@@ -1,0 +1,32 @@
+# --- Operating System Files ---
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Common Build & Dependency Directories ---
+node_modules/
+build/
+dist/
+bin/
+obj/
+out/
+
+# --- Logs, Diagnostics, and Tmp Files ---
+*.log
+*.tmp
+*.bak
+*.swp
+crash.dump
+
+# --- Environment Variables & Secrets ---
+.env
+.env.local
+.env.*.local
+
+# --- IDEs and Text Editors ---
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln.docstates
