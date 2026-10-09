@@ -15,6 +15,7 @@ import Report from './pages/Report';
 import WeighEnter from './pages/WeighEnter';
 import SignUp from './pages/SignUp';
 import Setup from './pages/Setup';
+import Feel from './pages/Feel';
 
 function App() {
   return (
@@ -34,6 +35,7 @@ function App() {
           <Route path="/family" element={<Family />} />
           <Route path="/report" element={<Report />} />
           <Route path="/weigh" element={<WeighEnter />} />
+          <Route path="/feel" element={<Feel />} />
         </Route>
         {/* Set-up for a new patient, then the full-screen emergency flow: no menu. */}
         <Route path="/setup/:step" element={<Setup />} />

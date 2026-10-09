@@ -10,9 +10,9 @@ This guide covers deploying Ventra on platforms that are free but use **ephemera
 
 | Platform | Best for | Disk | Sleep |
 |----------|----------|------|-------|
-| **Hugging Face Spaces** | Demo / hackathon showcase | Ephemeral | Yes |
+| **Hugging Face Spaces** | Docker Spaces now paid | Ephemeral | Yes |
 | **Railway** | Hobby / small traffic | Ephemeral | No |
-| **Render** | Hobby / small traffic | Ephemeral | Yes (15 min) |
+| **Render** (live) | Demo / hackathon showcase | Ephemeral | Yes (15 min) |
 | **Fly.io** | Hobby / small traffic | Ephemeral (free tier) | No |
 
 ---
@@ -111,29 +111,34 @@ Add in Railway dashboard:
 
 ---
 
-## Render
+## Render (live host)
 
-### 1. Create Web Service
-- [render.com](https://render.com) → New → Web Service
-- Connect your GitHub repo
+Ventra runs at **https://ventra-hackathon.onrender.com** on a Render free web service. (Hugging Face Docker Spaces now need a paid plan.)
 
-### 2. Settings
-| Setting | Value |
-|---------|-------|
-| Runtime | Docker |
-| Dockerfile path | `./Dockerfile` |
-| Port | `3000` |
+### 1. Create the web service
+- [render.com](https://render.com) → sign up with GitHub → **New** → **Web Service** → pick this repo
+- **Language:** Docker · **Branch:** `main` · **Region:** Singapore · **Root directory:** empty · **Instance type:** Free
+- **Health check path:** `/api/health`
 
-### 3. Environment variables
-Add in Render dashboard:
+### 2. Environment variables
+Add these by hand. Do **not** use "Add from .env": `.env.local` also holds local-only values such as `PORT` and `NODE_ENV`.
 
 | Variable | Value |
-|----------|-------|
-| `NODE_ENV` | `production` |
-| `PORT` | `3000` |
+|---|---|
+| `ADP_KEY_GENERAL` | ADP app key |
+| `TELEGRAM_BOT_TOKEN` | Bot token |
+| `TELEGRAM_WEBHOOK_SECRET` | Long random string (letters, numbers, `_`, `-`) |
+| `SESSION_SECRET` | Long random string |
+| `PUBLIC_URL` | The service URL, e.g. `https://ventra-hackathon.onrender.com` |
+| `DEMO_FAMILY_CHAT_ID` | Optional: keeps the demo family linked to Telegram after restarts |
 
-### 4. Limitations
-Render free web services spin down after 15 minutes of inactivity. The next request takes ~30 seconds to wake up, and the database will be re-seeded.
+`NODE_ENV` is already `production` in the Dockerfile, and Render sets `PORT` itself.
+
+### 3. Deploys and limits
+- Every push to `main` redeploys (about 5–10 minutes).
+- On start the server migrates the database, rebuilds the demo patient and registers the Telegram webhook at `PUBLIC_URL/api/telegram/webhook`.
+- Free instances sleep after about 15 minutes without visits; the next visit takes about a minute. Open the link before a demo.
+- No persistent disk: sign-ups are lost on restart; the demo patient is always rebuilt.
 
 ---
 

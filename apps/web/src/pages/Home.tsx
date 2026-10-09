@@ -72,7 +72,7 @@ function HomeView({ metrics }: { metrics: MetricsResponse }) {
       ariaLabel: left > 0 ? `Medicine, ${left} pill${left === 1 ? '' : 's'} still to take today` : undefined,
     },
     { label: 'Meals', bg: '#CDEFD9', icon: <MealsIcon />, to: '/track?tab=meal' },
-    { label: 'How I feel', bg: '#F9D3E3', icon: <FeelIcon />, to: '/track' },
+    { label: 'How I feel', bg: '#F9D3E3', icon: <FeelIcon />, to: '/feel' },
     { label: 'Ask AI', bg: '#DCDEFC', icon: <AskAiIcon />, to: '/ask' },
     {
       label: 'Calendar',

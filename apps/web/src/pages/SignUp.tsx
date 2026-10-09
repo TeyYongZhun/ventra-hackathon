@@ -40,7 +40,8 @@ export default function SignUp() {
         <input id="su-name" autoComplete="name" placeholder="e.g. Tan Ah Mui" value={name} onChange={(e) => setName(e.target.value)} style={field} />
 
         <label htmlFor="su-phone" style={fieldLabel}>Phone number</label>
-        <input id="su-phone" type="tel" inputMode="tel" autoComplete="tel-national" placeholder="9123 4567" value={phone} onChange={(e) => setPhone(e.target.value)} style={field} />
+        <input id="su-phone" type="tel" inputMode="tel" autoComplete="tel-national" placeholder="9123 4567" aria-describedby="su-phone-hint" value={phone} onChange={(e) => setPhone(e.target.value)} style={field} />
+        <span id="su-phone-hint" style={{ marginTop: -6, fontSize: 17, color: 'var(--color-ink-muted)' }}>Used to log in only — we don't text or call this number.</span>
 
         <label htmlFor="su-pin" style={fieldLabel}>Choose a 4-digit PIN</label>
         <input id="su-pin" type="password" inputMode="numeric" autoComplete="new-password" maxLength={4} value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))} style={field} />

@@ -40,7 +40,8 @@ export default function Login() {
       >
         <h2 style={{ margin: 0, fontSize: 'var(--text-h3)', lineHeight: 'var(--lh-h3)', fontWeight: 700 }}>Welcome back</h2>
         <label htmlFor="login-phone" style={fieldLabel}>Phone number</label>
-        <input id="login-phone" type="tel" inputMode="tel" autoComplete="tel-national" placeholder="9123 4567" value={phone} onChange={(e) => setPhone(e.target.value)} style={field} />
+        <input id="login-phone" type="tel" inputMode="tel" autoComplete="tel-national" placeholder="9123 4567" aria-describedby="login-phone-hint" value={phone} onChange={(e) => setPhone(e.target.value)} style={field} />
+        <span id="login-phone-hint" style={{ marginTop: -6, fontSize: 17, color: 'var(--color-ink-muted)' }}>Used to log in only — we don't text or call this number.</span>
         <label htmlFor="login-pin" style={fieldLabel}>4-digit PIN</label>
         <input id="login-pin" type="password" inputMode="numeric" autoComplete="current-password" maxLength={4} value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))} style={field} />
         {errorText && <p role="alert" style={{ margin: 0, fontSize: 'var(--text-caption)', fontWeight: 600, color: 'var(--color-red)' }}>{errorText}</p>}
