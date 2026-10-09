@@ -1,4 +1,75 @@
-import type { PatientRecord } from './record.js';
+import { addDays, clock, type IsoDate, type Medicine, type MissedDose, type PatientRecord, type TakenDose } from './record.js';
+
+const today: IsoDate = '2026-10-07';
+const nowMin = 9 * 60 + 41;
+const discharge: IsoDate = '2026-09-27';
+
+const meds: Medicine[] = [
+  {
+    id: 'furo',
+    name: 'Water pill',
+    generic: 'Furosemide',
+    strength: '40 mg',
+    times: [480],
+    purpose: 'Helps your body get rid of extra water, so you breathe easier and swell less.',
+    looks: 'Small white round tablet',
+    tile: '#DCE3EC',
+    round: { size: 36, bg: '#FFFFFF', border: '#C9CED6', line: '#C9CED6' },
+  },
+  {
+    id: 'biso',
+    name: 'Heart rate pill',
+    generic: 'Bisoprolol',
+    strength: '2.5 mg',
+    times: [480],
+    purpose: 'Keeps your heartbeat slow and steady, so your heart works less hard.',
+    looks: 'Small pale-yellow round tablet',
+    tile: '#E3E6EC',
+    round: { size: 30, bg: '#F6E7A8', border: '#D8C277', line: '#C9B266' },
+  },
+  {
+    id: 'sv',
+    name: 'Heart helper',
+    generic: 'Sacubitril/Valsartan',
+    strength: '49/51 mg',
+    times: [480, 1200],
+    purpose: 'Relaxes your blood vessels so your heart pumps more easily.',
+    looks: 'Light-purple oval tablet',
+    tile: '#E6E8EE',
+    oval: { bg: '#D9C8E6', border: '#B8A3C9' },
+  },
+  {
+    id: 'spiro',
+    name: 'Heart protector',
+    generic: 'Spironolactone',
+    strength: '25 mg',
+    times: [480],
+    purpose: 'Protects your heart muscle over time and helps remove extra water.',
+    looks: 'Light-brown round tablet',
+    tile: '#E3E6EC',
+    round: { size: 34, bg: '#EFD8BE', border: '#CDB08F', line: '#C2A584' },
+  },
+];
+
+const missed: MissedDose[] = [
+  { date: '2026-10-03', med: 'furo', time: 480, why: 'going out' },
+  { date: '2026-10-06', med: 'furo', time: 480, why: 'going out' },
+];
+
+// Every dose from discharge until now was confirmed 5 minutes after its time, except the missed ones.
+function confirmedDoses(): TakenDose[] {
+  const out: TakenDose[] = [];
+  for (let date = discharge; date <= today; date = addDays(date, 1)) {
+    for (const med of meds) {
+      for (const time of med.times) {
+        if (date === today && time > nowMin) continue;
+        if (missed.some((dose) => dose.date === date && dose.med === med.id && dose.time === time)) continue;
+        out.push({ date, med: med.id, time, at: clock(time + 5) });
+      }
+    }
+  }
+  return out;
+}
 
 export const mdmTanSeed: PatientRecord = {
   patient: {
@@ -7,62 +78,14 @@ export const mdmTanSeed: PatientRecord = {
     condition: 'heart failure',
     family: { name: 'Mei Ling', relation: 'daughter' },
   },
-  today: '2026-10-07',
-  nowMin: 9 * 60 + 41,
-  discharge: '2026-09-27',
+  today,
+  nowMin,
+  discharge,
   period: { from: '2026-10-01', to: '2026-10-07' },
   targets: { dryKg: 58.0, alertGainKg: 2, alertDays: 3, fluidMl: 1500, sodiumMg: 2000, capMl: 150 },
-  meds: [
-    {
-      id: 'furo',
-      name: 'Water pill',
-      generic: 'Furosemide',
-      strength: '40 mg',
-      times: [480],
-      purpose: 'Helps your body get rid of extra water, so you breathe easier and swell less.',
-      looks: 'Small white round tablet',
-      tile: '#DCE3EC',
-      round: { size: 36, bg: '#FFFFFF', border: '#C9CED6', line: '#C9CED6' },
-    },
-    {
-      id: 'biso',
-      name: 'Heart rate pill',
-      generic: 'Bisoprolol',
-      strength: '2.5 mg',
-      times: [480],
-      purpose: 'Keeps your heartbeat slow and steady, so your heart works less hard.',
-      looks: 'Small pale-yellow round tablet',
-      tile: '#E3E6EC',
-      round: { size: 30, bg: '#F6E7A8', border: '#D8C277', line: '#C9B266' },
-    },
-    {
-      id: 'sv',
-      name: 'Heart helper',
-      generic: 'Sacubitril/Valsartan',
-      strength: '49/51 mg',
-      times: [480, 1200],
-      purpose: 'Relaxes your blood vessels so your heart pumps more easily.',
-      looks: 'Light-purple oval tablet',
-      tile: '#E6E8EE',
-      oval: { bg: '#D9C8E6', border: '#B8A3C9' },
-    },
-    {
-      id: 'spiro',
-      name: 'Heart protector',
-      generic: 'Spironolactone',
-      strength: '25 mg',
-      times: [480],
-      purpose: 'Protects your heart muscle over time and helps remove extra water.',
-      looks: 'Light-brown round tablet',
-      tile: '#E3E6EC',
-      round: { size: 34, bg: '#EFD8BE', border: '#CDB08F', line: '#C2A584' },
-    },
-  ],
-  missed: [
-    { date: '2026-10-03', med: 'furo', time: 480, why: 'going out' },
-    { date: '2026-10-06', med: 'furo', time: 480, why: 'going out' },
-  ],
-  takenAt: { '2026-10-07': { 480: '8:05 AM' } },
+  meds,
+  missed,
+  taken: confirmedDoses(),
   weights: {
     '2026-09-27': 59.2,
     '2026-09-28': 58.9,

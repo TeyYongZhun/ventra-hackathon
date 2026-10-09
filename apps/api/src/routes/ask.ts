@@ -13,6 +13,7 @@ import * as schema from '../db/schema.js';
 import { patientScope } from '../db/scope.js';
 import { sendError } from '../errors.js';
 import { AdpError, type AdpClient } from '../services/adp.js';
+import { sgDate } from '../time.js';
 
 // ADP free plan allows 10 requests per minute for the whole app; stay under it.
 export const ASK_LIMIT_PER_MINUTE = 8;
@@ -41,10 +42,6 @@ function createLimiter(limit: number, windowMs: number, now: () => number) {
       return 0;
     },
   };
-}
-
-function singaporeDate(nowMs: number): string {
-  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Singapore' }).format(new Date(nowMs));
 }
 
 export function registerAskRoutes(app: FastifyInstance, options: AskRouteOptions) {
@@ -105,7 +102,7 @@ export function registerAskRoutes(app: FastifyInstance, options: AskRouteOptions
       answer = await adp.ask({
         question,
         requestId,
-        sessionId: pseudonym('session', `${scope.patientId}:${singaporeDate(now())}`),
+        sessionId: pseudonym('session', `${scope.patientId}:${sgDate(now())}`),
         visitorId: pseudonym('visitor', String(scope.patientId)),
       });
     } catch (error) {

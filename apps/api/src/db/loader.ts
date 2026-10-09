@@ -1,6 +1,7 @@
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 import { eq, and, isNull } from 'drizzle-orm';
-import type { PatientRecord, IsoDate, Medicine, MissedDose, TakenAt, DrinkLog, MealLog, SymptomLog, AlertLog } from '@ventra/core';
+import { addDays } from '@ventra/core';
+import type { PatientRecord, IsoDate, Medicine, MissedDose, TakenDose, DrinkLog, MealLog, SymptomLog, AlertLog } from '@ventra/core';
 import * as schema from './schema.js';
 
 export interface LoadContext {
@@ -73,12 +74,14 @@ export function loadPatientRecord(
       why: d.why ?? undefined,
     }));
 
-  const takenAt: TakenAt = {};
-  for (const d of doseRows.filter((d) => d.status === 'taken' && d.takenAt)) {
-    const date = d.date as IsoDate;
-    if (!takenAt[date]) takenAt[date] = {};
-    takenAt[date][d.time] = d.takenAt!;
-  }
+  const taken: TakenDose[] = doseRows
+    .filter((d) => d.status === 'taken')
+    .map((d) => ({
+      date: d.date as IsoDate,
+      med: d.medId,
+      time: d.time,
+      at: d.takenAt ?? '',
+    }));
 
   // Load weights
   const weightRows = db.select()
@@ -171,7 +174,8 @@ export function loadPatientRecord(
   }));
 
   const discharge = patientRow.dischargeDate as IsoDate;
-  const period = ctx.period ?? { from: '2026-10-01' as IsoDate, to: today };
+  // Default reporting period: the last 7 days, ending today.
+  const period = ctx.period ?? { from: addDays(today, -6), to: today };
 
   return {
     patient: {
@@ -196,7 +200,7 @@ export function loadPatientRecord(
     },
     meds,
     missed,
-    takenAt,
+    taken,
     weights,
     weighTime: patientRow.weighTime ?? '',
     fluid,

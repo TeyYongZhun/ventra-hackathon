@@ -3,170 +3,120 @@ import { drizzle } from 'drizzle-orm/better-sqlite3';
 import Database from 'better-sqlite3';
 import { eq } from 'drizzle-orm';
 import bcryptjs from 'bcryptjs';
+import { addDays, mdmTanSeed, type IsoDate, type MealLog } from '@ventra/core';
 import * as schema from './schema.js';
 
-export async function seedDemoPatient(db: BetterSQLite3Database<typeof schema>): Promise<number> {
+function daysBetween(from: IsoDate, to: IsoDate): number {
+  return Math.round((Date.parse(to) - Date.parse(from)) / 864e5);
+}
+
+function mealRow(meal: MealLog) {
+  return {
+    time: meal.t,
+    meal: meal.meal,
+    what: meal.what,
+    sodiumMg: meal.sodiumMg,
+    kcal: meal.kcal,
+    potassiumMg: meal.potassiumMg,
+    phosphorusMg: meal.phosphorusMg,
+    carbsJson: JSON.stringify(meal.carbs),
+    proteinJson: JSON.stringify(meal.protein),
+    fatJson: JSON.stringify(meal.fat),
+    plateJson: JSON.stringify(meal.plate),
+    tip: meal.tip,
+  };
+}
+
+// Inserts Mdm Tan from the core fixture, shifting every date so her last day is `today`.
+// The server passes today's Singapore date, so the demo history always ends today.
+export async function seedDemoPatient(
+  db: BetterSQLite3Database<typeof schema>,
+  today: IsoDate = mdmTanSeed.today,
+): Promise<number> {
+  const record = mdmTanSeed;
+  const offset = daysBetween(record.today, today);
+  const day = (date: IsoDate) => addDays(date, offset);
+
   // Hash PIN 1234
   const pinHash = await bcryptjs.hash('1234', 10);
 
-  // Insert patient
   const patientResult = db.insert(schema.patients).values({
     phone: '81234567',
     pinHash,
-    name: 'Mdm Tan',
-    age: 72,
-    condition: 'heart failure',
-    dischargeDate: '2026-09-27',
-    dischargeWeightKg: 59.2,
+    name: record.patient.name,
+    age: record.patient.age,
+    condition: record.patient.condition,
+    dischargeDate: day(record.discharge),
+    dischargeWeightKg: record.weights[record.discharge] ?? null,
     textSize: null,
-    weighTime: '7:10 AM',
+    weighTime: record.weighTime,
     isDemo: true,
   }).returning({ id: schema.patients.id }).get();
 
   const patientId = patientResult.id;
 
-  // Insert family contact
   db.insert(schema.contacts).values({
     patientId,
-    name: 'Mei Ling',
-    relation: 'daughter',
+    name: record.patient.family.name,
+    relation: record.patient.family.relation,
     phone: null,
   }).run();
 
-  // Insert care targets
-  db.insert(schema.careTargets).values({
-    patientId,
-    dryKg: 58.0,
-    alertGainKg: 2,
-    alertDays: 3,
-    fluidMl: 1500,
-    sodiumMg: 2000,
-    capMl: 150,
-  }).run();
+  db.insert(schema.careTargets).values({ patientId, ...record.targets }).run();
 
-  // Insert medications
-  const meds = [
-    {
-      medId: 'furo',
-      name: 'Water pill',
-      generic: 'Furosemide',
-      strength: '40 mg',
-      times: JSON.stringify([480]),
-      purpose: 'Helps your body get rid of extra water, so you breathe easier and swell less.',
-      looks: 'Small white round tablet',
-      tile: '#DCE3EC',
-      round: JSON.stringify({ size: 36, bg: '#FFFFFF', border: '#C9CED6', line: '#C9CED6' }),
-      oval: null,
-    },
-    {
-      medId: 'biso',
-      name: 'Heart rate pill',
-      generic: 'Bisoprolol',
-      strength: '2.5 mg',
-      times: JSON.stringify([480]),
-      purpose: 'Keeps your heartbeat slow and steady, so your heart works less hard.',
-      looks: 'Small pale-yellow round tablet',
-      tile: '#E3E6EC',
-      round: JSON.stringify({ size: 30, bg: '#F6E7A8', border: '#D8C277', line: '#C9B266' }),
-      oval: null,
-    },
-    {
-      medId: 'sv',
-      name: 'Heart helper',
-      generic: 'Sacubitril/Valsartan',
-      strength: '49/51 mg',
-      times: JSON.stringify([480, 1200]),
-      purpose: 'Relaxes your blood vessels so your heart pumps more easily.',
-      looks: 'Light-purple oval tablet',
-      tile: '#E6E8EE',
-      round: null,
-      oval: JSON.stringify({ bg: '#D9C8E6', border: '#B8A3C9' }),
-    },
-    {
-      medId: 'spiro',
-      name: 'Heart protector',
-      generic: 'Spironolactone',
-      strength: '25 mg',
-      times: JSON.stringify([480]),
-      purpose: 'Protects your heart muscle over time and helps remove extra water.',
-      looks: 'Light-brown round tablet',
-      tile: '#E3E6EC',
-      round: JSON.stringify({ size: 34, bg: '#EFD8BE', border: '#CDB08F', line: '#C2A584' }),
-      oval: null,
-    },
-  ];
-
-  for (const med of meds) {
-    db.insert(schema.medications).values({ patientId, ...med }).run();
+  for (const med of record.meds) {
+    db.insert(schema.medications).values({
+      patientId,
+      medId: med.id,
+      name: med.name,
+      generic: med.generic,
+      strength: med.strength,
+      times: JSON.stringify(med.times),
+      purpose: med.purpose,
+      looks: med.looks,
+      tile: med.tile ?? null,
+      round: med.round ? JSON.stringify(med.round) : null,
+      oval: med.oval ? JSON.stringify(med.oval) : null,
+    }).run();
   }
 
-  // Insert dose events
-  const missedDoses = [
-    { date: '2026-10-03', medId: 'furo', time: 480, why: 'going out' },
-    { date: '2026-10-06', medId: 'furo', time: 480, why: 'going out' },
-  ];
-
-  for (const dose of missedDoses) {
+  for (const dose of record.missed) {
     db.insert(schema.doseEvents).values({
       patientId,
-      date: dose.date,
-      medId: dose.medId,
+      date: day(dose.date),
+      medId: dose.med,
       time: dose.time,
       status: 'missed',
       takenAt: null,
-      why: dose.why,
+      why: dose.why ?? null,
       locked: true,
     }).run();
   }
 
-  // Taken dose on 2026-10-07 at 480 (all meds at that time)
-  const takenMeds = ['furo', 'biso', 'sv', 'spiro'];
-  for (const medId of takenMeds) {
+  for (const dose of record.taken) {
     db.insert(schema.doseEvents).values({
       patientId,
-      date: '2026-10-07',
-      medId,
-      time: 480,
+      date: day(dose.date),
+      medId: dose.med,
+      time: dose.time,
       status: 'taken',
-      takenAt: '8:05 AM',
+      takenAt: dose.at,
       why: null,
       locked: true,
     }).run();
   }
 
-  // Insert weights
-  const weightEntries: Record<string, number> = {
-    '2026-09-27': 59.2,
-    '2026-09-28': 58.9,
-    '2026-09-29': 58.6,
-    '2026-09-30': 58.4,
-    '2026-10-01': 58.1,
-    '2026-10-02': 58.3,
-    '2026-10-03': 58.0,
-    '2026-10-04': 58.2,
-    '2026-10-05': 58.2,
-    '2026-10-06': 58.2,
-    '2026-10-07': 58.4,
-  };
-
-  for (const [date, weightKg] of Object.entries(weightEntries)) {
-    db.insert(schema.weights).values({ patientId, date, weightKg }).run();
+  for (const [date, weightKg] of Object.entries(record.weights)) {
+    if (weightKg == null) continue;
+    db.insert(schema.weights).values({ patientId, date: day(date as IsoDate), weightKg }).run();
   }
 
-  // Insert fluid entries for past days (single entry per day with total)
-  const fluidTotals: Record<string, number> = {
-    '2026-10-01': 1350,
-    '2026-10-02': 1400,
-    '2026-10-03': 1750,
-    '2026-10-04': 1300,
-    '2026-10-05': 1450,
-    '2026-10-06': 1200,
-  };
-
-  for (const [date, ml] of Object.entries(fluidTotals)) {
+  // Past days: one entry per day holding the day's total
+  for (const [date, ml] of Object.entries(record.fluid)) {
+    if (ml == null) continue;
     db.insert(schema.fluidEntries).values({
       patientId,
-      date,
+      date: day(date as IsoDate),
       time: '12:00 PM',
       what: 'Water',
       ml,
@@ -174,105 +124,46 @@ export async function seedDemoPatient(db: BetterSQLite3Database<typeof schema>):
     }).run();
   }
 
-  // Insert fluid entries for today (Oct 7)
-  const drinksToday = [
-    { time: '3:00 PM', what: 'Water', ml: 300 },
-    { time: '12:40 PM', what: 'Soup', ml: 250 },
-    { time: '9:15 AM', what: 'Tea', ml: 150 },
-    { time: '7:30 AM', what: 'Water', ml: 150 },
-  ];
-
-  for (const drink of drinksToday) {
+  // The fixture lists newest first; insert oldest first so "undo last" removes the latest drink.
+  for (const drink of [...record.drinksToday].reverse()) {
     db.insert(schema.fluidEntries).values({
       patientId,
-      date: '2026-10-07',
-      time: drink.time,
+      date: today,
+      time: drink.t,
       what: drink.what,
       ml: drink.ml,
       deletedAt: null,
     }).run();
   }
 
-  // Insert meals
-  const mealsToday = [
-    {
-      time: '7:30 AM',
-      meal: 'Breakfast',
-      what: 'Oat porridge with banana',
-      sodiumMg: 500,
-      kcal: 330,
-      potassiumMg: 480,
-      phosphorusMg: 260,
-      carbsJson: JSON.stringify({ g: 58, what: 'Oats and banana' }),
-      proteinJson: JSON.stringify({ g: 9, what: 'Oats and milk' }),
-      fatJson: JSON.stringify({ g: 7, what: 'Milk' }),
-      plateJson: JSON.stringify([0.75, 0.125, 0.125]),
-      tip: 'A good choice. Most of the salt comes from the instant oats — plain rolled oats have less.',
-      isDemoScan: false,
-    },
-    {
-      time: '12:40 PM',
-      meal: 'Lunch',
-      what: 'Fish soup with noodles',
-      sodiumMg: 1100,
-      kcal: 420,
-      potassiumMg: 650,
-      phosphorusMg: 280,
-      carbsJson: JSON.stringify({ g: 52, what: 'Noodles' }),
-      proteinJson: JSON.stringify({ g: 24, what: 'Fish' }),
-      fatJson: JSON.stringify({ g: 12, what: 'Oil and fish' }),
-      plateJson: JSON.stringify([0.5, 0.25, 0.25]),
-      tip: 'Most of the salt is in the soup — try drinking only half next time.',
-      isDemoScan: false,
-    },
-    {
-      time: '6:30 PM',
-      meal: 'Dinner',
-      what: 'Steamed fish with rice and vegetables',
-      sodiumMg: 450,
-      kcal: 480,
-      potassiumMg: 720,
-      phosphorusMg: 320,
-      carbsJson: JSON.stringify({ g: 60, what: 'Rice' }),
-      proteinJson: JSON.stringify({ g: 28, what: 'Fish' }),
-      fatJson: JSON.stringify({ g: 10, what: 'Oil' }),
-      plateJson: JSON.stringify([0.5, 0.25, 0.25]),
-      tip: 'Great pick — steaming keeps the salt low. Skip extra soy sauce.',
-      isDemoScan: true,
-    },
-  ];
-
-  for (const meal of mealsToday) {
-    db.insert(schema.meals).values({ patientId, date: '2026-10-07', ...meal }).run();
+  for (const meal of record.mealsToday) {
+    db.insert(schema.meals).values({ patientId, date: today, ...mealRow(meal), isDemoScan: false }).run();
+  }
+  if (record.demoScan) {
+    db.insert(schema.meals).values({ patientId, date: today, ...mealRow(record.demoScan), isDemoScan: true }).run();
   }
 
-  // Insert symptoms
-  const symptoms = [
-    { date: '2026-10-02', key: 'tired', sev: 'Mild' },
-    { date: '2026-10-03', key: 'ankles', sev: 'Mild' },
-    { date: '2026-10-04', key: 'dizzy', sev: 'Mild' },
-    { date: '2026-10-04', key: 'tired', sev: 'Mild' },
-    { date: '2026-10-05', key: 'ankles', sev: 'Mild' },
-    { date: '2026-10-06', key: 'tired', sev: 'Mild' },
-  ];
-
-  for (const symptom of symptoms) {
-    db.insert(schema.symptoms).values({ patientId, ...symptom }).run();
+  for (const symptom of record.symptoms) {
+    db.insert(schema.symptoms).values({ patientId, date: day(symptom.date), key: symptom.key, sev: symptom.sev }).run();
   }
 
-  // Insert alerts
-  db.insert(schema.alerts).values({
-    patientId,
-    date: '2026-10-03',
-    time: '6:10 PM',
-    zone: 'yellow',
-    familyTold: true,
-  }).run();
+  for (const alert of record.alerts) {
+    db.insert(schema.alerts).values({
+      patientId,
+      date: day(alert.date),
+      time: alert.time,
+      zone: alert.zone,
+      familyTold: alert.familyTold,
+    }).run();
+  }
 
   return patientId;
 }
 
-export async function reseedDemoPatient(db: BetterSQLite3Database<typeof schema>): Promise<number> {
+export async function reseedDemoPatient(
+  db: BetterSQLite3Database<typeof schema>,
+  today: IsoDate = mdmTanSeed.today,
+): Promise<number> {
   // Find existing demo patient
   const existing = db.select({ id: schema.patients.id })
     .from(schema.patients)
@@ -299,7 +190,7 @@ export async function reseedDemoPatient(db: BetterSQLite3Database<typeof schema>
     db.delete(schema.patients).where(eq(schema.patients.id, patientId)).run();
   }
 
-  return seedDemoPatient(db);
+  return seedDemoPatient(db, today);
 }
 
 // CLI runner

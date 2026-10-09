@@ -239,8 +239,16 @@ All onboarding routes save one setup step for the logged-in patient.
 ## Metrics
 
 ### GET /api/metrics?date=YYYY-MM-DD
-Returns every number the screens show for the given date.  
-If `date` is omitted, defaults to today.
+Returns every number the screens show for the given date, built by `buildMetrics` in `@ventra/core`.  
+If `date` is omitted, defaults to today in Singapore. A past date is treated as a finished day.
+
+**Dose model** (`dosesOn` in `packages/core/src/record.ts`):
+- A dose is `taken` only after `POST /api/doses/confirm` ("I took it"). Confirmed doses are locked.
+- An unconfirmed dose is `missed` 2 hours after its time (`MISSED_GRACE_MIN`), or on any earlier day.
+- `adherence` counts only settled doses (taken or missed); a dose still inside its 2-hour window is left out.
+- `pillsToday.next` is the first dose today that is neither taken nor missed.
+
+**Demo patient:** Mdm Tan is rebuilt on every server start with her history shifted so her last day is today. Her numbers are the same on any day.
 
 **Session required:** Yes
 
@@ -256,6 +264,7 @@ If `date` is omitted, defaults to today.
     "family": { "name": "Mei Ling", "relation": "daughter" }
   },
   "today": "2026-10-07",
+  "targets": { "dryKg": 58, "alertGainKg": 2, "alertDays": 3, "fluidMl": 1500, "sodiumMg": 2000, "capMl": 150 },
   "adherence": { "due": 34, "taken": 32, "missed": 2, "pct": 94, "text": "32 of 34" },
   "pillsToday": {
     "all": [ /* DoseStatus[] */ ],
@@ -265,7 +274,7 @@ If `date` is omitted, defaults to today.
     "taken": 4,
     "morningTaken": 4,
     "next": { /* DoseStatus */ },
-    "nextTime": "8:00 PM"
+    "nextTime": "8 PM"
   },
   "weightChange": 0.2,
   "vsDry": 0.4,
@@ -302,20 +311,21 @@ This example uses the real values from `@ventra/core` (`mdmTanSeed`) and the met
     "family": { "name": "Mei Ling", "relation": "daughter" }
   },
   "today": "2026-10-07",
+  "targets": { "dryKg": 58, "alertGainKg": 2, "alertDays": 3, "fluidMl": 1500, "sodiumMg": 2000, "capMl": 150 },
   "adherence": { "due": 34, "taken": 32, "missed": 2, "pct": 94, "text": "32 of 34" },
   "pillsToday": {
     "all": [
       { "med": { "id": "furo", "name": "Water pill", "generic": "Furosemide", "strength": "40 mg", "times": [480], "purpose": "Helps your body get rid of extra water, so you breathe easier and swell less.", "looks": "Small white round tablet", "tile": "#DCE3EC", "round": { "size": 36, "bg": "#FFFFFF", "border": "#C9CED6", "line": "#C9CED6" } }, "time": 480, "index": 0, "of": 1, "due": true, "missed": false, "taken": true, "takenAt": "8:05 AM" },
-      { "med": { "id": "biso", "name": "Heart rate pill", "generic": "Bisoprolol", "strength": "2.5 mg", "times": [480], "purpose": "Keeps your heartbeat slow and steady, so your heart works less hard.", "looks": "Small pale-yellow round tablet", "tile": "#E3E6EC", "round": { "size": 30, "bg": "#F6E7A8", "border": "#D8C277", "line": "#C9B266" } }, "time": 480, "index": 0, "of": 1, "due": true, "missed": false, "taken": true, "takenAt": null },
-      { "med": { "id": "sv", "name": "Heart helper", "generic": "Sacubitril/Valsartan", "strength": "49/51 mg", "times": [480, 1200], "purpose": "Relaxes your blood vessels so your heart pumps more easily.", "looks": "Light-purple oval tablet", "tile": "#E6E8EE", "oval": { "bg": "#D9C8E6", "border": "#B8A3C9" } }, "time": 480, "index": 0, "of": 2, "due": true, "missed": false, "taken": true, "takenAt": null },
-      { "med": { "id": "spiro", "name": "Heart protector", "generic": "Spironolactone", "strength": "25 mg", "times": [480], "purpose": "Protects your heart muscle over time and helps remove extra water.", "looks": "Light-brown round tablet", "tile": "#E3E6EC", "round": { "size": 34, "bg": "#EFD8BE", "border": "#CDB08F", "line": "#C2A584" } }, "time": 480, "index": 0, "of": 1, "due": true, "missed": false, "taken": true, "takenAt": null },
+      { "med": { "id": "biso", "name": "Heart rate pill", "generic": "Bisoprolol", "strength": "2.5 mg", "times": [480], "purpose": "Keeps your heartbeat slow and steady, so your heart works less hard.", "looks": "Small pale-yellow round tablet", "tile": "#E3E6EC", "round": { "size": 30, "bg": "#F6E7A8", "border": "#D8C277", "line": "#C9B266" } }, "time": 480, "index": 0, "of": 1, "due": true, "missed": false, "taken": true, "takenAt": "8:05 AM" },
+      { "med": { "id": "sv", "name": "Heart helper", "generic": "Sacubitril/Valsartan", "strength": "49/51 mg", "times": [480, 1200], "purpose": "Relaxes your blood vessels so your heart pumps more easily.", "looks": "Light-purple oval tablet", "tile": "#E6E8EE", "oval": { "bg": "#D9C8E6", "border": "#B8A3C9" } }, "time": 480, "index": 0, "of": 2, "due": true, "missed": false, "taken": true, "takenAt": "8:05 AM" },
+      { "med": { "id": "spiro", "name": "Heart protector", "generic": "Spironolactone", "strength": "25 mg", "times": [480], "purpose": "Protects your heart muscle over time and helps remove extra water.", "looks": "Light-brown round tablet", "tile": "#E3E6EC", "round": { "size": 34, "bg": "#EFD8BE", "border": "#CDB08F", "line": "#C2A584" } }, "time": 480, "index": 0, "of": 1, "due": true, "missed": false, "taken": true, "takenAt": "8:05 AM" },
       { "med": { "id": "sv", "name": "Heart helper", "generic": "Sacubitril/Valsartan", "strength": "49/51 mg", "times": [480, 1200], "purpose": "Relaxes your blood vessels so your heart pumps more easily.", "looks": "Light-purple oval tablet", "tile": "#E6E8EE", "oval": { "bg": "#D9C8E6", "border": "#B8A3C9" } }, "time": 1200, "index": 1, "of": 2, "due": false, "missed": false, "taken": false, "takenAt": null }
     ],
     "morning": [
       { "med": { "id": "furo", "name": "Water pill", "generic": "Furosemide", "strength": "40 mg", "times": [480], "purpose": "Helps your body get rid of extra water, so you breathe easier and swell less.", "looks": "Small white round tablet", "tile": "#DCE3EC", "round": { "size": 36, "bg": "#FFFFFF", "border": "#C9CED6", "line": "#C9CED6" } }, "time": 480, "index": 0, "of": 1, "due": true, "missed": false, "taken": true, "takenAt": "8:05 AM" },
-      { "med": { "id": "biso", "name": "Heart rate pill", "generic": "Bisoprolol", "strength": "2.5 mg", "times": [480], "purpose": "Keeps your heartbeat slow and steady, so your heart works less hard.", "looks": "Small pale-yellow round tablet", "tile": "#E3E6EC", "round": { "size": 30, "bg": "#F6E7A8", "border": "#D8C277", "line": "#C9B266" } }, "time": 480, "index": 0, "of": 1, "due": true, "missed": false, "taken": true, "takenAt": null },
-      { "med": { "id": "sv", "name": "Heart helper", "generic": "Sacubitril/Valsartan", "strength": "49/51 mg", "times": [480, 1200], "purpose": "Relaxes your blood vessels so your heart pumps more easily.", "looks": "Light-purple oval tablet", "tile": "#E6E8EE", "oval": { "bg": "#D9C8E6", "border": "#B8A3C9" } }, "time": 480, "index": 0, "of": 2, "due": true, "missed": false, "taken": true, "takenAt": null },
-      { "med": { "id": "spiro", "name": "Heart protector", "generic": "Spironolactone", "strength": "25 mg", "times": [480], "purpose": "Protects your heart muscle over time and helps remove extra water.", "looks": "Light-brown round tablet", "tile": "#E3E6EC", "round": { "size": 34, "bg": "#EFD8BE", "border": "#CDB08F", "line": "#C2A584" } }, "time": 480, "index": 0, "of": 1, "due": true, "missed": false, "taken": true, "takenAt": null }
+      { "med": { "id": "biso", "name": "Heart rate pill", "generic": "Bisoprolol", "strength": "2.5 mg", "times": [480], "purpose": "Keeps your heartbeat slow and steady, so your heart works less hard.", "looks": "Small pale-yellow round tablet", "tile": "#E3E6EC", "round": { "size": 30, "bg": "#F6E7A8", "border": "#D8C277", "line": "#C9B266" } }, "time": 480, "index": 0, "of": 1, "due": true, "missed": false, "taken": true, "takenAt": "8:05 AM" },
+      { "med": { "id": "sv", "name": "Heart helper", "generic": "Sacubitril/Valsartan", "strength": "49/51 mg", "times": [480, 1200], "purpose": "Relaxes your blood vessels so your heart pumps more easily.", "looks": "Light-purple oval tablet", "tile": "#E6E8EE", "oval": { "bg": "#D9C8E6", "border": "#B8A3C9" } }, "time": 480, "index": 0, "of": 2, "due": true, "missed": false, "taken": true, "takenAt": "8:05 AM" },
+      { "med": { "id": "spiro", "name": "Heart protector", "generic": "Spironolactone", "strength": "25 mg", "times": [480], "purpose": "Protects your heart muscle over time and helps remove extra water.", "looks": "Light-brown round tablet", "tile": "#E3E6EC", "round": { "size": 34, "bg": "#EFD8BE", "border": "#CDB08F", "line": "#C2A584" } }, "time": 480, "index": 0, "of": 1, "due": true, "missed": false, "taken": true, "takenAt": "8:05 AM" }
     ],
     "evening": [
       { "med": { "id": "sv", "name": "Heart helper", "generic": "Sacubitril/Valsartan", "strength": "49/51 mg", "times": [480, 1200], "purpose": "Relaxes your blood vessels so your heart pumps more easily.", "looks": "Light-purple oval tablet", "tile": "#E6E8EE", "oval": { "bg": "#D9C8E6", "border": "#B8A3C9" } }, "time": 1200, "index": 1, "of": 2, "due": false, "missed": false, "taken": false, "takenAt": null }
@@ -324,7 +334,7 @@ This example uses the real values from `@ventra/core` (`mdmTanSeed`) and the met
     "taken": 4,
     "morningTaken": 4,
     "next": { "med": { "id": "sv", "name": "Heart helper", "generic": "Sacubitril/Valsartan", "strength": "49/51 mg", "times": [480, 1200], "purpose": "Relaxes your blood vessels so your heart pumps more easily.", "looks": "Light-purple oval tablet", "tile": "#E6E8EE", "oval": { "bg": "#D9C8E6", "border": "#B8A3C9" } }, "time": 1200, "index": 1, "of": 2, "due": false, "missed": false, "taken": false, "takenAt": null },
-    "nextTime": "8:00 PM"
+    "nextTime": "8 PM"
   },
   "weightChange": 0.2,
   "vsDry": 0.4,
@@ -405,7 +415,7 @@ Add a drink entry for today.
 ---
 
 ### DELETE /api/fluid/last
-Undo the most recent fluid entry for the same day only.
+Undo the most recent fluid entry for the same day only. Soft delete (`deleted_at`); alert rules run after.
 
 **Session required:** Yes
 
@@ -493,7 +503,7 @@ Undo the most recent meal entry.
 ## Weight
 
 ### POST /api/weight
-Record today's weight. Triggers alert rules after save.
+Record today's weight (20–250 kg, rounded to 0.1). One weight per day: weighing again today replaces it. Triggers alert rules after save.
 
 **Session required:** Yes
 
@@ -520,7 +530,8 @@ Record today's weight. Triggers alert rules after save.
 ## Doses
 
 ### POST /api/doses/confirm
-Mark a dose as taken. No delete route — taken doses are locked.
+Mark a dose as taken ("I took it"). No update or delete route — taken doses are locked.  
+Only today's doses (Singapore date). A dose can be confirmed early (e.g. the evening pill) or late. `medId` and `time` must be on the patient's schedule.
 
 **Session required:** Yes
 
@@ -541,14 +552,14 @@ Mark a dose as taken. No delete route — taken doses are locked.
 }
 ```
 
-**Errors:** `VALIDATION_ERROR`, `CONFLICT` (already taken), `NOT_FOUND`
+**Errors:** `VALIDATION_ERROR`, `CONFLICT` (already taken, or not today), `NOT_FOUND` (not on the schedule)
 
 ---
 
 ## Symptoms
 
 ### POST /api/symptoms
-Log a symptom. Triggers alert rules after save.
+Log a symptom. `key`: `ankles` | `tired` | `dizzy` | `breath`; `sev`: `Mild` | `Moderate` | `Severe`. One entry per symptom per day: logging it again updates the severity. Triggers alert rules after save.
 
 **Session required:** Yes
 
@@ -974,51 +985,12 @@ Reset the demo patient (`Mdm Tan`) to the seed fixture state.
 
 ## Mock-data note for frontend development
 
-Until the API endpoints are implemented, Teammate A can fake the backend using the seed fixture exported by `@ventra/core`:
+Until an endpoint is implemented, the frontend can fake it with the seed fixture exported by `@ventra/core`. `GET /api/metrics` uses the same builder, so mock and real numbers match:
 
 ```ts
-import { mdmTanSeed } from '@ventra/core';
-import {
-  adherence,
-  pillsToday,
-  weightChange,
-  vsDry,
-  weighStreak,
-  fluidOn,
-  fluidOk,
-  sodiumToday,
-  evaluate,
-  goodStreak,
-  isGoodDay,
-  reasons,
-  symptomsOn,
-  alertOn,
-  questions,
-} from '@ventra/core';
+import { buildMetrics, mdmTanSeed } from '@ventra/core';
 
-const record = mdmTanSeed;
-const date = '2026-10-07';
-
-const metrics = {
-  patient: record.patient,
-  today: record.today,
-  adherence: adherence(record),
-  pillsToday: pillsToday(record),
-  weightChange: weightChange(record, record.targets.alertDays, date),
-  vsDry: vsDry(record, date),
-  weighStreak: weighStreak(record),
-  fluidToday: fluidOn(record, date),
-  fluidOk: fluidOk(record, date),
-  sodiumToday: sodiumToday(record),
-  zone: evaluate(record, date).zone,
-  goodDays: ['2026-10-01','2026-10-02','2026-10-03','2026-10-04','2026-10-05','2026-10-06','2026-10-07']
-    .filter((d) => isGoodDay(record, d as `${number}-${number}-${number}`)).length,
-  goodStreak: goodStreak(record),
-  reasons: reasons(record, date),
-  symptomsToday: symptomsOn(record, date),
-  alertsToday: alertOn(record, date) ? [alertOn(record, date)!] : [],
-  questions: questions(record),
-};
+const metrics = buildMetrics(mdmTanSeed); // Mdm Tan on 2026-10-07 at 9:41 AM
 ```
 
-All numbers in the example `GET /api/metrics` response above were produced by these exact function calls.
+All numbers in the example `GET /api/metrics` response above come from this call.

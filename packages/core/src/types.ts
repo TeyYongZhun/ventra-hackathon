@@ -101,6 +101,7 @@ export interface OnboardingResponse {
 export interface MetricsResponse {
   patient: PatientInfo;
   today: IsoDate;
+  targets: Targets;
   adherence: AdherenceSummary;
   pillsToday: PillsTodaySummary;
   weightChange: number | null;

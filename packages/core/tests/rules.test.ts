@@ -22,7 +22,13 @@ const otherMed: Medicine = {
   looks: '',
 };
 
+// Today's 8 AM doses are confirmed unless the test marks them missed.
 function baseRecord(overrides: Partial<PatientRecord> = {}): PatientRecord {
+  const missed = overrides.missed ?? [];
+  const taken = [waterPill, otherMed]
+    .filter((med) => !missed.some((dose) => dose.med === med.id))
+    .map((med) => ({ date: '2026-10-07' as IsoDate, med: med.id, time: 480, at: '8:05 AM' }));
+
   return {
     patient: {
       name: 'Test',
@@ -46,8 +52,8 @@ function baseRecord(overrides: Partial<PatientRecord> = {}): PatientRecord {
       capMl: 150,
     },
     meds: [waterPill, otherMed],
-    missed: [],
-    takenAt: {},
+    missed,
+    taken,
     weights: {},
     weighTime: '7:00 AM',
     fluid: {},

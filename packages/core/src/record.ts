@@ -49,7 +49,16 @@ export interface MissedDose {
   why?: string;
 }
 
-export type TakenAt = Record<IsoDate, Record<number, string>>;
+// A dose the patient confirmed with "I took it". Confirmed doses are locked.
+export interface TakenDose {
+  date: IsoDate;
+  med: string;
+  time: number;
+  at: string;
+}
+
+// An unconfirmed dose counts as missed this many minutes after its time.
+export const MISSED_GRACE_MIN = 120;
 
 export interface DrinkLog {
   t: string;
@@ -104,7 +113,7 @@ export interface PatientRecord {
   targets: Targets;
   meds: Medicine[];
   missed: MissedDose[];
-  takenAt: TakenAt;
+  taken: TakenDose[];
   weights: Partial<Record<IsoDate, number>>;
   weighTime: string;
   fluid: Partial<Record<IsoDate, number>>;
@@ -186,7 +195,7 @@ function iso(ms: number): IsoDate {
   return new Date(ms).toISOString().slice(0, 10) as IsoDate;
 }
 
-function addDays(date: IsoDate, days: number): IsoDate {
+export function addDays(date: IsoDate, days: number): IsoDate {
   return iso(parseDate(date) + days * 864e5);
 }
 
@@ -204,7 +213,7 @@ function kg(value: number): string {
   return `${value.toFixed(1)} kg`;
 }
 
-function clock(minutes: number): string {
+export function clock(minutes: number): string {
   let hour = Math.floor(minutes / 60);
   const minute = minutes % 60;
   const suffix = hour >= 12 ? 'PM' : 'AM';
@@ -242,32 +251,37 @@ export function symptomsOn(record: PatientRecord, date: IsoDate): SymptomLog[] {
   return record.symptoms.filter((symptom) => symptom.date === date);
 }
 
+// A dose is taken only when confirmed. An unconfirmed dose is missed once it is
+// MISSED_GRACE_MIN past its time (or on any earlier day), or when marked missed.
 export function dosesOn(record: PatientRecord, date: IsoDate): DoseStatus[] {
   return record.meds.flatMap((med) =>
     med.times.map((time, index) => {
-      const isMissed = record.missed.some((missed) => missed.date === date && missed.med === med.id && missed.time === time);
+      const confirmed = record.taken.find((dose) => dose.date === date && dose.med === med.id && dose.time === time);
+      const markedMissed = record.missed.some((missed) => missed.date === date && missed.med === med.id && missed.time === time);
       const due = date < record.today || time <= record.nowMin;
+      const overdue = date < record.today || record.nowMin >= time + MISSED_GRACE_MIN;
       return {
         med,
         time,
         index,
         of: med.times.length,
         due,
-        missed: due && isMissed,
-        taken: due && !isMissed,
-        takenAt: record.takenAt[date]?.[time] ?? null,
+        missed: !confirmed && due && (markedMissed || overdue),
+        taken: Boolean(confirmed),
+        takenAt: confirmed?.at ?? null,
       };
     }),
   );
 }
 
+// Counts only settled doses (taken or missed); a dose still inside its grace window is left out.
 export function adherence(record: PatientRecord, days = defaultPeriodDays(record)): AdherenceSummary {
   let due = 0;
   let taken = 0;
 
   for (const date of days) {
     for (const dose of dosesOn(record, date)) {
-      if (dose.due) {
+      if (dose.taken || dose.missed) {
         due += 1;
         if (dose.taken) taken += 1;
       }
@@ -287,7 +301,7 @@ export function pillsToday(record: PatientRecord): PillsTodaySummary {
   const all = dosesOn(record, record.today);
   const morning = all.filter((dose) => dose.time < 720);
   const evening = all.filter((dose) => dose.time >= 720);
-  const next = all.find((dose) => !dose.due) ?? null;
+  const next = all.find((dose) => !dose.taken && !dose.missed) ?? null;
 
   return {
     all,

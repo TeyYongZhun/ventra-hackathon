@@ -1,13 +1,15 @@
 import crypto from 'node:crypto';
 import fastify, { type FastifyReply, type FastifyRequest, type FastifyServerOptions } from 'fastify';
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
-import { and, desc, eq, isNull } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import bcryptjs from 'bcryptjs';
 import { z } from 'zod';
 import * as schema from './db/schema.js';
-import { patientScope, requirePatientId } from './db/scope.js';
+import { requirePatientId } from './db/scope.js';
 import { sendError } from './errors.js';
 import { registerAskRoutes } from './routes/ask.js';
+import { registerLogRoutes } from './routes/logs.js';
+import { registerMetricsRoutes } from './routes/metrics.js';
 import type { AdpClient } from './services/adp.js';
 
 export type ApiDb = BetterSQLite3Database<typeof schema>;
@@ -43,11 +45,6 @@ const signupSchema = z.object({
 const loginSchema = z.object({
   phone: phoneSchema,
   pin: pinSchema,
-});
-
-const fluidSchema = z.object({
-  what: z.string().trim().min(1).max(100),
-  ml: z.number().int().positive().max(5000),
 });
 
 function parseCookie(cookieHeader: string | undefined, name: string): string | undefined {
@@ -94,19 +91,6 @@ function isSqliteUniqueConstraint(error: unknown): boolean {
     && error !== null
     && 'code' in error
     && String((error as { code: unknown }).code).startsWith('SQLITE_CONSTRAINT');
-}
-
-function todayIso(nowMs: number): string {
-  return new Date(nowMs).toISOString().slice(0, 10);
-}
-
-function timeLabel(nowMs: number): string {
-  return new Intl.DateTimeFormat('en-SG', {
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true,
-    timeZone: 'Asia/Singapore',
-  }).format(new Date(nowMs));
 }
 
 export function createApiApp(options: CreateApiAppOptions) {
@@ -273,46 +257,8 @@ export function createApiApp(options: CreateApiAppOptions) {
     return { name: patient.name, is_demo: patient.isDemo };
   });
 
-  app.post('/api/fluid', async (request, reply) => {
-    const parsed = fluidSchema.safeParse(request.body);
-    if (!parsed.success) {
-      return sendError(reply, 400, 'VALIDATION_ERROR', 'Invalid request body');
-    }
-
-    const scope = patientScope(request);
-    const entry = db.insert(schema.fluidEntries).values(scope.values({
-      date: todayIso(now()),
-      time: timeLabel(now()),
-      what: parsed.data.what,
-      ml: parsed.data.ml,
-    })).returning({
-      id: schema.fluidEntries.id,
-      date: schema.fluidEntries.date,
-      time: schema.fluidEntries.time,
-      what: schema.fluidEntries.what,
-      ml: schema.fluidEntries.ml,
-    }).get();
-
-    return entry;
-  });
-
-  app.get('/api/fluid', async (request) => {
-    const scope = patientScope(request);
-    const entries = db.select({
-      id: schema.fluidEntries.id,
-      date: schema.fluidEntries.date,
-      time: schema.fluidEntries.time,
-      what: schema.fluidEntries.what,
-      ml: schema.fluidEntries.ml,
-    })
-      .from(schema.fluidEntries)
-      .where(and(scope.where(schema.fluidEntries.patientId), isNull(schema.fluidEntries.deletedAt)))
-      .orderBy(desc(schema.fluidEntries.id))
-      .all();
-
-    return { entries };
-  });
-
+  registerMetricsRoutes(app, { db, now });
+  registerLogRoutes(app, { db, now });
   registerAskRoutes(app, {
     db,
     adp: options.adp,
