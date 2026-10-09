@@ -1,3 +1,2 @@
-export function helloCore(): string {
-  return 'core';
-}
+export * from './record.js';
+export * from './rules.js';
