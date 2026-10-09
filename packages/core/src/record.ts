@@ -238,11 +238,11 @@ function alertOn(record: PatientRecord, date: IsoDate): AlertLog | null {
   return record.alerts.find((alert) => alert.date === date) ?? null;
 }
 
-function symptomsOn(record: PatientRecord, date: IsoDate): SymptomLog[] {
+export function symptomsOn(record: PatientRecord, date: IsoDate): SymptomLog[] {
   return record.symptoms.filter((symptom) => symptom.date === date);
 }
 
-function dosesOn(record: PatientRecord, date: IsoDate): DoseStatus[] {
+export function dosesOn(record: PatientRecord, date: IsoDate): DoseStatus[] {
   return record.meds.flatMap((med) =>
     med.times.map((time, index) => {
       const isMissed = record.missed.some((missed) => missed.date === date && missed.med === med.id && missed.time === time);

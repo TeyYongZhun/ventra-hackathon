@@ -27,6 +27,7 @@ crash.dump
 *.sln.docstates
 
 # --- Ventra: keep private / generated ---
+.env
 .env.*
 !.env.example
 *.pem
@@ -36,7 +37,7 @@ crash.dump
 *.sqlite
 data/
 uploads/
-drizzle/
 .pnpm-store/
 coverage/
 .turbo/
+dev-dist/
