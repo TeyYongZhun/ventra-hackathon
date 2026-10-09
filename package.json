@@ -11,6 +11,7 @@
   "scripts": {
     "dev": "pnpm -r --parallel dev",
     "build": "pnpm -r build",
+    "pretest": "pnpm --filter @ventra/core build",
     "test": "pnpm -r test",
     "lint": "pnpm -r lint"
   },
