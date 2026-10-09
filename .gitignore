@@ -36,6 +36,7 @@ crash.dump
 *.sqlite
 data/
 uploads/
+drizzle/
 .pnpm-store/
 coverage/
 .turbo/
