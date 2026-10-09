@@ -1,14 +1,13 @@
-import fastify from 'fastify';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import fastifyStatic from '@fastify/static';
+import { createApiApp } from './app.js';
+import { createDb } from './db/client.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const app = fastify({ logger: true });
-
-// Health check
-app.get('/api/health', async () => ({ ok: true }));
+const db = createDb();
+const app = createApiApp({ db });
 
 // Serve built web app in production
 if (process.env.NODE_ENV === 'production') {

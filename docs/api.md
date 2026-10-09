@@ -24,6 +24,7 @@ Common codes:
 - `VALIDATION_ERROR` — request body failed zod validation
 - `NOT_FOUND` — resource does not exist
 - `CONFLICT` — business rule blocked the action (e.g. undoing fluid from a previous day)
+- `TOO_MANY_ATTEMPTS` — 5 wrong PIN attempts locked login for 5 minutes
 - `INTERNAL_ERROR` — unexpected server error
 
 ---
@@ -40,9 +41,7 @@ Create a new patient account and start a session.
 {
   "phone": "string",
   "pin": "string (4 digits)",
-  "name": "string",
-  "age": 72,
-  "condition": "string"
+  "name": "string"
 }
 ```
 
@@ -78,7 +77,26 @@ Authenticate with phone + PIN. Sets an `httpOnly` session cookie.
 }
 ```
 
-**Errors:** `UNAUTHORIZED` (invalid credentials), `VALIDATION_ERROR`
+**Errors:** `UNAUTHORIZED` (invalid credentials), `VALIDATION_ERROR`, `TOO_MANY_ATTEMPTS`
+
+---
+
+### GET /api/me
+Return the logged-in patient's display identity.
+
+**Session required:** Yes
+
+**Request body:** none
+
+**Success 200:**
+```json
+{
+  "name": "Mdm Tan",
+  "is_demo": true
+}
+```
+
+**Errors:** `UNAUTHORIZED`
 
 ---
 
@@ -330,6 +348,32 @@ This example uses the real values from `@ventra/core` (`mdmTanSeed`) and the met
 ---
 
 ## Fluid
+
+### GET /api/fluid
+Return non-deleted fluid entries for the logged-in patient.
+
+**Session required:** Yes
+
+**Request body:** none
+
+**Success 200:**
+```json
+{
+  "entries": [
+    {
+      "id": 1,
+      "date": "2026-10-07",
+      "time": "3:00 PM",
+      "what": "Water",
+      "ml": 300
+    }
+  ]
+}
+```
+
+**Errors:** `UNAUTHORIZED`
+
+---
 
 ### POST /api/fluid
 Add a drink entry for today.
