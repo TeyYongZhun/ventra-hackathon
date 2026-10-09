@@ -1,21 +1,23 @@
 import { Link } from 'react-router-dom';
 
-export function SOSButton() {
+// large: Home (design/Main.dc.html). page: inner page headers (padding 20, 22px text).
+export function SOSButton({ size = 'large' }: { size?: 'large' | 'page' }) {
+  const large = size === 'large';
   return (
     <Link
       to="/emergency"
       aria-label="Emergency SOS"
       style={{
         height: 64,
-        padding: '0 22px',
+        padding: large ? '0 22px' : '0 20px',
         display: 'inline-flex',
         alignItems: 'center',
-        gap: 10,
+        gap: large ? 10 : 8,
         borderRadius: 'var(--radius-pill)',
         background: 'var(--color-red)',
         color: 'var(--color-surface)',
         textDecoration: 'none',
-        fontSize: 'var(--text-title)',
+        fontSize: large ? 24 : 22,
         fontWeight: 700,
         lineHeight: 'var(--lh-title)',
         minWidth: 64,
@@ -23,8 +25,8 @@ export function SOSButton() {
       }}
     >
       <svg
-        width={26}
-        height={26}
+        width={large ? 30 : 26}
+        height={large ? 30 : 26}
         viewBox="0 0 24 24"
         fill="currentColor"
         stroke="currentColor"

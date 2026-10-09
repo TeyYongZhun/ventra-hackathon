@@ -1,14 +1,20 @@
+import type { ReactNode } from 'react';
+
 // Loading and error views for screens that wait on the API.
-export function Loading({ what = 'your day' }: { what?: string }) {
+// Pages pass their header so SOS stays on screen while they wait.
+export function Loading({ what = 'your day', header }: { what?: string; header?: ReactNode }) {
   return (
+    <WithHeader header={header}>
     <p role="status" style={{ margin: 0, padding: 'var(--space-6) 0', fontSize: 'var(--text-body)', lineHeight: 'var(--lh-body)' }}>
       Loading {what}…
     </p>
+    </WithHeader>
   );
 }
 
-export function LoadError({ onRetry }: { onRetry: () => void }) {
+export function LoadError({ onRetry, header }: { onRetry: () => void; header?: ReactNode }) {
   return (
+    <WithHeader header={header}>
     <div role="alert" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)', padding: 'var(--space-6) 0' }}>
       <p style={{ margin: 0, fontSize: 'var(--text-body)', lineHeight: 'var(--lh-body)' }}>
         We couldn't load your information. Please check your internet and try again.
@@ -29,6 +35,17 @@ export function LoadError({ onRetry }: { onRetry: () => void }) {
       >
         Try again
       </button>
+    </div>
+    </WithHeader>
+  );
+}
+
+function WithHeader({ header, children }: { header?: ReactNode; children: ReactNode }) {
+  if (!header) return <>{children}</>;
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
+      {header}
+      {children}
     </div>
   );
 }

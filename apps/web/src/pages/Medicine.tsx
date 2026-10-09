@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { clock, type DoseStatus, type IsoDate, type MetricsResponse } from '@ventra/core';
+import { PageHeader } from '../components';
 import { LoadError, Loading } from '../components/QueryState';
 import { useConfirmDose, useMetrics } from '../lib/api';
 
@@ -8,8 +9,8 @@ import { useConfirmDose, useMetrics } from '../lib/api';
 export default function Medicine() {
   const metrics = useMetrics();
 
-  if (metrics.isLoading) return <Loading what="your medicines" />;
-  if (metrics.isError || !metrics.data) return <LoadError onRetry={() => metrics.refetch()} />;
+  if (metrics.isLoading) return <Loading what="your medicines" header={<Heading />} />;
+  if (metrics.isError || !metrics.data) return <LoadError onRetry={() => metrics.refetch()} header={<Heading />} />;
   return <MedicineView metrics={metrics.data} />;
 }
 
@@ -72,11 +73,7 @@ function MedicineView({ metrics }: { metrics: MetricsResponse }) {
 }
 
 function Heading() {
-  return (
-    <h1 style={{ margin: 0, fontSize: 'var(--text-h1)', lineHeight: 'var(--lh-h1)', fontWeight: 700, letterSpacing: '-0.02em' }}>
-      Medicine
-    </h1>
-  );
+  return <PageHeader title="Medicine" />;
 }
 
 interface DoseGroupProps {

@@ -5,7 +5,17 @@ import { loginAsDemo } from '../test-utils';
 async function openMore() {
   const user = await loginAsDemo();
   await user.click(screen.getByRole('button', { name: 'More' }));
-  await screen.findByRole('heading', { level: 1, name: 'More' });
+  await screen.findByRole('heading', { level: 1, name: 'Calendar' });
+  return user;
+}
+
+// The alert and nurse script: Home → What green means → Yellow → What to say to the nurse.
+async function openAlert() {
+  const user = await loginAsDemo();
+  await user.click(screen.getByRole('link', { name: /See what green means/ }));
+  const colours = await screen.findByRole('navigation', { name: 'What the colours mean' });
+  await user.click(within(colours).getByRole('link', { name: 'Yellow' }));
+  await user.click(screen.getByRole('link', { name: 'What to say to the nurse' }));
   return user;
 }
 
@@ -22,8 +32,7 @@ describe('More, alert, nurse call and family', () => {
   });
 
   it('shows the alert with reasons, the nurse script and whether family was told', async () => {
-    const user = await openMore();
-    await user.click(screen.getByRole('link', { name: /My alert and nurse script/ }));
+    await openAlert();
 
     expect(await screen.findByText('YELLOW · CALL TODAY')).toBeTruthy();
     expect(screen.getByText('Alert · Sat, 3 October, 6:10 PM')).toBeTruthy();
@@ -35,8 +44,7 @@ describe('More, alert, nurse call and family', () => {
   });
 
   it('opens a simulated nurse call', async () => {
-    const user = await openMore();
-    await user.click(screen.getByRole('link', { name: /My alert and nurse script/ }));
+    const user = await openAlert();
     await user.click(await screen.findByRole('link', { name: /Call heart nurse/ }));
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Heart Failure Nurse' })).toBeTruthy();
@@ -46,7 +54,7 @@ describe('More, alert, nurse call and family', () => {
 
   it('shows the family preview with alerts, status and medicines locked on', async () => {
     const user = await openMore();
-    await user.click(screen.getByRole('link', { name: /Summary for my family/ }));
+    await user.click(screen.getByRole('link', { name: /My family contacts/ }));
 
     const preview = await screen.findByRole('region', { name: 'Preview' });
     expect(within(preview).getByText('What Mei Ling will get')).toBeTruthy();
@@ -57,7 +65,7 @@ describe('More, alert, nurse call and family', () => {
 
   it('adds weight to the preview when switched on, then sends the summary once', async () => {
     const user = await openMore();
-    await user.click(screen.getByRole('link', { name: /Summary for my family/ }));
+    await user.click(screen.getByRole('link', { name: /My family contacts/ }));
     const weight = await screen.findByRole('switch', { name: 'My weight' });
 
     await user.click(weight);

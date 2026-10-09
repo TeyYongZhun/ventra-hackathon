@@ -3,10 +3,9 @@ import { render, screen } from '@testing-library/react';
 import { LockedSwitch } from './LockedSwitch';
 
 describe('LockedSwitch', () => {
-  it('renders with ON state and lock icon', () => {
+  it('is announced as locked on (no visible ON label, as in the design)', () => {
     render(<LockedSwitch label="Family sharing" />);
     expect(screen.getByLabelText(/Family sharing, locked on/i)).toBeTruthy();
-    expect(screen.getByText('ON')).toBeTruthy();
   });
 
   it('renders without label', () => {

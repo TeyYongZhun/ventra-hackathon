@@ -218,6 +218,8 @@ export async function reseedDemoPatient(db: Db, today: IsoDate = mdmTanSeed.toda
     .get()?.chatId;
 
   db.transaction((tx) => {
+    // Back to the default text size (Extra large) too, so every demo starts the same.
+    tx.update(schema.patients).set({ textSize: null }).where(eq(schema.patients.id, existing.id)).run();
     clearPatientData(tx, existing.id);
     insertDemoData(tx, existing.id, today, { ...options, familyChatId: linkedChat ?? options.familyChatId ?? null });
   });

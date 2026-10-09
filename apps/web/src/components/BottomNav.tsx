@@ -79,6 +79,8 @@ export function BottomNav({ activeTab, onChange }: BottomNavProps) {
     >
       {tabs.map((tab) => {
         const isActive = tab.id === activeTab;
+        // Ask AI gets a slowly moving blue-to-iris gradient when selected (index.css · .nav-ai-active).
+        const aiActive = isActive && tab.id === 'ask';
         return (
           <button
             key={tab.id}
@@ -86,6 +88,7 @@ export function BottomNav({ activeTab, onChange }: BottomNavProps) {
             aria-label={tab.label}
             aria-current={isActive ? 'page' : undefined}
             onClick={() => onChange(tab.id)}
+            className={aiActive ? 'nav-ai-active' : undefined}
             style={{
               display: 'flex',
               flexDirection: 'column',
@@ -94,7 +97,7 @@ export function BottomNav({ activeTab, onChange }: BottomNavProps) {
               gap: 4,
               height: 76,
               borderRadius: 20,
-              background: isActive ? 'var(--color-blue)' : 'transparent',
+              background: aiActive ? undefined : isActive ? 'var(--color-blue)' : 'transparent',
               color: 'var(--color-ink)',
               border: 'none',
               fontFamily: 'inherit',

@@ -9,6 +9,7 @@ import type {
   PillsTodaySummary,
   Reason,
   ScriptLine,
+  MacroLog,
 } from './record.js';
 import type { AlertZone } from './rules.js';
 import type { SummaryLine } from './family.js';
@@ -113,6 +114,8 @@ export interface MetricsResponse {
   weightChange: number | null;
   vsDry: number | null;
   weightToday: number | null;
+  // Time of today's weigh-in, e.g. "7:10 AM"; null when not weighed today or not known
+  weighTimeToday: string | null;
   weightChange1: number | null;
   // Every logged morning weight since discharge (or the first one), oldest first
   weightHistory: Array<{ date: IsoDate; kg: number }>;
@@ -125,6 +128,10 @@ export interface MetricsResponse {
   goodStreak: number;
   reasons: Reason[];
   symptomsToday: SymptomLog[];
+  // Last 7 days including today, newest first (How I feel · Recent check-ins)
+  symptomsRecent: SymptomLog[];
+  // Zone of every day the patient logged a weight, plus today, oldest first (Calendar)
+  dayZones: Array<{ date: IsoDate; zone: 'green' | 'yellow' }>;
   alertsToday: AlertLog[];
   questions: string[];
 }
@@ -166,6 +173,14 @@ export interface MealListEntry {
   what: string;
   sodiumMg: number;
   tip: string;
+  // Estimates for the meal card (Track → Meals → Today): plate is carbs, protein, fat shares.
+  kcal: number;
+  potassiumMg: number;
+  phosphorusMg: number;
+  carbs: MacroLog;
+  protein: MacroLog;
+  fat: MacroLog;
+  plate: [number, number, number];
 }
 
 export interface MealListResponse {

@@ -1,10 +1,10 @@
 import { SOSButton } from './SOSButton';
 
 // Top-right SOS. z-index 50 keeps it above overlays (daily note is 45) so SOS always stays reachable.
-export function SOSSlot() {
+export function SOSSlot({ size }: { size?: 'large' | 'page' }) {
   return (
     <div data-noprint style={{ position: 'relative', zIndex: 50, flexShrink: 0 }}>
-      <SOSButton />
+      <SOSButton size={size} />
     </div>
   );
 }

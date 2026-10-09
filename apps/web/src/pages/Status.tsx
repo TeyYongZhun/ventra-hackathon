@@ -1,7 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import type { AlertsLatestResponse, MetricsResponse } from '@ventra/core';
-import { SOSSlot } from '../components';
+import { PageHeader } from '../components';
 import { LoadError, Loading } from '../components/QueryState';
 import { useLatestAlert, useMetrics } from '../lib/api';
 import { alertSentence } from '../lib/copy';
@@ -12,14 +12,16 @@ import { alertSentence } from '../lib/copy';
 type Colour = 'green' | 'yellow' | 'red';
 const COLOURS: Colour[] = ['green', 'yellow', 'red'];
 
+const header = <PageHeader back={{ to: '/home', label: 'Back to home' }} title="My status" />;
+
 export default function Status() {
   const { colour } = useParams();
   const metrics = useMetrics();
   const alert = useLatestAlert();
 
   if (!COLOURS.includes(colour as Colour)) return <Navigate to="/status/green" replace />;
-  if (metrics.isLoading || alert.isLoading) return <Loading what="your status" />;
-  if (metrics.isError || !metrics.data) return <LoadError onRetry={() => { metrics.refetch(); alert.refetch(); }} />;
+  if (metrics.isLoading || alert.isLoading) return <Loading what="your status" header={header} />;
+  if (metrics.isError || !metrics.data) return <LoadError onRetry={() => { metrics.refetch(); alert.refetch(); }} header={header} />;
 
   return <StatusView colour={colour as Colour} metrics={metrics.data} alert={alert.data} />;
 }
@@ -30,15 +32,7 @@ function StatusView({ colour, metrics, alert }: { colour: Colour; metrics: Metri
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
-      <header style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <Link to="/home" aria-label="Back to home" style={backButton}>
-          <svg width={34} height={34} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.75} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="m15 18-6-6 6-6" />
-          </svg>
-        </Link>
-        <h1 style={{ flex: 1, margin: 0, fontSize: 36, lineHeight: '42px', fontWeight: 700, letterSpacing: '-0.02em' }}>My status</h1>
-        <SOSSlot />
-      </header>
+      {header}
 
       {colour === 'green' && (
         <>
@@ -85,7 +79,7 @@ function StatusView({ colour, metrics, alert }: { colour: Colour; metrics: Metri
         <>
           <Hero colour="red" label={current ? 'RIGHT NOW' : 'IF YOU SEE'} name="Red" line="Get help now" />
           <Link
-            to="/emergency"
+            to="/emergency/confirm"
             style={{ ...pillButton, minHeight: 104, gap: 14, background: 'var(--color-red)', color: 'var(--color-surface)', fontSize: 32, boxShadow: '0 0 0 4px var(--color-canvas), 0 0 0 8px var(--color-red)' }}
           >
             <PhoneIcon size={42} />
@@ -143,20 +137,6 @@ const chip: CSSProperties = {
   textDecoration: 'none',
   fontSize: 20,
   fontWeight: 700,
-};
-
-const backButton: CSSProperties = {
-  width: 64,
-  height: 64,
-  flexShrink: 0,
-  boxSizing: 'border-box',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  borderRadius: 'var(--radius-pill)',
-  background: 'var(--color-surface)',
-  color: 'var(--color-ink)',
-  border: '2.5px solid var(--color-ink)',
 };
 
 const pillButton: CSSProperties = {

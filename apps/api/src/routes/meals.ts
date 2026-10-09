@@ -5,6 +5,7 @@ import {
   findFood,
   mealForTime,
   type MealDeleteResponse,
+  type MealListEntry,
   type MealListResponse,
 } from '@ventra/core';
 import type { ApiDb } from '../app.js';
@@ -16,6 +17,25 @@ import { sgClock, sgDate, sgMinutes } from '../time.js';
 const mealSchema = z.object({
   foodId: z.string().trim().min(1).max(64),
 });
+
+// One logged meal as the app shows it, with the nutrition estimates for its card.
+function toListEntry(meal: typeof schema.meals.$inferSelect): MealListEntry {
+  return {
+    id: meal.id,
+    time: meal.time,
+    meal: meal.meal,
+    what: meal.what,
+    sodiumMg: meal.sodiumMg,
+    tip: meal.tip,
+    kcal: meal.kcal,
+    potassiumMg: meal.potassiumMg,
+    phosphorusMg: meal.phosphorusMg,
+    carbs: JSON.parse(meal.carbsJson),
+    protein: JSON.parse(meal.proteinJson),
+    fat: JSON.parse(meal.fatJson),
+    plate: JSON.parse(meal.plateJson),
+  };
+}
 
 export interface MealRouteOptions {
   db: ApiDb;
@@ -37,14 +57,7 @@ export function registerMealRoutes(app: FastifyInstance, options: MealRouteOptio
   // Today's meals, newest first.
   app.get('/api/meals', async (request) => {
     const scope = patientScope(request);
-    const entries = todayMeals(scope.patientId, sgDate(now())).map((meal) => ({
-      id: meal.id,
-      time: meal.time,
-      meal: meal.meal,
-      what: meal.what,
-      sodiumMg: meal.sodiumMg,
-      tip: meal.tip,
-    }));
+    const entries = todayMeals(scope.patientId, sgDate(now())).map(toListEntry);
     return { entries } satisfies MealListResponse;
   });
 
@@ -77,7 +90,7 @@ export function registerMealRoutes(app: FastifyInstance, options: MealRouteOptio
       isDemoScan: false,
     })).returning().get();
 
-    return { id: meal.id, time: meal.time, meal: meal.meal, what: meal.what, sodiumMg: meal.sodiumMg, tip: meal.tip };
+    return toListEntry(meal);
   });
 
   // Undo the latest meal logged today.

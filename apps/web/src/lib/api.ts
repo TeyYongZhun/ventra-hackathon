@@ -58,9 +58,16 @@ const isMockApi =
 
 let mockSession = false;
 let mockSetUp = true;
+let mockTextSize: MeResponse['text_size'] = null;
+// A logged meal built from the food list, like the API does.
+function mockMeal(id: number, time: string, meal: string, foodId: string): MealListEntry {
+  const food = findFood(foodId)!;
+  const { what, sodiumMg, tip, kcal, potassiumMg, phosphorusMg, carbs, protein, fat, plate } = food;
+  return { id, time, meal, what, sodiumMg, tip, kcal, potassiumMg, phosphorusMg, carbs, protein, fat, plate };
+}
 let mockMeals: MealListEntry[] = [
-  { id: 2, time: '12:40 PM', meal: 'Lunch', what: 'Fish soup with noodles', sodiumMg: 1100, tip: 'Most of the salt is in the soup — try drinking only half next time.' },
-  { id: 1, time: '7:30 AM', meal: 'Breakfast', what: 'Oat porridge with banana', sodiumMg: 500, tip: 'A good choice.' },
+  mockMeal(2, '12:40 PM', 'Lunch', 'fish-soup-noodles'),
+  mockMeal(1, '7:30 AM', 'Breakfast', 'oat-porridge'),
 ];
 const mockFamily = {
   share: { weight: false, drinks: false, symptoms: false },
@@ -91,7 +98,7 @@ function mockResponse(path: string, init?: RequestInit): unknown {
   }
   if (path === '/api/me') {
     if (!mockSession) throw unauthorized();
-    return { name: 'Mdm Tan', is_demo: true, text_size: null, set_up: mockSetUp } satisfies MeResponse;
+    return { name: 'Mdm Tan', is_demo: true, text_size: mockTextSize, set_up: mockSetUp } satisfies MeResponse;
   }
   if (path.startsWith('/api/metrics')) {
     if (!mockSession) throw unauthorized();
@@ -119,7 +126,7 @@ function mockResponse(path: string, init?: RequestInit): unknown {
       const body = JSON.parse((init.body as string) || '{}') as MealCreateRequest;
       const food = findFood(body.foodId);
       if (!food) throw apiError('NOT_FOUND', 'Unknown food');
-      const entry = { id: mockMeals.length + 10, time: '12:30 PM', meal: 'Lunch', what: food.what, sodiumMg: food.sodiumMg, tip: food.tip };
+      const entry = mockMeal(mockMeals.length + 10, '12:30 PM', 'Lunch', food.id);
       mockMeals = [entry, ...mockMeals];
       return entry satisfies MealListEntry;
     }
@@ -144,6 +151,10 @@ function mockResponse(path: string, init?: RequestInit): unknown {
   if (path.startsWith('/api/onboarding/')) {
     if (!mockSession) throw unauthorized();
     if (path === '/api/onboarding/targets') mockSetUp = true;
+    if (path === '/api/onboarding/profile') {
+      const size = (JSON.parse(String(init?.body ?? '{}')) as { textSize?: 'large' | 'xl' }).textSize;
+      if (size) mockTextSize = size;
+    }
     return { ok: true } satisfies OnboardingResponse;
   }
   if (path === '/api/weight') {

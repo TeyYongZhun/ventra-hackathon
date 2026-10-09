@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import type { AlertsLatestResponse } from '@ventra/core';
+import { PageHeader, SOSSlot } from '../components';
 import { NurseScript } from '../components/NurseScript';
 import { LoadError, Loading } from '../components/QueryState';
 import { useLatestAlert, useMetrics } from '../lib/api';
@@ -7,13 +8,15 @@ import { dayHeading } from '../lib/copy';
 
 // G1 · Yellow alert (design/YellowAlert.dc.html). Reasons, headline and nurse script all
 // come from GET /api/alerts/latest, built from raw logs by the core rules.
+// "Remind me in 1 hour" is left out: the app has no reminders yet.
+const header = <PageHeader back={{ to: '/home', label: 'Back to home' }} title="My status" />;
 export default function Alert() {
   const alert = useLatestAlert();
   const metrics = useMetrics();
 
-  if (alert.isLoading || metrics.isLoading) return <Loading what="your alert" />;
+  if (alert.isLoading || metrics.isLoading) return <Loading what="your alert" header={header} />;
   if (alert.isError || !alert.data || !metrics.data) {
-    return <LoadError onRetry={() => { alert.refetch(); metrics.refetch(); }} />;
+    return <LoadError onRetry={() => { alert.refetch(); metrics.refetch(); }} header={header} />;
   }
   return <AlertView alert={alert.data} today={metrics.data.today} />;
 }
@@ -24,7 +27,7 @@ function AlertView({ alert, today }: { alert: AlertsLatestResponse; today: strin
   if (alert.zone === 'green' && !alert.time) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
-        <h1 style={{ margin: 0, fontSize: 'var(--text-h1)', lineHeight: 'var(--lh-h1)', fontWeight: 700 }}>My status</h1>
+        {header}
         <p style={{ margin: 0, fontSize: 'var(--text-body)', lineHeight: 'var(--lh-body)' }}>
           No alerts. You're on track — keep logging your drinks, weight and pills.
         </p>
@@ -36,7 +39,7 @@ function AlertView({ alert, today }: { alert: AlertsLatestResponse; today: strin
     <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
       <section
         aria-label="Warning"
-        style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: '28px 20px', margin: '-24px -24px 0', background: 'var(--color-yellow)', borderBottom: '6px solid var(--color-yellow-ink)', borderRadius: '0 0 32px 32px' }}
+        style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: '32px 20px 28px', margin: '-28px -20px 0', background: 'var(--color-yellow)', borderBottom: '6px solid var(--color-yellow-ink)', borderRadius: '0 0 32px 32px' }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <span aria-hidden="true" style={{ width: 80, height: 80, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 'var(--radius-pill)', background: 'var(--color-ink)', color: 'var(--color-yellow)' }}>
@@ -46,8 +49,11 @@ function AlertView({ alert, today }: { alert: AlertsLatestResponse; today: strin
               <path d="M12 17h.01" />
             </svg>
           </span>
-          <span style={{ padding: '6px 14px', borderRadius: 'var(--radius-pill)', background: 'var(--color-ink)', color: 'var(--color-yellow)', fontSize: 19, fontWeight: 700 }}>
+          <span style={{ padding: '6px 14px', borderRadius: 'var(--radius-pill)', background: 'var(--color-ink)', color: 'var(--color-yellow)', fontSize: 19, lineHeight: '24px', fontWeight: 700 }}>
             YELLOW · CALL TODAY
+          </span>
+          <span style={{ marginLeft: 'auto' }}>
+            <SOSSlot size="page" />
           </span>
         </div>
         {alert.time && (
@@ -104,6 +110,11 @@ function AlertView({ alert, today }: { alert: AlertsLatestResponse; today: strin
       </Link>
 
       <div style={{ display: 'flex', gap: 14, padding: 18, borderRadius: 20, background: 'var(--color-red-soft)', border: '3px solid var(--color-red)' }}>
+        <svg style={{ flexShrink: 0 }} width={34} height={30} viewBox="0 0 24 21.5" aria-hidden="true">
+          <path d="M10.27 1.5a2 2 0 0 1 3.46 0l9.5 16.5a2 2 0 0 1-1.73 3H2.5a2 2 0 0 1-1.73-3z" fill="#B83A26" />
+          <path d="M12 6.5v6.5" stroke="#FFFFFF" strokeWidth={2.6} strokeLinecap="round" />
+          <circle cx={12} cy={17} r={1.6} fill="#FFFFFF" />
+        </svg>
         <p style={{ margin: 0, fontSize: 21, lineHeight: '30px', fontWeight: 600 }}>
           Chest pain or can't breathe? <Link to="/emergency" style={{ color: 'var(--color-red)', fontWeight: 700 }}>Get emergency help</Link>
         </p>

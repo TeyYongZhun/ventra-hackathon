@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { cloneElement, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import type { EmergencyWhat } from '@ventra/core';
 import { useEmergencyNotify, useMetrics } from '../lib/api';
@@ -137,9 +137,8 @@ export function EmergencyCountdown() {
     <div style={{ ...redPage, alignItems: 'center', textAlign: 'center', gap: 22 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '10px 24px 10px 10px', borderRadius: 'var(--radius-pill)', background: 'var(--color-surface)', color: 'var(--color-red)' }}>
         <span aria-hidden="true" style={{ width: 60, height: 60, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 'var(--radius-pill)', background: 'var(--color-red)', color: 'var(--color-surface)' }}>
-          <svg width={32} height={32} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z" />
-          </svg>
+          {/* The icon of the choice that was tapped, as in design/Emergency.dc.html. */}
+          {cloneElement(CHOICES.find((choice) => choice.what === what)?.icon ?? CHOICES[CHOICES.length - 1]!.icon, { width: 32, height: 32 })}
         </span>
         <span style={{ fontSize: 28, lineHeight: '34px', fontWeight: 700 }}>{what}</span>
       </div>

@@ -1,16 +1,15 @@
 import { useEffect } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useMe } from '../lib/api';
+import { applyTextSize } from '../lib/textSize';
 
-// Extra large text: the design sizes are already large, so XL scales everything up a step.
-const ZOOM: Record<string, string> = { xl: '1.15' };
 
 export function RequireAuth() {
   const { data: me, isLoading } = useMe();
   const location = useLocation();
 
   useEffect(() => {
-    document.documentElement.style.zoom = (me?.text_size && ZOOM[me.text_size]) || '';
+    applyTextSize(me?.text_size);
   }, [me?.text_size]);
 
   if (isLoading) {

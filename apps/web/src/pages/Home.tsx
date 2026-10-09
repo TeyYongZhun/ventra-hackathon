@@ -21,8 +21,9 @@ import { calendarTile, dayHeading, greeting, pillsLeft, statusLine, streakText }
 export default function Home() {
   const metrics = useMetrics();
 
-  if (metrics.isLoading) return <Loading />;
-  if (metrics.isError || !metrics.data) return <LoadError onRetry={() => metrics.refetch()} />;
+  const sosRow = <div style={{ display: 'flex', justifyContent: 'flex-end' }}><SOSSlot /></div>;
+  if (metrics.isLoading) return <Loading header={sosRow} />;
+  if (metrics.isError || !metrics.data) return <LoadError onRetry={() => metrics.refetch()} header={sosRow} />;
   return <HomeView metrics={metrics.data} />;
 }
 
@@ -81,7 +82,7 @@ function HomeView({ metrics }: { metrics: MetricsResponse }) {
       to: '/more',
       ariaLabel: `Calendar, today is ${dayHeading(metrics.today)}`,
     },
-    { label: 'Visit prep', bg: '#C9EEE9', icon: <VisitPrepIcon />, to: '/more' },
+    { label: 'Visit prep', bg: '#C9EEE9', icon: <VisitPrepIcon />, to: '/visit' },
     { label: 'My report', bg: '#D6DEF7', icon: <ReportIcon />, to: '/report' },
   ];
 

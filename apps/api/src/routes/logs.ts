@@ -27,7 +27,7 @@ const weightSchema = z.object({
 });
 
 const symptomSchema = z.object({
-  key: z.enum(['ankles', 'tired', 'dizzy', 'breath']),
+  key: z.enum(['ankles', 'tired', 'dizzy', 'breath', 'cough', 'sleep']),
   sev: z.enum(['Mild', 'Moderate', 'Severe']),
 });
 
@@ -143,6 +143,9 @@ export function registerLogRoutes(app: FastifyInstance, options: LogRouteOptions
       id = db.insert(schema.weights).values(scope.values({ date, weightKg }))
         .returning({ id: schema.weights.id }).get().id;
     }
+
+    // Remember when today's weigh-in happened (Weight tab: "Today at 7:10 AM").
+    db.update(schema.patients).set({ weighTime: sgClock(nowMs) }).where(eq(schema.patients.id, scope.patientId)).run();
 
     afterWrite(scope.patientId, nowMs);
     return { id, date, weightKg } satisfies WeightEntryResponse;

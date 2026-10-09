@@ -50,7 +50,7 @@ describe('Status', () => {
 
     await user.click(within(colours).getByRole('link', { name: 'Red' }));
     expect(within(screen.getByRole('region', { name: 'Status: red' })).getByText('IF YOU SEE')).toBeTruthy();
-    expect(screen.getByRole('link', { name: /Call 995/ }).getAttribute('href')).toBe('/emergency');
+    expect(screen.getByRole('link', { name: /Call 995/ }).getAttribute('href')).toBe('/emergency/confirm');
     expect(screen.getByRole('heading', { name: 'While you wait' })).toBeTruthy();
     expect(within(colours).getByRole('link', { name: 'Red' }).getAttribute('aria-current')).toBe('page');
   });
