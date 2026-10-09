@@ -3,11 +3,13 @@ interface IconTileProps {
   icon: React.ReactNode;
   label: string;
   badge?: number;
+  // Spoken name when the visible label is not enough, e.g. "Medicine, 1 pill still to take today"
+  ariaLabel?: string;
   bg?: string;
   onClick?: () => void;
 }
 
-export function IconTile({ icon, label, badge, bg = 'var(--color-surface)', onClick }: IconTileProps) {
+export function IconTile({ icon, label, badge, ariaLabel, bg = 'var(--color-surface)', onClick }: IconTileProps) {
   const tile = (
     <div
       style={{
@@ -78,6 +80,7 @@ export function IconTile({ icon, label, badge, bg = 'var(--color-surface)', onCl
     return (
       <button
         type="button"
+        aria-label={ariaLabel}
         onClick={onClick}
         style={{
           background: 'none',

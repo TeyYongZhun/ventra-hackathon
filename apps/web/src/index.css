@@ -24,3 +24,27 @@ body {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Motion from the design files (design/Main.dc.html, design/Fluid.dc.html).
+   Reduced-motion users get the end state via the rule above. */
+@keyframes vt-rise {
+  from { opacity: 0; transform: translateY(24px) scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes vt-wave {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+@keyframes vt-pop {
+  0% { opacity: 0; transform: translate(-50%, 10px) scale(0.8); }
+  15% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -56px) scale(1); }
+}
+
+@keyframes vt-drop {
+  0% { opacity: 0; transform: translate(-50%, -24px); }
+  20% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, 90px); }
+}

@@ -260,7 +260,10 @@ export function useAddFluid() {
   const qc = useQueryClient();
   return useMutation<FluidEntryResponse, Error, FluidCreateRequest>({
     mutationFn: (body) => apiFetch('/api/fluid', { method: 'POST', body: JSON.stringify(body) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['fluid'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['fluid'] });
+      qc.invalidateQueries({ queryKey: ['metrics'] });
+    },
   });
 }
 
@@ -268,7 +271,10 @@ export function useDeleteLastFluid() {
   const qc = useQueryClient();
   return useMutation<FluidDeleteResponse, Error, void>({
     mutationFn: () => apiFetch('/api/fluid/last', { method: 'DELETE' }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['fluid'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['fluid'] });
+      qc.invalidateQueries({ queryKey: ['metrics'] });
+    },
   });
 }
 
