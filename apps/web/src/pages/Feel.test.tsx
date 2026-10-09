@@ -21,7 +21,7 @@ describe('How I feel', () => {
     await user.click(screen.getByRole('button', { name: 'Swollen ankles' }));
     const howBad = screen.getByRole('radiogroup', { name: 'How bad' });
     await user.click(within(howBad).getByRole('radio', { name: 'Medium' }));
-    await user.click(screen.getByRole('button', { name: 'Save' }));
+    await user.click(screen.getByRole('button', { name: 'Save how I feel' }));
 
     expect(await screen.findByText('Saved. Thank you for telling us.')).toBeTruthy();
   });
@@ -29,13 +29,13 @@ describe('How I feel', () => {
   it('points to SOS when breathing is picked', async () => {
     const user = await openFeel();
     await user.click(screen.getByRole('button', { name: 'Short of breath' }));
-    expect(screen.getByRole('alert').textContent).toContain('If breathing is very hard right now, press the red SOS button.');
+    expect(screen.getByRole('alert').textContent).toContain('If breathing is very hard right now, press the red SOS button at the top.');
   });
 
   it('says thanks for "I feel fine" without saving symptoms', async () => {
     const user = await openFeel();
     await user.click(screen.getByRole('button', { name: 'I feel fine' }));
-    await user.click(screen.getByRole('button', { name: 'Save' }));
+    await user.click(screen.getByRole('button', { name: 'Save how I feel' }));
     expect(await screen.findByText('Good to hear. Thank you for checking in.')).toBeTruthy();
   });
 

@@ -69,6 +69,8 @@ describe('Day 4: meals, onboarding, report, Ask AI numbers', () => {
 
       const list = (await call('GET', '/api/meals', cookie)).json().entries;
       expect(list.map((meal: { what: string }) => meal.what)).toEqual(['Chicken rice', 'Fish soup with noodles', 'Oat porridge with banana']);
+      // Each entry carries the estimates for its meal card.
+      expect(list[0]).toMatchObject({ kcal: 600, carbs: { g: 75, what: 'Rice' }, plate: [0.6, 0.3, 0.1], potassiumMg: 350 });
 
       const undo = await call('DELETE', '/api/meals/last', cookie);
       expect(undo.json()).toEqual({ ok: true, deletedId: added.json().id });
@@ -107,6 +109,16 @@ describe('Day 4: meals, onboarding, report, Ask AI numbers', () => {
       expect(metrics.targets).toMatchObject({ fluidMl: 1200, capMl: 200, dryKg: 70 });
       expect(metrics.pillsToday.total).toBe(2);
       expect(metrics.patient).toMatchObject({ name: 'Mr Lee', age: 68, family: { name: 'Lee Wei', relation: 'son' } });
+    });
+
+    it('keeps the contact phone when My details saves only the name', async () => {
+      const { db, call, signup } = await setup();
+      const cookie = await signup();
+      await call('PUT', '/api/onboarding/contact', cookie, { name: 'Lee Wei', relation: 'son', phone: '9876 5432' });
+      expect((await call('PUT', '/api/onboarding/contact', cookie, { name: 'Lee Wei Ming', relation: 'son' })).statusCode).toBe(200);
+
+      const contact = db.select().from(schema.contacts).all().find((row) => row.name === 'Lee Wei Ming');
+      expect(contact?.phone).toBe('9876 5432');
     });
 
     it('validates set-up input', async () => {

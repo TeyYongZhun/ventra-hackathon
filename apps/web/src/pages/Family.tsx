@@ -1,17 +1,18 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 import type { FamilySettingsResponse, FamilySettingsUpdateRequest } from '@ventra/core';
-import { LockedSwitch } from '../components';
+import { LockedSwitch, PageHeader } from '../components';
 import { LoadError, Loading } from '../components/QueryState';
 import { useFamilySettings, useSendFamilySummary, useUpdateFamilySettings } from '../lib/api';
 
 // F3 · Summary for my family (design/Family.dc.html). The preview is built by
 // packages/core (familySummaryLines), the same text the family gets on Telegram.
+const header = <PageHeader back={{ to: '/more', label: 'Back' }} title="Summary for my family" titleSize={30} />;
+
 export default function Family() {
   const settings = useFamilySettings();
 
-  if (settings.isLoading) return <Loading what="family sharing" />;
-  if (settings.isError || !settings.data) return <LoadError onRetry={() => settings.refetch()} />;
+  if (settings.isLoading) return <Loading what="family sharing" header={header} />;
+  if (settings.isError || !settings.data) return <LoadError onRetry={() => settings.refetch()} header={header} />;
   return <FamilyView settings={settings.data} />;
 }
 
@@ -47,20 +48,7 @@ function FamilyView({ settings }: { settings: FamilySettingsResponse }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
-      <header style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <Link
-          to="/more"
-          aria-label="Back"
-          style={{ width: 64, height: 64, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 'var(--radius-pill)', background: 'var(--color-surface)', color: 'var(--color-ink)', border: '2.5px solid var(--color-ink)' }}
-        >
-          <svg width={30} height={30} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.75} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="m15 18-6-6 6-6" />
-          </svg>
-        </Link>
-        <h1 style={{ flex: 1, margin: 0, fontSize: 'var(--text-h2)', lineHeight: 'var(--lh-h2)', fontWeight: 700, letterSpacing: '-0.02em' }}>
-          Summary for my family
-        </h1>
-      </header>
+      {header}
 
       {!settings.linked && <ConnectTelegram settings={settings} />}
 
@@ -87,7 +75,7 @@ function FamilyView({ settings }: { settings: FamilySettingsResponse }) {
               <span style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                 <span style={{ fontSize: 21, lineHeight: '28px', fontWeight: 700 }}>{row.label}</span>
                 <span style={{ fontSize: 'var(--text-tag)', lineHeight: '24px', color: 'var(--color-ink-muted)' }}>{row.sub}</span>
-                <span style={{ fontSize: 'var(--text-tag)', fontWeight: 700, color: locked ? '#4A4F49' : on ? 'var(--color-blue-ink)' : 'var(--color-ink-muted)' }}>
+                <span style={{ fontSize: 'var(--text-tag)', lineHeight: '24px', fontWeight: 700, color: locked ? '#4A4F49' : on ? 'var(--color-blue-ink)' : 'var(--color-ink-muted)' }}>
                   {locked ? 'Always shared · for your safety' : on ? 'Sharing' : 'Not shared'}
                 </span>
               </span>

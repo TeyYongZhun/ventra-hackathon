@@ -230,6 +230,8 @@ describe('metrics and logging endpoints', () => {
       await call('POST', '/api/weight', cookie, { weightKg: 60.3 });
 
       const body = await metrics(cookie);
+      // Saving today's weight records when it happened (Weight tab: "Today at …").
+      expect(body.weighTimeToday).toBe('9:41 AM');
       expect(body.zone).toBe('yellow');
       expect(body.reasons.map((reason: { key: string }) => reason.key)).toContain('weight');
       expect(body.alertsToday).toEqual([{ date: '2026-10-07', time: '9:41 AM', zone: 'yellow', familyTold: false }]);

@@ -44,6 +44,7 @@ export function buildMetrics(record: PatientRecord): MetricsResponse {
     weightChange: weightChange(record, record.targets.alertDays, date),
     vsDry: vsDry(record, date),
     weightToday: record.weights[date] ?? null,
+    weighTimeToday: record.weights[date] != null && record.weighTime ? record.weighTime : null,
     weightChange1: weightChange(record, 1, date),
     weightHistory: weightHistory(record),
     weighStreak: weighStreak(record),
@@ -55,6 +56,12 @@ export function buildMetrics(record: PatientRecord): MetricsResponse {
     goodStreak: goodStreak(record),
     reasons: reasons(record, date),
     symptomsToday: symptomsOn(record, date),
+    symptomsRecent: record.symptoms
+      .filter((symptom) => symptom.date > addDays(date, -7) && symptom.date <= date)
+      .sort((a, b) => b.date.localeCompare(a.date)),
+    dayZones: [...new Set([...weightHistory(record).map((point) => point.date), date])]
+      .sort()
+      .map((day) => ({ date: day, zone: evaluate(record, day).zone })),
     alertsToday: alert ? [alert] : [],
     questions: questions(record),
   };

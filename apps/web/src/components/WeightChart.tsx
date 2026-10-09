@@ -32,11 +32,24 @@ export function WeightChart({ points, dryKg, alertGainKg }: { points: Array<{ da
         <circle cx={x(points.length - 1)} cy={y(last.kg)} r={9} fill="#1F6FB2" stroke="#FFFFFF" strokeWidth={3} />
       </svg>
       {dryKg > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 18, lineHeight: '24px' }}>
-          {watch != null && <span><strong>{watch.toFixed(1)} kg</strong> — {alertGainKg} kg above your dry weight</span>}
-          <span>{dryKg.toFixed(1)} kg — my dry weight</span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 19, lineHeight: '26px' }}>
+          {watch != null && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span aria-hidden="true" style={{ width: 32, height: 0, flexShrink: 0, borderTop: '4px dashed #8A5B00' }} />
+              <span><strong>{kgLabel(watch)}</strong> — call the nurse above this</span>
+            </div>
+          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span aria-hidden="true" style={{ width: 32, height: 0, flexShrink: 0, borderTop: '3px dashed #8C877B' }} />
+            <span>{kgLabel(dryKg)} — my dry weight</span>
+          </div>
         </div>
       )}
     </>
   );
+}
+
+// "60 kg", "58.5 kg" (design legend drops a trailing .0).
+function kgLabel(kg: number): string {
+  return `${Number.isInteger(kg) ? kg : kg.toFixed(1)} kg`;
 }

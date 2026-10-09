@@ -7,3 +7,4 @@ export { BottomNav } from './BottomNav';
 export { ConfirmBox } from './ConfirmBox';
 export { LockedSwitch } from './LockedSwitch';
 export { ExpandCard } from './ExpandCard';
+export { PageHeader, BackButton } from './PageHeader';

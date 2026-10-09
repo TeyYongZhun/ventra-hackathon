@@ -86,7 +86,8 @@ export interface MacroLog {
   what: string;
 }
 
-export type SymptomKey = 'ankles' | 'tired' | 'dizzy' | 'breath';
+// cough and sleep are logged for the nurse and the report; no alert rule uses them.
+export type SymptomKey = 'ankles' | 'tired' | 'dizzy' | 'breath' | 'cough' | 'sleep';
 
 export interface SymptomLog {
   date: IsoDate;
@@ -180,6 +181,8 @@ const SYMPTOMS: Record<SymptomKey, SymptomCopy> = {
   tired: { label: 'Tired in the afternoon', say: 'very tired', short: 'tired' },
   dizzy: { label: 'Dizzy after morning pills', say: 'dizzy after my morning pills', short: 'dizzy' },
   breath: { label: 'Short of breath', say: 'short of breath', short: 'breathless' },
+  cough: { label: 'Cough at night', say: 'coughing at night', short: 'night cough' },
+  sleep: { label: 'Poor sleep', say: 'sleeping badly', short: 'poor sleep' },
 };
 
 const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];

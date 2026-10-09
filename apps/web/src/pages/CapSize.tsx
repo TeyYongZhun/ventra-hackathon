@@ -1,6 +1,6 @@
-import { useState, type CSSProperties } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { SOSSlot } from '../components';
+import { useState, type CSSProperties, type ReactNode } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { PageHeader } from '../components';
 import { LoadError, Loading } from '../components/QueryState';
 import { useMetrics, useSaveCap } from '../lib/api';
 
@@ -12,14 +12,25 @@ const MIN_ML = 20;
 const MAX_ML = 1000;
 const DRINKS = '/track?tab=drinks';
 
-export default function CapSize() {
-  const metrics = useMetrics();
-  if (metrics.isLoading) return <Loading what="your cap size" />;
-  if (metrics.isError || !metrics.data) return <LoadError onRetry={() => metrics.refetch()} />;
-  return <CapSizeForm current={metrics.data.targets.capMl} />;
+// Opened from Drinks, or from My details (?from=settings): Back and Save return there.
+function useReturn() {
+  const [params] = useSearchParams();
+  return params.get('from') === 'settings'
+    ? { to: '/settings', label: 'Back to my details', state: { saved: 'Your cap size' } }
+    : { to: DRINKS, label: 'Back to drinks', state: undefined };
 }
 
-function CapSizeForm({ current }: { current: number }) {
+export default function CapSize() {
+  const metrics = useMetrics();
+  const back = useReturn();
+  const header = <PageHeader back={{ to: back.to, label: back.label }} />;
+  if (metrics.isLoading) return <Loading what="your cap size" header={header} />;
+  if (metrics.isError || !metrics.data) return <LoadError onRetry={() => metrics.refetch()} header={header} />;
+  return <CapSizeForm current={metrics.data.targets.capMl} header={header} />;
+}
+
+function CapSizeForm({ current, header }: { current: number; header: ReactNode }) {
+  const back = useReturn();
   const navigate = useNavigate();
   const save = useSaveCap();
   // 0 means not set yet.
@@ -37,16 +48,7 @@ function CapSizeForm({ current }: { current: number }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-      <header style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-        <Link to={DRINKS} aria-label="Back to drinks" style={roundButton}>
-          <svg width={34} height={34} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.75} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="m15 18-6-6 6-6" />
-          </svg>
-        </Link>
-        <span style={{ marginLeft: 'auto' }}>
-          <SOSSlot />
-        </span>
-      </header>
+      {header}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <h1 style={{ margin: 0, fontSize: 'var(--text-h1)', lineHeight: 'var(--lh-h1)', fontWeight: 700, letterSpacing: '-0.02em' }}>How much does your cap hold?</h1>
@@ -114,7 +116,7 @@ function CapSizeForm({ current }: { current: number }) {
       <button
         type="button"
         disabled={save.isPending}
-        onClick={() => save.mutate({ capMl }, { onSuccess: () => navigate(DRINKS) })}
+        onClick={() => save.mutate({ capMl }, { onSuccess: () => navigate(back.to, { state: back.state }) })}
         style={{ minHeight: 76, borderRadius: 'var(--radius-pill)', border: 0, background: 'var(--color-blue)', color: 'var(--color-ink)', fontFamily: 'inherit', fontSize: 26, fontWeight: 700, cursor: save.isPending ? 'wait' : 'pointer', opacity: save.isPending ? 0.6 : 1 }}
       >
         Save cap size

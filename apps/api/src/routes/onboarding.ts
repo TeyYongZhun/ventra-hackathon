@@ -140,7 +140,9 @@ export function registerOnboardingRoutes(app: FastifyInstance, options: Onboardi
       .from(schema.contacts).where(scope.where(schema.contacts.patientId)).get();
     const values = { name: parsed.data.name, relation: parsed.data.relation, phone: parsed.data.phone || null };
     if (existing) {
-      db.update(schema.contacts).set(values).where(eq(schema.contacts.id, existing.id)).run();
+      // No phone sent (e.g. editing only the name in My details): keep the one on file.
+      const update = parsed.data.phone === undefined ? { name: values.name, relation: values.relation } : values;
+      db.update(schema.contacts).set(update).where(eq(schema.contacts.id, existing.id)).run();
     } else {
       db.insert(schema.contacts).values(scope.values(values)).run();
     }

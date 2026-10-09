@@ -7,6 +7,8 @@ import { field, fieldLabel, primaryButton, secondaryButton } from '../lib/formSt
 
 // A2–A6 · Set-up after sign-up (design/Setup, Baselines, CapSize, Contacts .dc.html).
 // A new patient starts empty; these steps give them their own limits and medicines.
+// NumbersStep, MedicinesStep and ContactStep are also used by My details (pages/MyDetails.tsx),
+// filled in with the patient's current values and without the step title.
 const STEPS = 5;
 
 export default function Setup() {
@@ -65,7 +67,8 @@ function Choice({ on, onClick, children }: { on: boolean; onClick: () => void; c
 // A2 · Text size
 function TextSizeStep({ onDone }: { onDone: () => void }) {
   const save = useSaveProfile();
-  const [size, setSize] = useState<'large' | 'xl'>('large');
+  // Extra large is the app's normal size; Large makes everything a little smaller.
+  const [size, setSize] = useState<'large' | 'xl'>('xl');
   return (
     <>
       <Title>Make it easy to read</Title>
@@ -81,11 +84,23 @@ function TextSizeStep({ onDone }: { onDone: () => void }) {
   );
 }
 
+export interface NumbersValues { age: string; dryKg: string; fluidMl: string; sodiumMg: string; alertGainKg: string; alertDays: string }
+const EMPTY_NUMBERS: NumbersValues = { age: '', dryKg: '', fluidMl: '1500', sodiumMg: '2000', alertGainKg: '2', alertDays: '3' };
+
+interface StepProps<T> {
+  onDone: () => void;
+  // Current values when editing (My details); empty for a new patient.
+  initial?: T;
+  submitLabel?: string;
+  // Set-up shows the step title; My details has it in the page header instead.
+  showTitle?: boolean;
+}
+
 // A3 · Clinic baselines (filled in by the care team)
-function NumbersStep({ onDone }: { onDone: () => void }) {
+export function NumbersStep({ onDone, initial = EMPTY_NUMBERS, submitLabel = 'Save and next', showTitle = true }: StepProps<NumbersValues>) {
   const profile = useSaveProfile();
   const targets = useSaveTargets();
-  const [values, setValues] = useState({ age: '', dryKg: '', fluidMl: '1500', sodiumMg: '2000', alertGainKg: '2', alertDays: '3' });
+  const [values, setValues] = useState(initial);
   const set = (key: keyof typeof values) => (event: React.ChangeEvent<HTMLInputElement>) => setValues({ ...values, [key]: event.target.value });
   const numbers = {
     age: Number(values.age), dryKg: Number(values.dryKg), fluidMl: Number(values.fluidMl),
@@ -115,7 +130,11 @@ function NumbersStep({ onDone }: { onDone: () => void }) {
   return (
     <>
       <span style={{ alignSelf: 'flex-start', padding: '4px 12px', borderRadius: 'var(--radius-pill)', background: 'var(--color-ink)', color: 'var(--color-surface)', fontSize: 'var(--text-tag)', fontWeight: 700 }}>Clinic staff</span>
-      <Title sub="The care team fills this in. The patient can see these numbers.">Patient's numbers</Title>
+      {showTitle ? (
+        <Title sub="The care team fills this in. The patient can see these numbers.">Patient's numbers</Title>
+      ) : (
+        <p style={{ margin: 0, fontSize: 20, lineHeight: '28px' }}>The care team fills this in. Change these only with your nurse or doctor.</p>
+      )}
       {input('age', 'Age', 'yrs')}
       {input('dryKg', 'Dry weight', 'kg', 'decimal')}
       {input('fluidMl', 'Drink limit per day', 'ml')}
@@ -128,15 +147,15 @@ function NumbersStep({ onDone }: { onDone: () => void }) {
         </p>
       )}
       <SaveError show={profile.isError || targets.isError} />
-      <button type="button" disabled={!ready || profile.isPending || targets.isPending} onClick={save} style={primaryButton(ready)}>Save and next</button>
+      <button type="button" disabled={!ready || profile.isPending || targets.isPending} onClick={save} style={primaryButton(ready)}>{submitLabel}</button>
     </>
   );
 }
 
 // Medicines, picked from the heart-failure list
-function MedicinesStep({ onDone }: { onDone: () => void }) {
+export function MedicinesStep({ onDone, initial = {}, submitLabel, showTitle = true }: StepProps<Record<string, number[]>>) {
   const save = useSaveMedications();
-  const [picked, setPicked] = useState<Record<string, number[]>>({});
+  const [picked, setPicked] = useState<Record<string, number[]>>(initial);
   const toggleMed = (id: string, times: number[]) =>
     setPicked((current) => {
       const copy = { ...current };
@@ -153,7 +172,11 @@ function MedicinesStep({ onDone }: { onDone: () => void }) {
 
   return (
     <>
-      <Title sub="Tick each medicine on the patient's list. Check the times with the discharge letter.">Medicines</Title>
+      {showTitle ? (
+        <Title sub="Tick each medicine on the patient's list. Check the times with the discharge letter.">Medicines</Title>
+      ) : (
+        <p style={{ margin: 0, fontSize: 20, lineHeight: '28px' }}>Tick each medicine you take. Check the times with your nurse or the discharge letter.</p>
+      )}
       {MEDICINE_CATALOG.map((med) => {
         const times = picked[med.id];
         return (
@@ -189,7 +212,7 @@ function MedicinesStep({ onDone }: { onDone: () => void }) {
         onClick={() => save.mutate({ meds: Object.entries(picked).map(([id, times]) => ({ id, times })) }, { onSuccess: onDone })}
         style={primaryButton(!save.isPending)}
       >
-        {Object.keys(picked).length ? 'Save and next' : 'No medicines for now — next'}
+        {submitLabel ?? (Object.keys(picked).length ? 'Save and next' : 'No medicines for now — next')}
       </button>
     </>
   );
@@ -227,26 +250,26 @@ function CapStep({ onDone }: { onDone: () => void }) {
 }
 
 // A6 · Who should we call? (design/Contacts.dc.html)
-function ContactStep({ onDone }: { onDone: () => void }) {
+export function ContactStep({ onDone, initial, submitLabel = 'Finish set-up', showTitle = true }: StepProps<{ name: string; relation: string }>) {
   const save = useSaveContact();
-  const [name, setName] = useState('');
-  const [relation, setRelation] = useState('');
+  const [name, setName] = useState(initial?.name ?? '');
+  const [relation, setRelation] = useState(initial?.relation ?? '');
   const [phone, setPhone] = useState('');
   const ready = name.trim().length > 0 && relation.trim().length > 0;
   return (
     <>
-      <Title sub="If you need help, we will tell this person. You choose what they see later, in More.">Who should we tell?</Title>
+      {showTitle && <Title sub="If you need help, we will tell this person. You choose what they see later, in More.">Who should we tell?</Title>}
       <label htmlFor="c-name" style={fieldLabel}>Family member's name</label>
       <input id="c-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Tan Mei Ling" style={field} />
       <label htmlFor="c-rel" style={fieldLabel}>They are my…</label>
       <input id="c-rel" value={relation} onChange={(e) => setRelation(e.target.value)} placeholder="e.g. daughter" style={field} />
-      <label htmlFor="c-phone" style={fieldLabel}>Phone number (optional)</label>
+      <label htmlFor="c-phone" style={fieldLabel}>Phone number (optional{initial ? ', leave empty to keep the one we have' : ''})</label>
       <input id="c-phone" type="tel" inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} style={field} />
       <SaveError show={save.isError} />
       <button type="button" disabled={!ready || save.isPending} onClick={() => save.mutate({ name: name.trim(), relation: relation.trim(), phone: phone.trim() || undefined }, { onSuccess: onDone })} style={primaryButton(ready)}>
-        Finish set-up
+        {submitLabel}
       </button>
-      <button type="button" onClick={onDone} style={{ ...secondaryButton, cursor: 'pointer' }}>Skip for now</button>
+      {showTitle && <button type="button" onClick={onDone} style={{ ...secondaryButton, cursor: 'pointer' }}>Skip for now</button>}
     </>
   );
 }

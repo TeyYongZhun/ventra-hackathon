@@ -11,13 +11,19 @@ import Alert from './pages/Alert';
 import NurseCall from './pages/NurseCall';
 import Family from './pages/Family';
 import Emergency, { EmergencyCall, EmergencyCountdown } from './pages/Emergency';
-import Report from './pages/Report';
+import Report, { ReportFull } from './pages/Report';
 import WeighEnter from './pages/WeighEnter';
 import SignUp from './pages/SignUp';
 import Setup from './pages/Setup';
 import Feel from './pages/Feel';
 import Status from './pages/Status';
 import CapSize from './pages/CapSize';
+import WeighHow from './pages/WeighHow';
+import ConfirmCall from './pages/ConfirmCall';
+import Privacy from './pages/Privacy';
+import TextSound from './pages/TextSound';
+import VisitPrep from './pages/VisitPrep';
+import MyDetails, { EditContact, EditMedicines, EditNumbers } from './pages/MyDetails';
 
 function App() {
   return (
@@ -35,16 +41,26 @@ function App() {
           <Route path="/alert" element={<Alert />} />
           <Route path="/status" element={<Navigate to="/status/green" replace />} />
           <Route path="/status/:colour" element={<Status />} />
-          <Route path="/nurse" element={<NurseCall />} />
           <Route path="/family" element={<Family />} />
           <Route path="/report" element={<Report />} />
+          <Route path="/report/full" element={<ReportFull />} />
           <Route path="/weigh" element={<WeighEnter />} />
+          <Route path="/weigh/how" element={<WeighHow />} />
           <Route path="/feel" element={<Feel />} />
           <Route path="/cap" element={<CapSize />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/settings" element={<MyDetails />} />
+          <Route path="/settings/numbers" element={<EditNumbers />} />
+          <Route path="/settings/medicines" element={<EditMedicines />} />
+          <Route path="/settings/contact" element={<EditContact />} />
+          <Route path="/settings/text" element={<TextSound />} />
+          <Route path="/visit" element={<VisitPrep />} />
         </Route>
-        {/* Set-up for a new patient, then the full-screen emergency flow: no menu. */}
+        {/* Full screen, no menu: set-up for a new patient, the simulated nurse call, the emergency flow. */}
         <Route path="/setup/:step" element={<Setup />} />
+        <Route path="/nurse" element={<NurseCall />} />
         <Route path="/emergency" element={<Emergency />} />
+        <Route path="/emergency/confirm" element={<ConfirmCall />} />
         <Route path="/emergency/countdown" element={<EmergencyCountdown />} />
         <Route path="/emergency/call" element={<EmergencyCall />} />
       </Route>

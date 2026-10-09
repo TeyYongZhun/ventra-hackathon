@@ -1,7 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import type { AskReplyKind } from '@ventra/core';
+import { PageHeader } from '../components';
+import { ScrollingPlaceholder } from '../components/ScrollingPlaceholder';
 import { useAsk, useMe } from '../lib/api';
+import { micEnabled } from '../lib/prefs';
 
 // E1 · Ask AI (design/Talk.dc.html). Every question goes through POST /api/ask, where the
 // code guardrail answers emergencies and dose questions itself; the UI only shows the result.
@@ -12,7 +16,21 @@ type Message =
   | { id: number; from: 'me'; text: string }
   | { id: number; from: 'ai'; kind: AiKind; text: string };
 
+type Recognition = { lang: string; interimResults: boolean; onresult: ((event: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null; onend: (() => void) | null; onerror: (() => void) | null; start: () => void; stop: () => void };
+function recognitionClass(): (new () => Recognition) | null {
+  if (typeof window === 'undefined') return null;
+  const w = window as unknown as { SpeechRecognition?: new () => Recognition; webkitSpeechRecognition?: new () => Recognition };
+  return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
+}
+
 const IDEAS = ['What is my water pill for?', 'How much can I drink today?', 'Why are my ankles swollen?'];
+
+// The Layout's slot above the bottom menu, found after mount (it may render in the same commit).
+function useDock(): (node: ReactNode) => ReactNode {
+  const [slot, setSlot] = useState<HTMLElement | null>(null);
+  useEffect(() => setSlot(document.getElementById('dock-above-nav')), []);
+  return (node) => (slot ? createPortal(node, slot) : node);
+}
 
 export default function AskAI() {
   const me = useMe();
@@ -21,6 +39,31 @@ export default function AskAI() {
   const [draft, setDraft] = useState('');
   const nextId = useRef(1);
   const endRef = useRef<HTMLSpanElement>(null);
+  const [listening, setListening] = useState(false);
+  const recognition = useRef<Recognition | null>(null);
+  // Hidden when the browser cannot listen, or the patient turned the microphone off.
+  const Speech = micEnabled() ? recognitionClass() : null;
+  const dock = useDock();
+
+  useEffect(() => () => recognition.current?.stop(), []);
+
+  // Speak instead of typing: the phone turns speech into text, then it is sent like typed text.
+  function talk() {
+    if (!Speech) return;
+    if (listening) { recognition.current?.stop(); return; }
+    const rec = new Speech();
+    rec.lang = 'en-SG';
+    rec.interimResults = false;
+    rec.onresult = (event) => {
+      const text = event.results[0]?.[0]?.transcript ?? '';
+      if (text.trim()) send(text);
+    };
+    rec.onend = () => setListening(false);
+    rec.onerror = () => setListening(false);
+    recognition.current = rec;
+    setListening(true);
+    rec.start();
+  }
 
   useEffect(() => {
     endRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'end' });
@@ -54,7 +97,7 @@ export default function AskAI() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
-      <h1 style={{ margin: 0, fontSize: 'var(--text-h1)', lineHeight: 'var(--lh-h1)', fontWeight: 700, letterSpacing: '-0.02em' }}>Ask AI</h1>
+      <PageHeader title="Ask AI" titleSize={32} />
 
       {messages.length === 0 && (
         <section
@@ -109,59 +152,6 @@ export default function AskAI() {
         ))}
       </section>
 
-      <form
-        onSubmit={(event) => {
-          event.preventDefault();
-          send(draft);
-        }}
-        style={{ display: 'flex', alignItems: 'center', gap: 10 }}
-      >
-        <input
-          type="text"
-          aria-label="Ask a question"
-          placeholder="Type your question…"
-          value={draft}
-          maxLength={500}
-          onChange={(event) => setDraft(event.target.value)}
-          style={{
-            flex: 1,
-            minWidth: 0,
-            height: 'var(--touch-min)',
-            padding: '0 20px',
-            borderRadius: 'var(--radius-pill)',
-            border: '2.5px solid var(--color-ink)',
-            background: 'var(--color-surface)',
-            color: 'var(--color-ink)',
-            fontFamily: 'inherit',
-            fontSize: 21,
-            fontWeight: 500,
-          }}
-        />
-        <button
-          type="submit"
-          aria-label="Send"
-          disabled={!draft.trim() || ask.isPending}
-          style={{
-            width: 64,
-            height: 64,
-            flexShrink: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderRadius: 'var(--radius-pill)',
-            border: 0,
-            background: draft.trim() && !ask.isPending ? '#4A4FC2' : 'var(--color-sunken)',
-            color: draft.trim() && !ask.isPending ? 'var(--color-surface)' : 'var(--color-ink-muted)',
-            cursor: 'pointer',
-          }}
-        >
-          <svg width={30} height={30} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.75} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M12 19V5" />
-            <path d="m5 12 7-7 7 7" />
-          </svg>
-        </button>
-      </form>
-
       <p style={{ margin: 0, display: 'flex', gap: 10, fontSize: 'var(--text-caption)', lineHeight: '27px', color: 'var(--color-ink-muted)' }}>
         <svg style={{ flexShrink: 0 }} width={24} height={24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.25} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" />
@@ -169,6 +159,65 @@ export default function AskAI() {
         I explain things simply. I never change doses or timing — your nurse decides that.
       </p>
       <span ref={endRef} aria-hidden="true" />
+      {/* Room for the docked composer, so the last message is not hidden behind it. */}
+      <div aria-hidden="true" style={{ height: 100 }} />
+      {/* Composer docked above the bottom menu (design/Talk.dc.html), in the Layout's slot. */}
+      {dock(<div style={{ background: 'var(--color-surface)', borderRadius: '28px 28px 0 0', borderTop: '1px solid var(--color-line)', boxShadow: '0 -6px 20px rgba(22,32,30,0.08)' }}>
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            send(draft);
+          }}
+          style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px 6px' }}
+        >
+          {/* The hint is drawn by ScrollingPlaceholder so it can scroll when the box is too narrow. */}
+          <div style={{ position: 'relative', flex: 1, minWidth: 0, display: 'flex' }}>
+            <input
+              type="text"
+              aria-label="Ask a question"
+              value={draft}
+              maxLength={500}
+              onChange={(event) => setDraft(event.target.value)}
+              style={{ flex: 1, minWidth: 0, height: 64, boxSizing: 'border-box', padding: '0 20px', borderRadius: 'var(--radius-pill)', border: '2.5px solid var(--color-ink)', background: 'var(--color-canvas)', color: 'var(--color-ink)', fontFamily: 'inherit', fontSize: 21, fontWeight: 500 }}
+            />
+            {!draft && (
+              <ScrollingPlaceholder
+                text={listening ? 'Listening…' : 'Type your question…'}
+                style={{ left: 22.5, right: 22.5, fontSize: 21, fontWeight: 500, color: 'var(--color-ink-muted)' }}
+              />
+            )}
+          </div>
+          {Speech && (
+            <button
+              type="button"
+              onClick={talk}
+              aria-label={listening ? 'Stop listening' : 'Speak instead'}
+              aria-pressed={listening}
+              style={{ width: 64, height: 64, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 'var(--radius-pill)', border: 0, background: listening ? '#4A4FC2' : 'var(--color-iris)', color: listening ? 'var(--color-surface)' : 'var(--color-ink)', boxShadow: listening ? '0 0 0 6px rgba(141,147,246,0.35)' : 'none', cursor: 'pointer' }}
+            >
+              <svg width={30} height={30} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.25} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <rect x={9} y={2} width={6} height={12} rx={3} />
+                <path d="M19 10v1a7 7 0 0 1-14 0v-1" />
+                <path d="M12 18v4" />
+              </svg>
+            </button>
+          )}
+          <button
+            type="submit"
+            aria-label="Send"
+            disabled={!draft.trim() || ask.isPending}
+            style={{ width: 64, height: 64, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 'var(--radius-pill)', border: 0, background: draft.trim() && !ask.isPending ? '#4A4FC2' : 'var(--color-sunken)', color: draft.trim() && !ask.isPending ? 'var(--color-surface)' : 'var(--color-ink-muted)', cursor: 'pointer' }}
+          >
+            <svg width={30} height={30} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.75} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M12 19V5" />
+              <path d="m5 12 7-7 7 7" />
+            </svg>
+          </button>
+        </form>
+        <p aria-live="polite" style={{ margin: 0, minHeight: 10, padding: '0 20px 4px', fontSize: 19, fontWeight: 700, color: '#4A4FC2' }}>
+          {listening ? 'Listening… speak now' : ''}
+        </p>
+      </div>)}
     </div>
   );
 }

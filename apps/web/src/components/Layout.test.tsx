@@ -28,20 +28,7 @@ function wrapper(route: string) {
   );
 }
 
-describe('Layout SOS button coverage', () => {
-  const routes = ['/track', '/medicine', '/ask', '/more', '/emergency'];
-
-  it.each(routes)('renders SOS button on %s', (route) => {
-    wrapper(route);
-    expect(screen.getByRole('link', { name: /Emergency SOS/i })).toBeTruthy();
-  });
-
-  // Home shows SOS in its own header row (covered in Home.test.tsx), so Layout leaves it out there.
-  it('leaves SOS to the Home page on /home', () => {
-    wrapper('/home');
-    expect(screen.queryByRole('link', { name: /Emergency SOS/i })).toBeNull();
-  });
-});
+// SOS now lives in each page header; SOSCoverage.test.tsx checks every real page.
 
 describe('Layout BottomNav', () => {
   it('marks the active tab', () => {

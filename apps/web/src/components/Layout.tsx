@@ -1,11 +1,8 @@
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { BottomNav, SOSSlot } from './index';
+import { BottomNav } from './index';
 import type { NavTab } from './BottomNav';
 
-// Pages that show SOS in their own header row (Home next to the date, others next to Back).
-const OWN_SOS = new Set(['home', 'status', 'cap']);
-
-const PARENT_TAB: Record<string, NavTab> = { alert: 'home', status: 'home', nurse: 'home', family: 'more', report: 'more', weigh: 'track', feel: 'track', cap: 'track' };
+const PARENT_TAB: Record<string, NavTab> = { alert: 'home', status: 'home', nurse: 'home', family: 'more', report: 'more', weigh: 'track', feel: 'track', cap: 'track', privacy: 'more', settings: 'more', visit: 'more' };
 
 export function Layout() {
   const location = useLocation();
@@ -24,13 +21,9 @@ export function Layout() {
         background: 'var(--color-canvas)',
       }}
     >
-      <main style={{ flex: 1, padding: '1.5rem', paddingBottom: 140 }}>
-        {/* These pages put SOS in their own header row. */}
-        {!OWN_SOS.has(segment) && (
-          <div data-noprint style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 'var(--space-4)' }}>
-            <SOSSlot />
-          </div>
-        )}
+      {/* Page padding from the design screens: 28px top, 20px sides. */}
+      <main style={{ flex: 1, padding: '28px 20px', paddingBottom: 140 }}>
+        {/* Every page puts SOS in its own header row (PageHeader, or next to the date on Home). */}
         <Outlet />
       </main>
       <div
@@ -43,6 +36,8 @@ export function Layout() {
           zIndex: 40,
         }}
       >
+        {/* Pages can dock something right above the menu (Ask AI's composer) via a portal. */}
+        <div id="dock-above-nav" />
         <BottomNav activeTab={activeTab} onChange={(tab) => navigate(`/${tab}`)} />
       </div>
     </div>

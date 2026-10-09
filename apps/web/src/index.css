@@ -72,3 +72,43 @@ body {
     margin: 14mm;
   }
 }
+
+/* Shown only when printing (e.g. the A4 report behind "Download PDF"). */
+.print-only {
+  display: none;
+}
+@media print {
+  .print-only {
+    display: block;
+  }
+}
+
+/* Text box hint that is too wide for the box: scrolls right to left in a loop (ScrollingPlaceholder). */
+@keyframes placeholder-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(var(--marquee-distance)); }
+}
+.placeholder-marquee {
+  animation-name: placeholder-marquee;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  animation-delay: 1s;
+}
+
+/* Bottom menu: the selected Ask AI tab glows with a slowly moving blue → iris gradient. */
+@keyframes nav-ai-gradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.nav-ai-active {
+  background: linear-gradient(120deg, #7CC7FE, #8D93F6, #B8BCFA, #7CC7FE, #8D93F6);
+  background-size: 300% 300%;
+  animation: nav-ai-gradient 6s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .nav-ai-active {
+    animation: none;
+    background-position: 50% 50%;
+  }
+}
