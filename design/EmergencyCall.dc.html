@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Ventra — Emergency call in progress</title>
+<script src="./support.js"></script>
+<script src="./ventra-record.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500&amp;family=Instrument+Sans:wght@400..700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F5F3EE}
+a{color:#1F6FB2}a:hover{color:#175A92}
+button{font-family:inherit;cursor:pointer}
+[data-statusbar]{display:none}
+@media (min-width:560px) and (min-height:640px){
+body{background:#DCD8CF !important;overflow:hidden}
+body::before{content:"";position:fixed;inset:0;margin:auto;width:424px;height:min(844px,calc(100vh - 56px));pointer-events:none;background:linear-gradient(#2B3331,#2B3331) left 0 top 112px/4px 32px no-repeat,linear-gradient(#2B3331,#2B3331) left 0 top 170px/4px 62px no-repeat,linear-gradient(#2B3331,#2B3331) left 0 top 246px/4px 62px no-repeat,linear-gradient(#2B3331,#2B3331) right 0 top 196px/4px 98px no-repeat}
+body::after{content:"";position:fixed;left:50%;bottom:calc((100vh - min(844px,calc(100vh - 56px))) / 2 + 8px);width:134px;height:5px;margin-left:-67px;border-radius:999px;background:#16201E;z-index:20;pointer-events:none}
+div:has(> [data-statusbar]){position:fixed !important;inset:0 !important;margin:auto !important;height:min(844px,calc(100vh - 56px)) !important;min-height:0 !important;overflow-x:hidden !important;overflow-y:auto !important;border-radius:54px;box-shadow:0 0 0 11px #16201E,0 0 0 13px #4A5250,0 30px 80px rgba(22,32,30,0.35);scrollbar-width:none}
+div:has(> [data-statusbar])::-webkit-scrollbar{display:none}
+div:has(> [data-statusbar]) > *{flex-shrink:0 !important}
+[data-statusbar]{display:flex;order:-1;margin-top:0 !important}
+div:has(> [data-statusbar]){padding-top:0 !important}
+nav[aria-label="Main menu"]{padding-bottom:26px !important}
+[data-overlay]{position:fixed !important;inset:0 !important;margin:auto;width:390px;height:min(844px,calc(100vh - 56px));border-radius:54px;overflow:hidden;z-index:30}
+}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; min-height: 100vh; margin: 0 auto; box-sizing: border-box; padding: 0 0 32px; display: flex; flex-direction: column; gap: 22px; background: #F5F3EE; color: #16201E; font-family: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif; overflow-x: clip">
+
+<section aria-live="polite" style="display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 36px 20px 28px; background: #B83A26; color: #FFFFFF; border-radius: 0 0 32px 32px; text-align: center">
+<div style="width: 104px; height: 104px; display: flex; align-items: center; justify-content: center; border-radius: 999px; background: #FFFFFF; color: #B83A26; box-shadow: 0 0 0 14px rgba(255,255,255,0.25)"><svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"></path></svg></div>
+<h1 style="margin: 12px 0 0; font-size: 40px; line-height: 46px; font-weight: 700; letter-spacing: -0.02em">Calling 995</h1>
+<p style="margin: 0; font-size: 22px; line-height: 30px; font-weight: 600">Can't breathe</p>
+</section>
+
+<div style="display: flex; flex-direction: column; gap: 16px; padding: 0 20px">
+
+<section aria-label="Call progress" style="display: flex; flex-direction: column; padding: 6px 20px; border-radius: 24px; background: #FFFFFF">
+<sc-for list="{{steps}}" as="s" hint-placeholder-count="3">
+<div style="{{s.row}}">
+<span style="{{s.dot}}"><sc-if value="{{s.done}}" hint-placeholder-val="{{false}}"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></sc-if><sc-if value="{{s.notDone}}" hint-placeholder-val="{{true}}"><span>{{s.n}}</span></sc-if></span>
+<span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 22px; line-height: 28px; font-weight: 700">{{s.title}}</span><span style="font-size: 18px; line-height: 25px; color: #5B605A">{{s.sub}}</span></span>
+</div>
+</sc-for>
+</section>
+
+<sc-if value="{{arrived}}" hint-placeholder-val="{{false}}">
+<section style="display: flex; flex-direction: column; gap: 8px; padding: 22px; border-radius: 24px; background: #DDF1E5; border: 3px solid #1B6F45; text-align: center">
+<p style="margin: 0; font-size: 30px; line-height: 38px; font-weight: 700">Help is on the way.</p>
+</section>
+</sc-if>
+
+<section style="display: flex; flex-direction: column; gap: 14px; padding: 22px; border-radius: 24px; background: #FFFFFF; border: 4px solid #16201E">
+<div style="display: flex; align-items: center; gap: 14px"><span style="width: 48px; height: 48px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-radius: 999px; background: #16201E; color: #FFFFFF; font-size: 22px; font-weight: 700">1</span><span style="font-size: 26px; line-height: 32px; font-weight: 700">Stay seated upright.</span></div>
+<div style="display: flex; align-items: center; gap: 14px"><span style="width: 48px; height: 48px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-radius: 999px; background: #16201E; color: #FFFFFF; font-size: 22px; font-weight: 700">2</span><span style="font-size: 26px; line-height: 32px; font-weight: 700">Unlock your door if you can.</span></div>
+</section>
+
+<div style="display: flex; align-items: center; gap: 14px; padding: 18px; border-radius: 24px; background: #DDF1E5">
+<span style="width: 48px; height: 48px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-radius: 999px; background: #1B6F45; color: #FFFFFF"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></span>
+<p style="margin: 0; font-size: 21px; line-height: 30px; font-weight: 600">We've also sent a message to Mei Ling.</p>
+</div>
+
+<button type="button" onClick="{{askCancel}}" style="min-height: 72px; border-radius: 999px; border: 2.5px solid #16201E; background: #FFFFFF; color: #16201E; font-size: 22px; font-weight: 700">Cancel call</button>
+<p style="margin: 0; font-size: 17px; line-height: 24px; color: #5B605A; text-align: center">Demo only — no real call is made.</p>
+</div>
+
+<sc-if value="{{confirm}}" hint-placeholder-val="{{false}}">
+<div data-overlay="true" style="position: absolute; inset: 0; display: flex; align-items: flex-end; background: rgba(22,32,30,0.55)">
+<div role="dialog" aria-modal="true" aria-label="Cancel the emergency call?" style="position: sticky; bottom: 0; width: 100%; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px; padding: 28px 20px 32px; border-radius: 32px 32px 0 0; background: #FFFFFF; box-shadow: 0 -8px 32px rgba(22,32,30,0.12)">
+<h2 style="margin: 0; font-size: 30px; line-height: 36px; font-weight: 700">Cancel the emergency call?</h2>
+<p style="margin: 0; font-size: 22px; line-height: 30px">Only cancel if you are safe.</p>
+<button type="button" onClick="{{keepCalling}}" style="min-height: 88px; border-radius: 999px; border: 0; background: #B83A26; color: #FFFFFF; font-size: 26px; font-weight: 700">No, keep calling</button>
+<a href="Main.dc.html" style="min-height: 76px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; border-radius: 999px; border: 2.5px solid #16201E; background: #FFFFFF; color: #16201E; text-decoration: none; font-size: 22px; font-weight: 700">Yes, cancel — I'm safe</a>
+</div>
+</div>
+</sc-if>
+<div data-statusbar="true" aria-hidden="true" style="position: sticky; top: 0; z-index: 6; align-self: stretch; margin: 0 0 -22px; height: 54px; padding: 0 22px; box-sizing: border-box; align-items: center; justify-content: space-between; background: #B83A26; color: #FFFFFF; font-size: 17px; line-height: 22px; font-weight: 600"><span style="width: 92px; text-align: center">9:41</span><span style="width: 124px; height: 36px; border-radius: 999px; background: #000000"></span><span style="width: 92px; display: flex; align-items: center; justify-content: center; gap: 6px"><svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor" aria-hidden="true"><rect x="0" y="8" width="3" height="4" rx="1"></rect><rect x="5" y="5.5" width="3" height="6.5" rx="1"></rect><rect x="10" y="3" width="3" height="9" rx="1"></rect><rect x="15" y="0" width="3" height="12" rx="1"></rect></svg><svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M1.5 4.2a9.5 9.5 0 0 1 13 0"></path><path d="M4.2 7.1a5.6 5.6 0 0 1 7.6 0"></path><circle cx="8" cy="10.2" r="1.4" fill="currentColor" stroke="none"></circle></svg><svg width="27" height="13" viewBox="0 0 27 13" fill="none" aria-hidden="true"><rect x="0.5" y="0.5" width="23" height="12" rx="3.5" stroke="currentColor" opacity="0.45"></rect><rect x="2.5" y="2.5" width="19" height="8" rx="2" fill="currentColor"></rect><path d="M25 4.5v4c.8-.3 1.5-1.1 1.5-2s-.7-1.7-1.5-2z" fill="currentColor" opacity="0.45"></path></svg></span></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1500}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { step: 2, confirm: false }; }
+  componentDidMount() {
+    this.t1 = setTimeout(() => this.setState({ step: 3 }), 3500);
+    this.t2 = setTimeout(() => this.setState({ step: 4 }), 7000);
+  }
+  componentWillUnmount() { clearTimeout(this.t1); clearTimeout(this.t2); }
+  renderVals() {
+    const step = this.state.step;
+    const R = window.VentraRecord;
+    const defs = [
+      ['Sharing your location', '[Home address from GPS]'],
+      ['Reading your heart profile', R ? 'Heart failure · ' + R.patient.age + ' · ' + R.meds.map((m) => m.generic).join(', ') : ''],
+      ['Help is on the way', 'An ambulance is coming to you']
+    ];
+    const steps = defs.map((d, i) => {
+      const n = i + 1, done = step > n, active = step === n;
+      return { n: String(n), title: d[0], sub: active ? 'Working on it…' : d[1], done, notDone: !done,
+        row: { display: 'flex', alignItems: 'center', gap: '14px', padding: '16px 0', borderTop: i ? '2px solid #E3DFD6' : '0', opacity: step < n ? 0.55 : 1 },
+        dot: { width: '52px', height: '52px', flexShrink: 0, boxSizing: 'border-box', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '999px', fontSize: '22px', fontWeight: 700, background: done ? '#1B6F45' : active ? '#FCE4DE' : '#FFFFFF', color: '#16201E', border: done ? '0' : active ? '4px solid #B83A26' : '3px solid #8C877B' } };
+    });
+    return {
+      steps, arrived: step > 3, confirm: this.state.confirm,
+      askCancel: () => this.setState({ confirm: true }),
+      keepCalling: () => this.setState({ confirm: false })
+    };
+  }
+}
+</script>
+</body>
+</html>

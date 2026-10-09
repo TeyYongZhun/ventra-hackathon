@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Ventra — Calling the heart nurse</title>
+<script src="./support.js"></script>
+<script src="./ventra-record.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500&amp;family=Instrument+Sans:wght@400..700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F5F3EE}
+a{color:#1F6FB2}a:hover{color:#175A92}
+button{font-family:inherit;cursor:pointer}
+[data-statusbar]{display:none}
+@media (min-width:560px) and (min-height:640px){
+body{background:#DCD8CF !important;overflow:hidden}
+body::before{content:"";position:fixed;inset:0;margin:auto;width:424px;height:min(844px,calc(100vh - 56px));pointer-events:none;background:linear-gradient(#2B3331,#2B3331) left 0 top 112px/4px 32px no-repeat,linear-gradient(#2B3331,#2B3331) left 0 top 170px/4px 62px no-repeat,linear-gradient(#2B3331,#2B3331) left 0 top 246px/4px 62px no-repeat,linear-gradient(#2B3331,#2B3331) right 0 top 196px/4px 98px no-repeat}
+body::after{content:"";position:fixed;left:50%;bottom:calc((100vh - min(844px,calc(100vh - 56px))) / 2 + 8px);width:134px;height:5px;margin-left:-67px;border-radius:999px;background:#16201E;z-index:20;pointer-events:none}
+div:has(> [data-statusbar]){position:fixed !important;inset:0 !important;margin:auto !important;height:min(844px,calc(100vh - 56px)) !important;min-height:0 !important;overflow-x:hidden !important;overflow-y:auto !important;border-radius:54px;box-shadow:0 0 0 11px #16201E,0 0 0 13px #4A5250,0 30px 80px rgba(22,32,30,0.35);scrollbar-width:none}
+div:has(> [data-statusbar])::-webkit-scrollbar{display:none}
+div:has(> [data-statusbar]) > *{flex-shrink:0 !important}
+[data-statusbar]{display:flex;order:-1;margin-top:0 !important}
+div:has(> [data-statusbar]){padding-top:0 !important}
+nav[aria-label="Main menu"]{padding-bottom:26px !important}
+[data-overlay]{position:fixed !important;inset:0 !important;margin:auto;width:390px;height:min(844px,calc(100vh - 56px));border-radius:54px;overflow:hidden;z-index:30}
+}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; min-height: 100vh; margin: 0 auto; box-sizing: border-box; padding: 0 0 32px; display: flex; flex-direction: column; gap: 22px; background: #F5F3EE; color: #16201E; font-family: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif; font-variant-numeric: tabular-nums; overflow-x: clip">
+
+<a href="EmergencyChoose.dc.html" aria-label="SOS — get emergency help" style="height: 64px; padding: 0 16px; margin-left: auto; flex-shrink: 0; display: flex; align-items: center; gap: 8px; border-radius: 999px; background: #B83A26; color: #FFFFFF; text-decoration: none; font-size: 21px; font-weight: 700; position: absolute; top: 62px; right: 20px; z-index: 4"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>SOS</a>
+<section aria-live="polite" style="display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 40px 20px 28px; background: #7CC7FE; border-radius: 0 0 32px 32px; text-align: center">
+<div style="width: 104px; height: 104px; display: flex; align-items: center; justify-content: center; border-radius: 999px; background: #FFFFFF; box-shadow: 0 0 0 12px rgba(255,255,255,0.45)"><svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#16201E" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path></svg></div>
+<h1 style="margin: 12px 0 0; font-size: 34px; line-height: 40px; font-weight: 700; letter-spacing: -0.02em">Heart Failure Nurse</h1>
+<p style="margin: 0; font-size: 24px; line-height: 32px; font-weight: 700">{{status}}</p>
+</section>
+
+<div style="display: flex; flex-direction: column; gap: 16px; padding: 0 20px">
+<section aria-label="Read this to the nurse" style="display: flex; flex-direction: column; gap: 14px; padding: 22px; border-radius: 24px; background: #FFFFFF; border: 3px solid #16201E">
+<h2 style="margin: 0; font-size: 26px; line-height: 32px; font-weight: 700">Read this to the nurse</h2>
+<span style="margin-top: -8px; font-size: 18px; line-height: 24px; color: #5B605A">{{scriptFrom}}</span>
+<div style="display: flex; flex-direction: column; gap: 10px; padding: 18px; border-radius: 14px; background: #ECE9E2; font-size: 22px; line-height: 32px">
+<sc-for list="{{script}}" as="l" hint-placeholder-count="5">
+<p style="margin: 0"><sc-for list="{{l.segs}}" as="sg" hint-placeholder-count="3"><sc-if value="{{sg.b}}" hint-placeholder-val="{{false}}"><strong>{{sg.t}}</strong></sc-if><sc-if value="{{sg.nb}}" hint-placeholder-val="{{true}}">{{sg.t}}</sc-if></sc-for></p>
+</sc-for>
+</div>
+<button type="button" style="min-height: 72px; display: flex; align-items: center; justify-content: center; gap: 12px; border-radius: 999px; border: 0; background: #8D93F6; color: #16201E; font-size: 23px; font-weight: 700"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4V5z"></path><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>Read it for me</button>
+</section>
+
+<a href="Main.dc.html" style="min-height: 88px; display: flex; align-items: center; justify-content: center; gap: 12px; border-radius: 999px; background: #B83A26; color: #FFFFFF; text-decoration: none; font-size: 26px; font-weight: 700"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91"></path><path d="M22 2 2 22"></path></svg>End call</a>
+<p style="margin: 0; font-size: 17px; line-height: 24px; color: #5B605A; text-align: center">Demo only — no real call is made.</p>
+</div>
+<div data-statusbar="true" aria-hidden="true" style="position: sticky; top: 0; z-index: 6; align-self: stretch; margin: 0 0 -22px; height: 54px; padding: 0 22px; box-sizing: border-box; align-items: center; justify-content: space-between; background: #7CC7FE; color: #16201E; font-size: 17px; line-height: 22px; font-weight: 600"><span style="width: 92px; text-align: center">9:41</span><span style="width: 124px; height: 36px; border-radius: 999px; background: #000000"></span><span style="width: 92px; display: flex; align-items: center; justify-content: center; gap: 6px"><svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor" aria-hidden="true"><rect x="0" y="8" width="3" height="4" rx="1"></rect><rect x="5" y="5.5" width="3" height="6.5" rx="1"></rect><rect x="10" y="3" width="3" height="9" rx="1"></rect><rect x="15" y="0" width="3" height="12" rx="1"></rect></svg><svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M1.5 4.2a9.5 9.5 0 0 1 13 0"></path><path d="M4.2 7.1a5.6 5.6 0 0 1 7.6 0"></path><circle cx="8" cy="10.2" r="1.4" fill="currentColor" stroke="none"></circle></svg><svg width="27" height="13" viewBox="0 0 27 13" fill="none" aria-hidden="true"><rect x="0.5" y="0.5" width="23" height="12" rx="3.5" stroke="currentColor" opacity="0.45"></rect><rect x="2.5" y="2.5" width="19" height="8" rx="2" fill="currentColor"></rect><path d="M25 4.5v4c.8-.3 1.5-1.1 1.5-2s-.7-1.7-1.5-2z" fill="currentColor" opacity="0.45"></path></svg></span></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1150}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { secs: 0 }; }
+  componentDidMount() { this.timer = setInterval(() => this.setState({ secs: this.state.secs + 1 }), 1000); }
+  componentWillUnmount() { clearInterval(this.timer); }
+  renderVals() {
+    const s = this.state.secs;
+    const t = s - 3, mm = Math.floor(Math.max(t, 0) / 60), ss = Math.max(t, 0) % 60;
+    const status = s < 3 ? 'Calling…' : 'Connected · ' + (mm < 10 ? '0' : '') + mm + ':' + (ss < 10 ? '0' : '') + ss;
+    const base = { status };
+    const R = window.VentraRecord; if (!R) return base;
+    const al = R.latestAlert(), d = al ? al.date : R.today;
+    const script = R.nurseScript(d).map((l) => ({ i: l.i, segs: l.segs.map((x) => ({ t: x.t, b: x.b, nb: !x.b })) }));
+    const scriptFrom = 'Made from what you logged on ' + R.dayShort(d) + (d === R.today ? ' (today)' : '') + '.';
+    return { status, script, scriptFrom };
+  }
+}
+</script>
+</body>
+</html>

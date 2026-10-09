@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Ventra — Meal result</title>
+<script src="./support.js"></script>
+<script src="./ventra-record.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500&amp;family=Instrument+Sans:wght@400..700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F5F3EE}
+a{color:#1F6FB2}a:hover{color:#175A92}
+button{font-family:inherit;cursor:pointer}
+@keyframes vt-scan-meal{from{transform:translateY(0)}to{transform:translateY(91px)}}
+@keyframes vt-breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+@keyframes vt-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@keyframes vt-plate-in{from{opacity:0;transform:scale(0.85) rotate(-40deg)}to{opacity:1;transform:none}}
+@keyframes vt-fall{0%{opacity:0;transform:translateY(0)}15%{opacity:1}100%{opacity:0;transform:translateY(34px)}}
+@media (prefers-reduced-motion: reduce){[data-anim]{animation:none !important}}
+[data-statusbar]{display:none}
+@media (min-width:560px) and (min-height:640px){
+body{background:#DCD8CF !important;overflow:hidden}
+body::before{content:"";position:fixed;inset:0;margin:auto;width:424px;height:min(844px,calc(100vh - 56px));pointer-events:none;background:linear-gradient(#2B3331,#2B3331) left 0 top 112px/4px 32px no-repeat,linear-gradient(#2B3331,#2B3331) left 0 top 170px/4px 62px no-repeat,linear-gradient(#2B3331,#2B3331) left 0 top 246px/4px 62px no-repeat,linear-gradient(#2B3331,#2B3331) right 0 top 196px/4px 98px no-repeat}
+body::after{content:"";position:fixed;left:50%;bottom:calc((100vh - min(844px,calc(100vh - 56px))) / 2 + 8px);width:134px;height:5px;margin-left:-67px;border-radius:999px;background:#16201E;z-index:20;pointer-events:none}
+div:has(> [data-statusbar]){position:fixed !important;inset:0 !important;margin:auto !important;height:min(844px,calc(100vh - 56px)) !important;min-height:0 !important;overflow-x:hidden !important;overflow-y:auto !important;border-radius:54px;box-shadow:0 0 0 11px #16201E,0 0 0 13px #4A5250,0 30px 80px rgba(22,32,30,0.35);scrollbar-width:none}
+div:has(> [data-statusbar])::-webkit-scrollbar{display:none}
+div:has(> [data-statusbar]) > *{flex-shrink:0 !important}
+[data-statusbar]{display:flex;order:-1;margin-top:0 !important}
+div:has(> [data-statusbar]){padding-top:0 !important}
+nav[aria-label="Main menu"]{padding-bottom:26px !important}
+[data-overlay]{position:fixed !important;inset:0 !important;margin:auto;width:390px;height:min(844px,calc(100vh - 56px));border-radius:54px;overflow:hidden;z-index:30}
+}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; min-height: 100vh; margin: 0 auto; box-sizing: border-box; padding: 28px 20px 0; display: flex; flex-direction: column; gap: 22px; background: #F5F3EE; color: #16201E; font-family: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif; font-variant-numeric: tabular-nums; overflow-x: clip">
+
+<header style="display: flex; align-items: center; gap: 12px">
+<h1 style="flex: 1; margin: 0; font-size: 38px; line-height: 44px; font-weight: 700; letter-spacing: -0.02em">Track</h1>
+<a href="EmergencyChoose.dc.html" style="height: 64px; padding: 0 20px; flex-shrink: 0; display: flex; align-items: center; gap: 8px; border-radius: 999px; background: #B83A26; color: #FFFFFF; text-decoration: none; font-size: 22px; font-weight: 700"><svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>SOS</a>
+</header>
+
+<a href="Symptoms.dc.html" style="min-height: 88px; display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 24px; background: #FDE5DD; color: #16201E; text-decoration: none; border: 3px solid #F2785C">
+<span style="width: 60px; height: 60px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-radius: 999px; background: #F2785C; color: #16201E"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M8 14s1.5 2 4 2 4-2 4-2"></path><path d="M9 9h.01"></path><path d="M15 9h.01"></path></svg></span>
+<span style="flex: 1; display: flex; flex-direction: column"><span style="font-size: 24px; line-height: 30px; font-weight: 700">How I feel</span><span style="font-size: 18px; line-height: 24px; color: #5B605A">Breathing, swelling, tiredness</span></span>
+<span style="width: 44px; height: 44px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-radius: 999px; background: #FFFFFF"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></span>
+</a>
+
+<nav aria-label="What to track" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; padding: 6px; border-radius: 30px; background: #ECE9E2">
+<a href="Fluid.dc.html" style="min-height: 76px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 6px 4px; border-radius: 24px; color: #16201E; text-decoration: none; font-size: 18px; line-height: 22px; font-weight: 700; text-align: center"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5S5 13 5 15a7 7 0 0 0 7 7z"></path></svg>Log drinks</a>
+<a href="Meals.dc.html" aria-current="page" style="min-height: 76px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 6px 4px; border-radius: 24px; color: #16201E; text-decoration: none; font-size: 18px; line-height: 22px; font-weight: 700; text-align: center; background: #7CC7FE; box-shadow: 0 2px 8px rgba(22,32,30,0.14)"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg>Scan meal</a>
+<a href="Weight.dc.html" style="min-height: 76px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 6px 4px; border-radius: 24px; color: #16201E; text-decoration: none; font-size: 18px; line-height: 22px; font-weight: 700; text-align: center"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4"></rect><path d="M7.5 10a6 6 0 0 1 9 0"></path><path d="m12 10 1.6-2.2"></path></svg>Log weight</a>
+</nav>
+
+<div style="display: flex; flex-direction: column; gap: 16px; padding: 20px; border-radius: 32px; background: #16201E; color: #FFFFFF; box-shadow: 0 12px 28px rgba(22,32,30,0.18)">
+<div aria-hidden="true" style="position: relative; height: 150px; border-radius: 22px; background: #2E3836; overflow: hidden">
+<span style="position: absolute; left: 0; right: 0; bottom: 0; height: 44px; background: #26302E"></span>
+<span data-anim="true" style="position: absolute; left: 50%; top: 50%; width: 108px; height: 108px; margin: -58px 0 0 -54px; display: flex; align-items: center; justify-content: center; border-radius: 999px; background: #FFFFFF; box-shadow: 0 8px 16px rgba(0,0,0,0.35); animation: vt-bob 3.2s ease-in-out infinite">
+<span style="position: relative; width: 80px; height: 80px; border-radius: 999px; background: #F8DA98; box-shadow: inset 0 0 0 3px #ECE9E2">
+<span style="position: absolute; left: 20px; top: 34px; width: 38px; height: 3px; border-radius: 2px; background: #E2B04A"></span>
+<span style="position: absolute; left: 24px; top: 40px; width: 32px; height: 3px; border-radius: 2px; background: #E2B04A"></span>
+<span style="position: absolute; left: 12px; top: 16px; width: 24px; height: 13px; border-radius: 999px; background: #FFF6EC; box-shadow: inset 0 0 0 2px #F2785C; transform: rotate(-20deg)"></span>
+<span style="position: absolute; left: 42px; top: 50px; width: 24px; height: 13px; border-radius: 999px; background: #FFF6EC; box-shadow: inset 0 0 0 2px #F2785C; transform: rotate(15deg)"></span>
+<span style="position: absolute; left: 46px; top: 14px; width: 16px; height: 10px; border-radius: 999px; background: #3CCB7F"></span>
+<span style="position: absolute; left: 16px; top: 50px; width: 14px; height: 9px; border-radius: 999px; background: #3CCB7F"></span>
+</span>
+</span>
+<span data-anim="true" style="position: absolute; left: 50%; top: 50%; width: 150px; height: 110px; margin: -59px 0 0 -75px; color: #D2EE63; animation: vt-breathe 1.6s ease-in-out infinite">
+<span style="position: absolute; left: 0; top: 0; width: 26px; height: 26px; box-sizing: border-box; border-left: 5px solid currentColor; border-top: 5px solid currentColor; border-radius: 10px 0 0 0"></span>
+<span style="position: absolute; right: 0; top: 0; width: 26px; height: 26px; box-sizing: border-box; border-right: 5px solid currentColor; border-top: 5px solid currentColor; border-radius: 0 10px 0 0"></span>
+<span style="position: absolute; left: 0; bottom: 0; width: 26px; height: 26px; box-sizing: border-box; border-left: 5px solid currentColor; border-bottom: 5px solid currentColor; border-radius: 0 0 0 10px"></span>
+<span style="position: absolute; right: 0; bottom: 0; width: 26px; height: 26px; box-sizing: border-box; border-right: 5px solid currentColor; border-bottom: 5px solid currentColor; border-radius: 0 0 10px 0"></span>
+<span data-anim="true" style="position: absolute; left: 12px; right: 12px; top: 8px; height: 3px; border-radius: 2px; background: #D2EE63; box-shadow: 0 0 12px 3px rgba(210,238,99,0.6); animation: vt-scan-meal 1.3s ease-in-out infinite alternate"></span>
+</span>
+<span style="position: absolute; left: 12px; top: 12px; padding: 4px 12px; border-radius: 999px; background: #D2EE63; color: #16201E; font-size: 16px; line-height: 22px; font-weight: 700">Check the salt</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<span style="font-size: 28px; line-height: 34px; font-weight: 700; letter-spacing: -0.015em">Scan my meal</span>
+<span style="font-size: 20px; line-height: 28px; color: #D6DAD4">Take a photo before you eat. We'll tell you how salty it is.</span>
+</div>
+<button type="button" onClick="{{snap}}" aria-live="polite" style="{{snapBtn}}"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path><circle cx="12" cy="13" r="3"></circle></svg>{{snapLabel}}</button>
+</div>
+
+<section aria-label="Today's salt" style="display: flex; align-items: center; gap: 22px; padding: 24px; border-radius: 32px; background: #FDF2D8">
+<div style="display: flex; flex-direction: column; align-items: center; flex-shrink: 0">
+<svg role="img" aria-label="{{bowlAria}}" width="136" height="160" viewBox="0 0 140 165" style="display: block; overflow: visible">
+<defs>
+<clipPath id="vt-bowl"><path d="M10 75 H130 C130 120 104 150 70 150 C36 150 10 120 10 75 Z"></path></clipPath>
+<pattern id="vt-grain" width="6" height="6" patternUnits="userSpaceOnUse"><circle cx="1.5" cy="1.5" r="0.9" fill="#B8B2A4"></circle><circle cx="4.5" cy="4.2" r="0.7" fill="#CFC9BB"></circle></pattern>
+</defs>
+<g data-anim="true" style="{{spoonStyle}}">
+<g transform="rotate(-28 96 28)"><rect x="96" y="25" width="44" height="7" rx="3.5" fill="#16201E"></rect><ellipse cx="84" cy="28.5" rx="16" ry="10" fill="#FFFFFF" stroke="#16201E" stroke-width="3"></ellipse><ellipse cx="84" cy="27" rx="10" ry="5" fill="url(#vt-grain)"></ellipse></g>
+<circle data-anim="true" cx="72" cy="44" r="1.8" fill="#8C877B" style="animation: vt-fall 800ms ease-in 4"></circle>
+<circle data-anim="true" cx="67" cy="44" r="1.5" fill="#8C877B" style="animation: vt-fall 800ms ease-in 200ms 4"></circle>
+<circle data-anim="true" cx="76" cy="44" r="1.5" fill="#8C877B" style="animation: vt-fall 800ms ease-in 420ms 4"></circle>
+</g>
+<path d="M10 75 H130 C130 120 104 150 70 150 C36 150 10 120 10 75 Z" fill="#2B3331"></path>
+<g clip-path="url(#vt-bowl)">
+<g data-anim="true" style="{{saltMove}}">
+<rect x="0" y="{{saltY}}" width="140" height="120" fill="#FFFFFF"></rect>
+<rect x="0" y="{{saltY}}" width="140" height="120" fill="url(#vt-grain)"></rect>
+<ellipse cx="70" cy="{{saltY}}" rx="44" ry="5" fill="#FFFFFF"></ellipse>
+</g>
+</g>
+<path d="M10 75 H130 C130 120 104 150 70 150 C36 150 10 120 10 75 Z" fill="none" stroke="#16201E" stroke-width="5" stroke-linejoin="round"></path>
+<rect x="44" y="150" width="52" height="9" rx="4" fill="#16201E"></rect>
+<line x1="2" y1="82" x2="138" y2="82" stroke="#B83A26" stroke-width="3" stroke-dasharray="7 5"></line>
+</svg>
+<span style="margin-top: 8px; display: flex; align-items: center; gap: 6px; font-size: 17px; line-height: 22px; font-weight: 700"><svg width="22" height="4" viewBox="0 0 22 4" aria-hidden="true"><line x1="0" y1="2" x2="22" y2="2" stroke="#B83A26" stroke-width="3" stroke-dasharray="6 4"></line></svg>Limit line</span>
+</div>
+<div style="flex: 1; display: flex; flex-direction: column; gap: 6px">
+<span style="font-size: 20px; line-height: 26px; font-weight: 700">Left today</span>
+<span style="font-size: 52px; line-height: 56px; font-weight: 600; letter-spacing: -0.02em">{{saltLeft}}</span>
+<span style="font-size: 24px; line-height: 30px; font-weight: 600">mg salt</span>
+<span style="font-size: 20px; line-height: 28px; color: #5B605A">{{saltUsed}}</span>
+</div>
+</section>
+
+
+<section aria-label="Today's food log" style="display: flex; flex-direction: column; padding: 20px; border-radius: 24px; background: #FFFFFF">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 8px">
+<h2 style="margin: 0; font-size: 26px; line-height: 32px; font-weight: 700">Today</h2>
+<button type="button" onClick="{{undoMeal}}" style="height: 56px; padding: 0 20px; display: flex; align-items: center; gap: 8px; border-radius: 999px; border: 2.5px solid #16201E; background: #FFFFFF; color: #16201E; font-size: 20px; font-weight: 700"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7v6h6"></path><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"></path></svg>Undo last</button>
+</div>
+<sc-for list="{{foodLog}}" as="fe" hint-placeholder-count="2">
+<div style="min-height: 64px; display: flex; align-items: center; gap: 14px; border-top: 2px solid #E3DFD6">
+<span style="width: 92px; flex-shrink: 0; font-size: 19px; color: #5B605A">{{fe.t}}</span>
+<span style="flex: 1; min-width: 0; padding: 10px 0; font-size: 21px; line-height: 27px; font-weight: 600">{{fe.what}}</span>
+<span style="flex-shrink: 0; font-size: 21px; font-weight: 700; white-space: nowrap">{{fe.mgText}}</span>
+</div>
+</sc-for>
+</section>
+
+<section aria-label="Meals you scanned today" style="display: flex; flex-direction: column; gap: 14px">
+<h2 style="margin: 0; font-size: 26px; line-height: 32px; font-weight: 700">Meals you scanned today</h2>
+<sc-for list="{{scanned}}" as="mc" hint-placeholder-count="2">
+<div style="display: flex; flex-direction: column; gap: 22px">
+<button type="button" data-meal-result="{{mc.first}}" onClick="{{mc.toggle}}" aria-expanded="{{mc.openAttr}}" style="display: flex; align-items: center; gap: 14px; min-height: 88px; padding: 14px 16px; border-radius: 24px; border: 2.5px solid #16201E; background: #FFFFFF; color: #16201E; text-align: left">
+<span style="width: 56px; height: 56px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-radius: 16px; background: #E2F59B"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg></span>
+<span style="flex: 1; display: flex; flex-direction: column"><span style="font-size: 17px; line-height: 22px; font-weight: 700; color: #5B605A">{{mc.when}}</span><span style="font-size: 21px; line-height: 27px; font-weight: 700">{{mc.what}}</span><span style="{{mc.levelStyle}}">{{mc.levelWord}} · {{mc.mg}}</span></span>
+<span style="display: flex; flex-direction: column; align-items: center; gap: 2px; flex-shrink: 0; font-size: 15px; font-weight: 700; color: #1F6FB2"><span style="{{mc.chev}}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></span>{{mc.toggleText}}</span>
+</button>
+<sc-if value="{{mc.open}}" hint-placeholder-val="{{false}}">
+<div style="position: relative; height: 180px; flex-shrink: 0; border-radius: 24px; background: #F2F9D6; display: flex; align-items: center; justify-content: center; overflow: hidden">
+<div style="position: absolute; width: 210px; height: 210px; border-radius: 999px; background: #D2EE63; opacity: 0.6"></div>
+<div style="position: relative; display: flex; flex-direction: column; align-items: center; gap: 8px; color: #16201E"><svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg><span style="font-size: 18px; font-weight: 700">[Meal photo]</span></div>
+<span style="position: absolute; left: 14px; bottom: 14px; padding: 6px 14px; border-radius: 999px; background: #FFFFFF; font-size: 17px; font-weight: 700">{{mc.when}}</span>
+</div>
+<div style="{{mc.boxStyle}}">
+<svg style="flex-shrink: 0; color: currentColor" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>
+<div style="display: flex; flex-direction: column; gap: 6px; color: #16201E">
+<p style="margin: 0; font-size: 24px; line-height: 30px; font-weight: 700">{{mc.saltHead}}</p>
+<p style="margin: 0; font-size: 21px; line-height: 30px">{{mc.saltNote}}</p>
+</div>
+</div>
+<section style="display: flex; flex-direction: column; gap: 18px; padding: 22px; border-radius: 24px; background: #FFFFFF">
+<h3 style="margin: 0; font-size: 26px; line-height: 32px; font-weight: 700">In this meal</h3>
+<div role="group" aria-label="Show meal info as" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; padding: 5px; border-radius: 999px; background: #ECE9E2">
+<button type="button" onClick="{{mc.showVisual}}" aria-pressed="{{mc.visualAttr}}" style="{{mc.visualBtn}}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></svg>Visual</button>
+<button type="button" onClick="{{mc.showDetailed}}" aria-pressed="{{mc.detailedAttr}}" style="{{mc.detailedBtn}}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13"></path><path d="M8 12h13"></path><path d="M8 18h13"></path><path d="M3 6h.01"></path><path d="M3 12h.01"></path><path d="M3 18h.01"></path></svg>Detailed</button>
+</div>
+<sc-if value="{{mc.visual}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; flex-direction: column; gap: 18px">
+<div style="display: flex; flex-direction: column; align-items: center; gap: 10px; padding-top: 6px">
+<div data-anim="true" role="img" aria-label="{{mc.plateAria}}" style="position: relative; width: 250px; height: 250px; border-radius: 999px; background: #FFFFFF; box-shadow: 0 10px 24px rgba(22,32,30,0.16), inset 0 0 0 2px #E3DFD6; animation: vt-plate-in 600ms cubic-bezier(0.2, 0.8, 0.2, 1) both">
+<span style="position: absolute; inset: 14px; border-radius: 999px; box-shadow: inset 0 0 0 2px #ECE9E2"></span>
+<span style="{{mc.plateFill}}"></span>
+<span aria-hidden="true" style="{{mc.l0.style}}">{{mc.l0.t}}</span>
+<span aria-hidden="true" style="{{mc.l1.style}}">{{mc.l1.t}}</span>
+<span aria-hidden="true" style="{{mc.l2.style}}">{{mc.l2.t}}</span>
+</div>
+<span style="font-size: 20px; line-height: 26px; font-weight: 700">About {{mc.kcal}} calories</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; align-items: center; gap: 12px"><span style="width: 30px; height: 30px; flex-shrink: 0; border-radius: 8px; background: #D2EE63; box-shadow: inset 0 0 0 2px rgba(22,32,30,0.15)"></span><span style="flex: 1; display: flex; flex-direction: column"><span style="font-size: 21px; line-height: 26px; font-weight: 700">Carbs · {{mc.l0.t}} plate</span><span style="font-size: 18px; line-height: 24px; color: #5B605A">{{mc.carbs}}</span></span></div>
+<div style="display: flex; align-items: center; gap: 12px"><span style="width: 30px; height: 30px; flex-shrink: 0; border-radius: 8px; background: #F2785C"></span><span style="flex: 1; display: flex; flex-direction: column"><span style="font-size: 21px; line-height: 26px; font-weight: 700">Protein · {{mc.l1.t}} plate</span><span style="font-size: 18px; line-height: 24px; color: #5B605A">{{mc.protein}}</span></span></div>
+<div style="display: flex; align-items: center; gap: 12px"><span style="width: 30px; height: 30px; flex-shrink: 0; border-radius: 8px; background: #1F6FB2"></span><span style="flex: 1; display: flex; flex-direction: column"><span style="font-size: 21px; line-height: 26px; font-weight: 700">Fat · {{mc.l2.t}} plate</span><span style="font-size: 18px; line-height: 24px; color: #5B605A">{{mc.fat}}</span></span></div>
+</div>
+<div style="{{mc.saltRow}}">
+<span style="{{mc.saltIcon}}"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 11h8l-1.2 10H9.2z"></path><path d="M8 11a4 4 0 0 1 8 0"></path><path d="M11 5.5h.01"></path><path d="M13 5.5h.01"></path><path d="M12 3.5h.01"></path></svg></span>
+<span style="flex: 1; display: flex; flex-direction: column"><span style="font-size: 22px; line-height: 28px; font-weight: 700">Salt</span><span style="font-size: 18px; line-height: 24px">{{mc.mg}} · about {{mc.tsp}} teaspoon</span></span>
+<span style="{{mc.chip}}">{{mc.levelShort}}</span>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{mc.detailed}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 18px">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; justify-content: space-between; align-items: baseline; gap: 10px"><span style="font-size: 22px; font-weight: 700">Salt (sodium)</span><span style="font-size: 22px; font-weight: 700">{{mc.mg}}</span></div>
+<div role="img" aria-label="Salt level: {{mc.levelShort}}" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px">
+<span style="{{mc.seg0}}">Low</span><span style="{{mc.seg1}}">OK</span><span style="{{mc.seg2}}">High</span>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; justify-content: space-between; align-items: baseline; gap: 10px"><span style="font-size: 22px; font-weight: 700">Potassium</span><span style="font-size: 22px; font-weight: 700">{{mc.potassium}}</span></div>
+<div style="height: 20px; border-radius: 999px; background: #ECE9E2; overflow: hidden"><div style="{{mc.kBar}}"></div></div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; justify-content: space-between; align-items: baseline; gap: 10px"><span style="font-size: 22px; font-weight: 700">Phosphorus</span><span style="font-size: 22px; font-weight: 700">{{mc.phosphorus}}</span></div>
+<div style="height: 20px; border-radius: 999px; background: #ECE9E2; overflow: hidden"><div style="{{mc.pBar}}"></div></div>
+</div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding-top: 6px">
+<div style="display: flex; flex-direction: column; padding: 14px; border-radius: 14px; background: #ECE9E2"><span style="font-size: 18px; color: #5B605A">Calories</span><span style="font-size: 26px; font-weight: 700">{{mc.kcal}}</span></div>
+<div style="display: flex; flex-direction: column; padding: 14px; border-radius: 14px; background: #ECE9E2"><span style="font-size: 18px; color: #5B605A">Protein</span><span style="font-size: 26px; font-weight: 700">{{mc.proteinG}}</span></div>
+<div style="display: flex; flex-direction: column; padding: 14px; border-radius: 14px; background: #ECE9E2"><span style="font-size: 18px; color: #5B605A">Carbs</span><span style="font-size: 26px; font-weight: 700">{{mc.carbsG}}</span></div>
+<div style="display: flex; flex-direction: column; padding: 14px; border-radius: 14px; background: #ECE9E2"><span style="font-size: 18px; color: #5B605A">Fat</span><span style="font-size: 26px; font-weight: 700">{{mc.fatG}}</span></div>
+</div>
+</div>
+</sc-if>
+<p style="margin: 0; display: flex; align-items: center; gap: 8px; font-size: 18px; line-height: 24px; color: #5B605A"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>Estimates only</p>
+</section>
+</sc-if>
+</div>
+</sc-for>
+</section>
+
+<nav aria-label="Main menu" style="position: sticky; bottom: 0; z-index: 5; margin: auto -20px 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; padding: 8px 6px 4px; background: #FFFFFF; border-radius: 28px 28px 0 0; border-top: 1px solid #E3DFD6; box-shadow: 0 -6px 20px rgba(22,32,30,0.08)">
+<a href="Main.dc.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; height: 76px; border-radius: 20px; text-decoration: none; font-size: 15px; font-weight: 700; color: #16201E"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"></path></svg><span>Home</span></a>
+<a href="Fluid.dc.html" aria-current="page" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; height: 76px; border-radius: 20px; text-decoration: none; font-size: 15px; font-weight: 700; background: #7CC7FE; color: #16201E"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg><span>Track</span></a>
+<a href="Talk.dc.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; height: 76px; border-radius: 20px; text-decoration: none; font-size: 15px; font-weight: 700; color: #16201E"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8V4H8"></path><rect width="16" height="12" x="4" y="8" rx="2"></rect><path d="M2 14h2"></path><path d="M20 14h2"></path><path d="M15 13v2"></path><path d="M9 13v2"></path></svg><span>Ask AI</span></a>
+<a href="Medicines.dc.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; height: 76px; border-radius: 20px; text-decoration: none; font-size: 15px; font-weight: 700; letter-spacing: -0.01em; color: #16201E"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"></path><path d="m8.5 8.5 7 7"></path></svg><span>Medicine</span></a>
+<a href="Calendar.dc.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; height: 76px; border-radius: 20px; text-decoration: none; font-size: 15px; font-weight: 700; color: #16201E"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="3" width="7" height="7" rx="1.5"></rect><rect x="3" y="14" width="7" height="7" rx="1.5"></rect><rect x="14" y="14" width="7" height="7" rx="1.5"></rect></svg><span>More</span></a>
+</nav>
+<div data-statusbar="true" aria-hidden="true" style="position: sticky; top: 0; z-index: 6; align-self: stretch; margin: -28px -20px -6px; height: 54px; padding: 0 22px; box-sizing: border-box; align-items: center; justify-content: space-between; background: #F5F3EE; color: #16201E; font-size: 17px; line-height: 22px; font-weight: 600"><span style="width: 92px; text-align: center">9:41</span><span style="width: 124px; height: 36px; border-radius: 999px; background: #000000"></span><span style="width: 92px; display: flex; align-items: center; justify-content: center; gap: 6px"><svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor" aria-hidden="true"><rect x="0" y="8" width="3" height="4" rx="1"></rect><rect x="5" y="5.5" width="3" height="6.5" rx="1"></rect><rect x="10" y="3" width="3" height="9" rx="1"></rect><rect x="15" y="0" width="3" height="12" rx="1"></rect></svg><svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M1.5 4.2a9.5 9.5 0 0 1 13 0"></path><path d="M4.2 7.1a5.6 5.6 0 0 1 7.6 0"></path><circle cx="8" cy="10.2" r="1.4" fill="currentColor" stroke="none"></circle></svg><svg width="27" height="13" viewBox="0 0 27 13" fill="none" aria-hidden="true"><rect x="0.5" y="0.5" width="23" height="12" rx="3.5" stroke="currentColor" opacity="0.45"></rect><rect x="2.5" y="2.5" width="19" height="8" rx="2" fill="currentColor"></rect><path d="M25 4.5v4c.8-.3 1.5-1.1 1.5-2s-.7-1.7-1.5-2z" fill="currentColor" opacity="0.45"></path></svg></span></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":2600}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { view: 'visual', scanning: false, lastOpen: false, risen: false, mealsOpen: false, meals: null }; }
+  componentDidMount() {
+    const go = () => { this.t3 = setTimeout(() => this.setState({ risen: true }), 80); };
+    if (window.VentraRecord) go(); else this._vr = setInterval(() => { if (window.VentraRecord) { clearInterval(this._vr); go(); } }, 50);
+  }
+  componentWillUnmount() { clearTimeout(this.t); clearTimeout(this.t2); clearTimeout(this.t3); clearInterval(this._vr); }
+  snap() {
+    if (this.state.scanning) return;
+    this.setState({ scanning: true });
+    this.t = setTimeout(() => {
+      const R = window.VentraRecord, cur = this.state.meals || (R ? R.data.mealsToday : []), d = R && R.data.demoScan;
+      const add = d && !cur.some((m) => m.meal === d.meal);
+      this.setState({ scanning: false, meals: add ? cur.concat([d]) : cur, openKeys: d ? { [d.meal + d.t]: true } : {} });
+      this.t2 = setTimeout(() => { const el = document.querySelector('[data-meal-result]'); if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 60);
+    }, 2200);
+  }
+  renderVals() {
+    const v = this.state.view === 'visual', s = this.state.scanning;
+    const seg = (on) => ({ height: '56px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', borderRadius: '999px', fontSize: '20px', fontWeight: 700, background: on ? '#FFFFFF' : 'transparent', color: on ? '#16201E' : '#5B605A', border: on ? '2.5px solid #16201E' : '2.5px solid transparent', boxShadow: on ? '0 2px 6px rgba(22,32,30,0.12)' : 'none' });
+    const R = window.VentraRecord;
+    const open = this.state.lastOpen;
+    const lastVals = { lastOpen: open, lastOpenAttr: open ? 'true' : 'false', lastLabel: open ? 'Hide' : 'Show',
+      toggleLast: () => this.setState({ lastOpen: !this.state.lastOpen }),
+      chevStyle: { width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '999px', background: open ? '#16201E' : '#E6F0FB', color: open ? '#FFFFFF' : '#1F6FB2', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 200ms ease-out' } };
+    let saltVals = {};
+    if (R) {
+      const meals = this.state.meals || R.data.mealsToday;
+      const LIM = R.targets.sodiumMg, F = R.fmt, used = meals.reduce((t, m) => t + m.sodiumMg, 0), left = Math.max(LIM - used, 0), ratio = Math.min(used / LIM, 1.08);
+      // Bowl: bottom y=150, limit line y=82. Salt surface sits between them.
+      const surface = 150 - ratio * (150 - 82);
+      saltVals = {
+        saltY: surface.toFixed(1),
+        saltMove: { transform: this.state.risen ? 'translateY(0)' : 'translateY(' + (150 - surface + 6).toFixed(0) + 'px)', transition: 'transform 1300ms cubic-bezier(0.34, 1.12, 0.64, 1) 250ms' },
+        spoonStyle: { opacity: this.state.risen ? 1 : 0, transition: 'opacity 300ms ease-out' },
+        bowlAria: 'Bowl of salt, ' + Math.round(used / LIM * 100) + ' percent of the way to the limit line',
+        foodLog: meals.slice().reverse().map((m) => ({ t: m.t, what: m.what, mgText: F.num(m.sodiumMg) + ' mg' })),
+        undoMeal: () => this.setState({ meals: meals.slice(0, -1) }),
+        saltLeft: F.num(left), saltUsed: F.num(used) + ' of ' + F.num(LIM) + ' mg eaten'
+      };
+    }
+
+    // One expandable card per meal scanned today, newest first.
+    let scannedVals = { scanned: [] };
+    if (R) {
+      const F = R.fmt, meals = this.state.meals || R.data.mealsToday, LIM = R.targets.sodiumMg;
+      const level = (mg) => mg >= 800 ? 'high' : mg >= 600 ? 'medium' : 'low';
+      const frac = (f) => ({ 0.125: '⅛', 0.25: '¼', 0.5: '½', 0.75: '¾' })[f] || Math.round(f * 100) + '%';
+      const tsp = (mg) => { const r = mg / 2667; return r < 0.3 ? '¼' : r < 0.6 ? '½' : r < 0.85 ? '¾' : '1'; };
+      const C = ['#D2EE63', '#F2785C', '#1F6FB2'], LABC = ['#16201E', '#16201E', '#FFFFFF'];
+      const T = { high: { word: 'High salt', short: 'High', head: 'High in salt', ink: '#B83A26', box: '#FDF2D8', edge: '#8A5B00', row: '#FCE4DE' },
+                  medium: { word: 'Some salt', short: 'OK', head: 'Some salt', ink: '#8A5B00', box: '#FDF2D8', edge: '#8A5B00', row: '#FDF2D8' },
+                  low: { word: 'Low salt', short: 'Low', head: 'Low in salt', ink: '#1B6F45', box: '#DDF1E5', edge: '#1B6F45', row: '#DDF1E5' } };
+      const openKeys = this.state.openKeys || {};
+      const seg = (on, i, lv) => ({ height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: i === 0 ? '12px 0 0 12px' : i === 2 ? '0 12px 12px 0' : '0', fontSize: '18px', fontWeight: 700, background: on ? T[lv].ink : '#ECE9E2', color: on ? '#FFFFFF' : '#5B605A' });
+      const vseg = (on) => ({ height: '56px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', borderRadius: '999px', border: 0, fontSize: '20px', fontWeight: 700, background: on ? '#FFFFFF' : 'transparent', color: '#16201E', boxShadow: on ? '0 2px 6px rgba(22,32,30,0.14)' : 'none' });
+      scannedVals.scanned = meals.slice().reverse().map((m, idx) => {
+        const key = m.meal + m.t, open = !!openKeys[key], lv = level(m.sodiumMg), t = T[lv];
+        const view = (this.state.views || {})[key] || 'visual', vis = view === 'visual';
+        const setView = (v) => this.setState({ views: { ...(this.state.views || {}), [key]: v } });
+        // Plate: conic slices with thin white gaps; labels sit at each slice's middle angle.
+        let acc = 0; const stops = [], labels = [];
+        m.plate.forEach((f, i) => {
+          const a0 = acc * 100, a1 = (acc + f) * 100;
+          stops.push(C[i] + ' ' + (a0 + 0.6).toFixed(1) + '% ' + (a1 - 0.6).toFixed(1) + '%', '#FFFFFF ' + (a1 - 0.6).toFixed(1) + '% ' + a1.toFixed(1) + '%');
+          const mid = (acc + f / 2) * 2 * Math.PI, r = f < 0.2 ? 70 : 58;
+          labels.push({ t: frac(f), style: { position: 'absolute', left: (125 + r * Math.sin(mid) - 24).toFixed(0) + 'px', top: (125 - r * Math.cos(mid) - 24).toFixed(0) + 'px', width: '48px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: f < 0.2 ? '22px' : '28px', fontWeight: 700, color: LABC[i] } });
+          acc += f;
+        });
+        return {
+          first: idx === 0 ? 'true' : 'false', open, openAttr: open ? 'true' : 'false', toggleText: open ? 'Hide' : 'Show',
+          toggle: () => this.setState({ openKeys: { ...(this.state.openKeys || {}), [key]: !open } }),
+          chev: { width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '999px', background: open ? '#16201E' : '#E6F0FB', color: open ? '#FFFFFF' : '#1F6FB2', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 200ms ease-out' },
+          when: m.meal + ' · ' + m.t, what: m.what, mg: F.num(m.sodiumMg) + ' mg', tsp: tsp(m.sodiumMg),
+          levelWord: t.word, levelShort: t.short, levelStyle: { fontSize: '17px', lineHeight: '22px', fontWeight: 700, color: t.ink },
+          saltHead: t.head + ' — about ' + tsp(m.sodiumMg) + ' teaspoon',
+          saltNote: 'That is ' + Math.round(m.sodiumMg / LIM * 100) + '% of your day. ' + m.tip,
+          boxStyle: { display: 'flex', gap: '14px', padding: '20px', borderRadius: '24px', background: t.box, border: '3px solid ' + t.edge, color: t.edge },
+          visual: vis, detailed: !vis, visualAttr: vis ? 'true' : 'false', detailedAttr: vis ? 'false' : 'true',
+          visualBtn: vseg(vis), detailedBtn: vseg(!vis), showVisual: () => setView('visual'), showDetailed: () => setView('detailed'),
+          plateFill: { position: 'absolute', left: '30px', top: '30px', width: '190px', height: '190px', borderRadius: '999px', background: 'conic-gradient(' + stops.join(', ') + ')', boxShadow: 'inset 0 3px 8px rgba(22,32,30,0.18)' },
+          l0: labels[0], l1: labels[1], l2: labels[2],
+          plateAria: 'Plate chart: carbs ' + labels[0].t + ', protein ' + labels[1].t + ', fat ' + labels[2].t + ' of the plate',
+          kcal: String(m.kcal),
+          carbs: m.carbs.what + ' · ' + m.carbs.g + ' g', protein: m.protein.what + ' · ' + m.protein.g + ' g', fat: m.fat.what + ' · ' + m.fat.g + ' g',
+          carbsG: m.carbs.g + ' g', proteinG: m.protein.g + ' g', fatG: m.fat.g + ' g',
+          saltRow: { display: 'flex', alignItems: 'center', gap: '14px', padding: '16px', borderRadius: '20px', background: t.row },
+          saltIcon: { width: '56px', height: '56px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '999px', background: t.ink, color: '#FFFFFF' },
+          chip: { padding: '6px 14px', borderRadius: '999px', background: t.ink, color: '#FFFFFF', fontSize: '18px', lineHeight: '24px', fontWeight: 700 },
+          seg0: seg(lv === 'low', 0, lv), seg1: seg(lv === 'medium', 1, lv), seg2: seg(lv === 'high', 2, lv),
+          potassium: F.num(m.potassiumMg) + ' mg', phosphorus: F.num(m.phosphorusMg) + ' mg',
+          kBar: { width: Math.min(m.potassiumMg / 1600 * 100, 100) + '%', height: '100%', borderRadius: '999px', background: '#1F6FB2' },
+          pBar: { width: Math.min(m.phosphorusMg / 900 * 100, 100) + '%', height: '100%', borderRadius: '999px', background: '#1F6FB2' }
+        };
+      });
+    }
+    return {
+      ...lastVals, ...saltVals, ...scannedVals,
+      visual: v, detailed: !v,
+      showVisual: () => this.setState({ view: 'visual' }),
+      showDetailed: () => this.setState({ view: 'detailed' }),
+      visualBtn: seg(v), detailedBtn: seg(!v),
+      snap: () => this.snap(),
+      snapLabel: s ? 'Checking the salt…' : 'Take a photo',
+      snapBtn: { height: '72px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', borderRadius: '999px', border: 0, fontSize: '24px', fontWeight: 700, background: s ? '#D2EE63' : '#7CC7FE', color: '#16201E', transition: 'background 200ms ease-out' }
+    };
+  }
+}
+</script>
+</body>
+</html>

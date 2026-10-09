@@ -1,0 +1,15 @@
+# Ventra — rules for every CodeBuddy session
+- Monorepo: apps/web (React+Vite+TS PWA), apps/api (Fastify+TS), packages/core (pure TS + Vitest).
+- ALL numbers shown in the UI come from packages/core via GET /api/metrics. Never hard-code a number in a screen.
+- Store raw events only. Never store derived values (adherence %, streaks).
+- Every table row and every API call is scoped to the logged-in patient_id. A patient can never read another patient's data.
+- Alert zones (green/yellow/red) are decided ONLY by packages/core/rules.ts. Never by an LLM.
+- AI must never advise changing, skipping, doubling or re-timing a medicine. Route to the nurse.
+- Taken doses are locked: no update/delete endpoint.
+- Family sharing keys alerts/status/meds are always on. Daily family summary is always on (10 PM Asia/Singapore, skipped if sent manually that day).
+- Every screen after login has the red SOS button (phone icon) linking to the emergency chooser.
+- Accessibility: touch targets >= 64px, body text >= 19px, contrast >= 4.5:1, aria labels on icon buttons, respect prefers-reduced-motion.
+- Design source of truth: design/*.dc.html (see design/INDEX.md). Match colours, sizes and copy exactly.
+- Validate every request and every AI JSON with zod. Never trust client or AI output.
+- Write a Vitest test for every rule and every metric.
+- Never print, log or commit secrets from .env.

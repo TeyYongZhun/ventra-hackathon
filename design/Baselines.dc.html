@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Ventra — Clinical baselines</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500&amp;family=Instrument+Sans:wght@400..700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F5F3EE}
+a{color:#1F6FB2}a:hover{color:#175A92}
+button,input{font-family:inherit}
+[data-statusbar]{display:none}
+@media (min-width:560px) and (min-height:640px){
+body{background:#DCD8CF !important;overflow:hidden}
+body::before{content:"";position:fixed;inset:0;margin:auto;width:424px;height:min(844px,calc(100vh - 56px));pointer-events:none;background:linear-gradient(#2B3331,#2B3331) left 0 top 112px/4px 32px no-repeat,linear-gradient(#2B3331,#2B3331) left 0 top 170px/4px 62px no-repeat,linear-gradient(#2B3331,#2B3331) left 0 top 246px/4px 62px no-repeat,linear-gradient(#2B3331,#2B3331) right 0 top 196px/4px 98px no-repeat}
+body::after{content:"";position:fixed;left:50%;bottom:calc((100vh - min(844px,calc(100vh - 56px))) / 2 + 8px);width:134px;height:5px;margin-left:-67px;border-radius:999px;background:#16201E;z-index:20;pointer-events:none}
+div:has(> [data-statusbar]){position:fixed !important;inset:0 !important;margin:auto !important;height:min(844px,calc(100vh - 56px)) !important;min-height:0 !important;overflow-x:hidden !important;overflow-y:auto !important;border-radius:54px;box-shadow:0 0 0 11px #16201E,0 0 0 13px #4A5250,0 30px 80px rgba(22,32,30,0.35);scrollbar-width:none}
+div:has(> [data-statusbar])::-webkit-scrollbar{display:none}
+div:has(> [data-statusbar]) > *{flex-shrink:0 !important}
+[data-statusbar]{display:flex;order:-1;margin-top:0 !important}
+div:has(> [data-statusbar]){padding-top:0 !important}
+nav[aria-label="Main menu"]{padding-bottom:26px !important}
+[data-overlay]{position:fixed !important;inset:0 !important;margin:auto;width:390px;height:min(844px,calc(100vh - 56px));border-radius:54px;overflow:hidden;z-index:30}
+}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; min-height: 100vh; margin: 0 auto; box-sizing: border-box; padding: 28px 20px 32px; display: flex; flex-direction: column; gap: 22px; background: #F5F3EE; color: #16201E; font-family: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif; font-variant-numeric: tabular-nums; overflow-x: clip">
+
+<header style="display: flex; align-items: center; gap: 14px">
+<a href="Setup.dc.html" aria-label="Back" style="width: 64px; height: 64px; flex-shrink: 0; box-sizing: border-box; display: flex; align-items: center; justify-content: center; border-radius: 999px; background: #FFFFFF; color: #16201E; border: 2.5px solid #16201E"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg></a>
+<span style="display: flex; align-items: center; gap: 10px; height: 48px; padding: 0 18px; border-radius: 999px; background: #7CC7FE; color: #16201E; font-size: 19px; font-weight: 700"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>Clinic staff only</span>
+</header>
+
+<div style="display: flex; flex-direction: column; gap: 10px">
+<span style="font-size: 20px; line-height: 26px; font-weight: 700; color: #5B605A">Step 3 of 9</span>
+<h1 style="margin: 0; font-size: 38px; line-height: 44px; font-weight: 700; letter-spacing: -0.02em">Patient's numbers</h1>
+<p style="margin: 0; font-size: 20px; line-height: 28px; color: #5B605A">The care team fills this in. The patient can see these numbers but cannot change them.</p>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 22px; padding: 22px; border-radius: 24px; background: #FFFFFF">
+<div style="display: flex; flex-direction: column; gap: 10px">
+<label for="dry" style="font-size: 22px; line-height: 28px; font-weight: 700">Dry weight</label>
+<div style="display: flex; align-items: center; gap: 12px"><input id="dry" inputmode="decimal" value="58.0" style="flex: 1; min-width: 0; height: 68px; box-sizing: border-box; padding: 0 18px; border-radius: 14px; border: 2.5px solid #16201E; background: #FFFFFF; color: #16201E; font-size: 26px; font-weight: 600"><span style="width: 44px; font-size: 22px; font-weight: 600">kg</span></div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px">
+<label for="fluid" style="font-size: 22px; line-height: 28px; font-weight: 700">Drink limit per day</label>
+<div style="display: flex; align-items: center; gap: 12px"><input id="fluid" inputmode="numeric" value="1500" style="flex: 1; min-width: 0; height: 68px; box-sizing: border-box; padding: 0 18px; border-radius: 14px; border: 2.5px solid #16201E; background: #FFFFFF; color: #16201E; font-size: 26px; font-weight: 600"><span style="width: 44px; font-size: 22px; font-weight: 600">ml</span></div>
+</div>
+<fieldset style="margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: 10px">
+<legend style="padding: 0 0 10px; font-size: 22px; line-height: 28px; font-weight: 700">Warn when weight goes up by</legend>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+<label style="display: flex; flex-direction: column; gap: 8px; font-size: 19px; font-weight: 600; color: #5B605A">kg<input inputmode="decimal" value="2.0" style="height: 68px; box-sizing: border-box; padding: 0 18px; border-radius: 14px; border: 2.5px solid #16201E; background: #FFFFFF; color: #16201E; font-size: 26px; font-weight: 600"></label>
+<label style="display: flex; flex-direction: column; gap: 8px; font-size: 19px; font-weight: 600; color: #5B605A">in days<input inputmode="numeric" value="3" style="height: 68px; box-sizing: border-box; padding: 0 18px; border-radius: 14px; border: 2.5px solid #16201E; background: #FFFFFF; color: #16201E; font-size: 26px; font-weight: 600"></label>
+</div>
+</fieldset>
+<div style="display: flex; flex-direction: column; gap: 10px">
+<label for="hotline" style="font-size: 22px; line-height: 28px; font-weight: 700">HF Nurse phone</label>
+<input id="hotline" inputmode="tel" placeholder="[Nurse hotline]" style="height: 68px; box-sizing: border-box; padding: 0 18px; border-radius: 14px; border: 2.5px solid #16201E; background: #FFFFFF; color: #16201E; font-size: 24px">
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px">
+<label for="doctor" style="font-size: 22px; line-height: 28px; font-weight: 700">Doctor's name</label>
+<input id="doctor" value="Dr Lim" style="height: 68px; box-sizing: border-box; padding: 0 18px; border-radius: 14px; border: 2.5px solid #16201E; background: #FFFFFF; color: #16201E; font-size: 24px">
+</div>
+</div>
+
+<div style="display: flex; gap: 14px; padding: 18px; border-radius: 14px; background: #FDF2D8; border: 3px solid #8A5B00">
+<svg style="flex-shrink: 0; color: #8A5B00" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>
+<p style="margin: 0; font-size: 20px; line-height: 28px">The patient will see: <strong>"Call the nurse if you gain more than 2 kg in 3 days."</strong></p>
+</div>
+
+<div style="flex: 1"></div>
+<a href="Thermos.dc.html" style="height: 76px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-radius: 999px; background: #7CC7FE; color: #16201E; text-decoration: none; font-size: 26px; font-weight: 700">Save and next</a>
+<div data-statusbar="true" aria-hidden="true" style="position: sticky; top: 0; z-index: 6; align-self: stretch; margin: -28px -20px -6px; height: 54px; padding: 0 22px; box-sizing: border-box; align-items: center; justify-content: space-between; background: #F5F3EE; color: #16201E; font-size: 17px; line-height: 22px; font-weight: 600"><span style="width: 92px; text-align: center">9:41</span><span style="width: 124px; height: 36px; border-radius: 999px; background: #000000"></span><span style="width: 92px; display: flex; align-items: center; justify-content: center; gap: 6px"><svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor" aria-hidden="true"><rect x="0" y="8" width="3" height="4" rx="1"></rect><rect x="5" y="5.5" width="3" height="6.5" rx="1"></rect><rect x="10" y="3" width="3" height="9" rx="1"></rect><rect x="15" y="0" width="3" height="12" rx="1"></rect></svg><svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M1.5 4.2a9.5 9.5 0 0 1 13 0"></path><path d="M4.2 7.1a5.6 5.6 0 0 1 7.6 0"></path><circle cx="8" cy="10.2" r="1.4" fill="currentColor" stroke="none"></circle></svg><svg width="27" height="13" viewBox="0 0 27 13" fill="none" aria-hidden="true"><rect x="0.5" y="0.5" width="23" height="12" rx="3.5" stroke="currentColor" opacity="0.45"></rect><rect x="2.5" y="2.5" width="19" height="8" rx="2" fill="currentColor"></rect><path d="M25 4.5v4c.8-.3 1.5-1.1 1.5-2s-.7-1.7-1.5-2z" fill="currentColor" opacity="0.45"></path></svg></span></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1600}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

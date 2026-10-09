@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Ventra — Summary for my family</title>
+<script src="./support.js"></script>
+<script src="./ventra-record.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500&amp;family=Instrument+Sans:wght@400..700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F5F3EE}
+a{color:#1F6FB2}a:hover{color:#175A92}
+button{font-family:inherit;cursor:pointer}
+[data-statusbar]{display:none}
+@media (min-width:560px) and (min-height:640px){
+body{background:#DCD8CF !important;overflow:hidden}
+body::before{content:"";position:fixed;inset:0;margin:auto;width:424px;height:min(844px,calc(100vh - 56px));pointer-events:none;background:linear-gradient(#2B3331,#2B3331) left 0 top 112px/4px 32px no-repeat,linear-gradient(#2B3331,#2B3331) left 0 top 170px/4px 62px no-repeat,linear-gradient(#2B3331,#2B3331) left 0 top 246px/4px 62px no-repeat,linear-gradient(#2B3331,#2B3331) right 0 top 196px/4px 98px no-repeat}
+body::after{content:"";position:fixed;left:50%;bottom:calc((100vh - min(844px,calc(100vh - 56px))) / 2 + 8px);width:134px;height:5px;margin-left:-67px;border-radius:999px;background:#16201E;z-index:20;pointer-events:none}
+div:has(> [data-statusbar]){position:fixed !important;inset:0 !important;margin:auto !important;height:min(844px,calc(100vh - 56px)) !important;min-height:0 !important;overflow-x:hidden !important;overflow-y:auto !important;border-radius:54px;box-shadow:0 0 0 11px #16201E,0 0 0 13px #4A5250,0 30px 80px rgba(22,32,30,0.35);scrollbar-width:none}
+div:has(> [data-statusbar])::-webkit-scrollbar{display:none}
+div:has(> [data-statusbar]) > *{flex-shrink:0 !important}
+[data-statusbar]{display:flex;order:-1;margin-top:0 !important}
+div:has(> [data-statusbar]){padding-top:0 !important}
+nav[aria-label="Main menu"]{padding-bottom:26px !important}
+[data-overlay]{position:fixed !important;inset:0 !important;margin:auto;width:390px;height:min(844px,calc(100vh - 56px));border-radius:54px;overflow:hidden;z-index:30}
+}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; min-height: 100vh; margin: 0 auto; box-sizing: border-box; padding: 28px 20px 0; display: flex; flex-direction: column; gap: 22px; background: #F5F3EE; color: #16201E; font-family: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif; font-variant-numeric: tabular-nums; overflow-x: clip">
+
+<header style="display: flex; align-items: center; gap: 12px">
+<a href="Main.dc.html" aria-label="Back to home" style="width: 64px; height: 64px; flex-shrink: 0; box-sizing: border-box; display: flex; align-items: center; justify-content: center; border-radius: 999px; background: #FFFFFF; color: #16201E; border: 2.5px solid #16201E"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg></a>
+<h1 style="flex: 1; margin: 0; font-size: 30px; line-height: 36px; font-weight: 700; letter-spacing: -0.02em">Summary for my family</h1>
+<a href="EmergencyChoose.dc.html" aria-label="SOS — get emergency help" style="height: 64px; padding: 0 16px; margin-left: auto; flex-shrink: 0; display: flex; align-items: center; gap: 8px; border-radius: 999px; background: #B83A26; color: #FFFFFF; text-decoration: none; font-size: 21px; font-weight: 700"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>SOS</a>
+</header>
+
+<section aria-label="Preview" style="display: flex; flex-direction: column; gap: 12px; padding: 22px; border-radius: 24px; background: #F2F9D6; border: 3px solid #16201E">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 10px">
+<span style="font-size: 22px; font-weight: 700">What Mei Ling will get</span>
+<span style="padding: 4px 12px; border-radius: 8px; background: #FFFFFF; font-size: 16px; font-weight: 700">PREVIEW</span>
+</div>
+<sc-if value="{{noneOn}}" hint-placeholder-val="{{false}}">
+<p style="margin: 0; font-size: 20px; line-height: 28px">Nothing is shared yet. Turn on what you'd like Mei Ling to see below.</p>
+</sc-if>
+<sc-for list="{{previewLines}}" as="l" hint-placeholder-count="3">
+<div style="display: flex; gap: 10px; font-size: 20px; line-height: 28px"><span style="font-weight: 700; min-width: 108px">{{l.k}}</span><span>{{l.v}}</span></div>
+</sc-for>
+</section>
+
+<section aria-label="What Mei Ling can see" style="display: flex; flex-direction: column; padding: 8px 20px; border-radius: 24px; background: #FFFFFF">
+<h2 style="margin: 0; padding: 12px 0 8px; font-size: 24px; line-height: 30px; font-weight: 700">What Mei Ling can see</h2>
+<sc-for list="{{rows}}" as="r" hint-placeholder-count="6">
+<div style="display: flex; align-items: center; gap: 14px; min-height: 84px; border-top: 2px solid #E3DFD6">
+<span style="flex: 1; display: flex; flex-direction: column"><span style="font-size: 21px; line-height: 28px; font-weight: 700">{{r.label}}</span><span style="font-size: 17px; line-height: 24px; color: #5B605A">{{r.sub}}</span><span style="{{r.stateStyle}}">{{r.state}}</span></span>
+<sc-if value="{{r.unlocked}}" hint-placeholder-val="{{true}}"><button type="button" onClick="{{r.toggle}}" aria-pressed="{{r.on}}" aria-label="{{r.label}}" style="{{r.track}}"><span style="{{r.thumb}}"></span></button></sc-if>
+<sc-if value="{{r.locked}}" hint-placeholder-val="{{false}}"><span role="img" aria-label="{{r.lockAria}}" style="position: relative; width: 84px; height: 50px; flex-shrink: 0; box-sizing: border-box; border-radius: 999px; background: #B9DDF8; border: 3px solid #5B605A"><span style="position: absolute; top: 4px; left: 38px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 999px; background: #5B605A; color: #FFFFFF"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg></span></span></sc-if>
+</div>
+</sc-for>
+</section>
+
+<button type="button" onClick="{{send}}" style="min-height: 80px; display: flex; align-items: center; justify-content: center; gap: 12px; border-radius: 999px; border: 0; background: #7CC7FE; color: #16201E; font-size: 24px; font-weight: 700"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m22 2-7 20-4-9-9-4Z"></path><path d="M22 2 11 13"></path></svg>Send today's summary now</button>
+<sc-if value="{{sent}}" hint-placeholder-val="{{false}}">
+<p style="margin: -8px 0 0; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 20px; font-weight: 700; color: #1B6F45"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>Sent to {{famName}}</p>
+</sc-if>
+<p style="margin: -6px 0 0; display: flex; align-items: flex-start; justify-content: center; gap: 8px; font-size: 19px; line-height: 26px; font-weight: 600; text-align: center; color: #16201E"><svg style="flex-shrink: 0; margin-top: 1px; color: #1F6FB2" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg><span>{{autoNote}}</span></p>
+<p style="margin: 0; font-size: 19px; line-height: 27px; color: #5B605A">Alerts, status and medicines are always shared for your safety. You choose the rest, and can change it any time.</p>
+
+<nav aria-label="Main menu" style="position: sticky; bottom: 0; z-index: 5; margin: auto -20px 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; padding: 8px 6px 4px; background: #FFFFFF; border-radius: 28px 28px 0 0; border-top: 1px solid #E3DFD6; box-shadow: 0 -6px 20px rgba(22,32,30,0.08)">
+<a href="Main.dc.html" aria-current="page" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; height: 76px; border-radius: 20px; text-decoration: none; font-size: 15px; font-weight: 700; background: #7CC7FE; color: #16201E"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"></path></svg><span>Home</span></a>
+<a href="Fluid.dc.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; height: 76px; border-radius: 20px; text-decoration: none; font-size: 15px; font-weight: 700; color: #16201E"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg><span>Track</span></a>
+<a href="Talk.dc.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; height: 76px; border-radius: 20px; text-decoration: none; font-size: 15px; font-weight: 700; color: #16201E"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8V4H8"></path><rect width="16" height="12" x="4" y="8" rx="2"></rect><path d="M2 14h2"></path><path d="M20 14h2"></path><path d="M15 13v2"></path><path d="M9 13v2"></path></svg><span>Ask AI</span></a>
+<a href="Medicines.dc.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; height: 76px; border-radius: 20px; text-decoration: none; font-size: 15px; font-weight: 700; letter-spacing: -0.01em; color: #16201E"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"></path><path d="m8.5 8.5 7 7"></path></svg><span>Medicine</span></a>
+<a href="Calendar.dc.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; height: 76px; border-radius: 20px; text-decoration: none; font-size: 15px; font-weight: 700; color: #16201E"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="3" width="7" height="7" rx="1.5"></rect><rect x="3" y="14" width="7" height="7" rx="1.5"></rect><rect x="14" y="14" width="7" height="7" rx="1.5"></rect></svg><span>More</span></a>
+</nav>
+<div data-statusbar="true" aria-hidden="true" style="position: sticky; top: 0; z-index: 6; align-self: stretch; margin: -28px -20px -6px; height: 54px; padding: 0 22px; box-sizing: border-box; align-items: center; justify-content: space-between; background: #F5F3EE; color: #16201E; font-size: 17px; line-height: 22px; font-weight: 600"><span style="width: 92px; text-align: center">9:41</span><span style="width: 124px; height: 36px; border-radius: 999px; background: #000000"></span><span style="width: 92px; display: flex; align-items: center; justify-content: center; gap: 6px"><svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor" aria-hidden="true"><rect x="0" y="8" width="3" height="4" rx="1"></rect><rect x="5" y="5.5" width="3" height="6.5" rx="1"></rect><rect x="10" y="3" width="3" height="9" rx="1"></rect><rect x="15" y="0" width="3" height="12" rx="1"></rect></svg><svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M1.5 4.2a9.5 9.5 0 0 1 13 0"></path><path d="M4.2 7.1a5.6 5.6 0 0 1 7.6 0"></path><circle cx="8" cy="10.2" r="1.4" fill="currentColor" stroke="none"></circle></svg><svg width="27" height="13" viewBox="0 0 27 13" fill="none" aria-hidden="true"><rect x="0.5" y="0.5" width="23" height="12" rx="3.5" stroke="currentColor" opacity="0.45"></rect><rect x="2.5" y="2.5" width="19" height="8" rx="2" fill="currentColor"></rect><path d="M25 4.5v4c.8-.3 1.5-1.1 1.5-2s-.7-1.7-1.5-2z" fill="currentColor" opacity="0.45"></path></svg></span></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1900}}'>
+class Component extends DCLogic {
+  componentDidMount() { if (!window.VentraRecord) { this._vr = setInterval(() => { if (window.VentraRecord) { clearInterval(this._vr); this.forceUpdate(); } }, 50); } }
+  constructor(p) { super(p); this.state = { share: { alerts: true, status: true, weight: false, meds: true, water: false, symptoms: false }, sent: false }; }
+  renderVals() {
+    const sh = this.state.share;
+    const R = window.VentraRecord; if (!R) return {};
+    const F = R.fmt, pt = R.pillsToday(), symT = R.symptomsOn(R.today), alT = R.alertOn(R.today);
+    const defs = [
+      ['alerts', 'Yellow and red alerts', 'Straight away, when they happen', 'Alerts', alT ? 'Yellow alert today' : 'None today'],
+      ['status', "Today's status", 'Green, yellow or red', 'Status', alT ? 'Yellow — call the nurse' : 'Green — on track'],
+      ['weight', 'My weight', "This morning's number", 'Weight', F.kg(R.weightToday) + ' (' + R.weightWord().toLowerCase() + ')'],
+      ['meds', 'My medicines', 'Taken or missed', 'Medicines', pt.taken + ' of ' + pt.total + ' taken' + (pt.next ? ' · ' + pt.nextTime + ' still to take' : '')],
+      ['water', 'My drinks', 'How much I drank', 'Drinks', F.num(R.fluidOn(R.today)) + ' of ' + F.num(R.targets.fluidMl) + ' ml'],
+      ['symptoms', 'How I feel', 'What I logged today', 'How I feel', symT.length ? symT.map((x) => R.sym[x.key].label).join(', ') : 'Nothing logged yet']
+    ];
+    const LOCKED = { alerts: true, status: true, meds: true };  // always shared, for safety
+    const rows = defs.map(([k, label, sub]) => {
+      const locked = !!LOCKED[k];
+      const on = locked || !!sh[k];
+      return { label, sub, on, locked, unlocked: !locked, lockAria: label + ': always shared for your safety. This cannot be turned off.',
+        state: locked ? 'Always shared · for your safety' : on ? 'Sharing' : 'Not shared',
+        stateStyle: { fontSize: '17px', fontWeight: 700, color: locked ? '#4A4F49' : on ? '#1F6FB2' : '#5B605A' },
+        toggle: () => { if (locked) return; this.setState({ share: { ...sh, [k]: !on }, sent: false }); },
+        track: { position: 'relative', width: '84px', height: '50px', flexShrink: 0, borderRadius: '999px', padding: 0, background: on ? '#7CC7FE' : '#FFFFFF', border: '3px solid #16201E' },
+        thumb: { position: 'absolute', top: '4px', left: on ? '38px' : '4px', width: '36px', height: '36px', borderRadius: '999px', background: '#16201E', transition: 'left 200ms ease-out' } };
+    });
+    const previewLines = defs.filter(([k]) => LOCKED[k] || sh[k]).map(([, , , pk, pv]) => ({ k: pk, v: pv }));
+    return { famName: R.patient.family.name, autoNote: this.state.sent ? 'Sent for today. Tonight’s 10 PM summary is skipped.' : 'If you don’t tap it, we’ll send it automatically at 10 PM every night.', rows, previewLines, noneOn: previewLines.length === 0, sent: this.state.sent, send: () => this.setState({ sent: true }) };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Ventra — Heart failure self-care summary</title>
+<script src="./support.js"></script>
+<script src="./ventra-record.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500&amp;family=Instrument+Sans:wght@400..700&amp;display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;background:#FFFFFF}
+a{color:#1F6FB2}a:hover{color:#175A92}
+</style>
+</helmet>
+<div style="width: 794px; box-sizing: border-box; padding: 72px; display: flex; flex-direction: column; gap: 36px; background: #FFFFFF; color: #16201E; font-family: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif; font-size: 16px; line-height: 1.55; font-variant-numeric: tabular-nums">
+
+<header style="display: flex; flex-direction: column; gap: 14px; padding-bottom: 22px; border-bottom: 2px solid #16201E">
+<div style="display: flex; align-items: center; gap: 10px">
+<span style="width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; border-radius: 999px; background: #7CC7FE; color: #16201E"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path><path d="M3.2 12h5.3l1.5-3 3 6 1.5-3h6.3"></path></svg></span>
+<span style="flex: 1; font-size: 18px; font-weight: 700">Ventra</span>
+<span style="font-size: 14px; color: #5B605A">Patient-generated report · 7 Oct 2026, 9:41 AM</span>
+</div>
+<h1 style="margin: 0; font-size: 34px; line-height: 40px; font-weight: 700; letter-spacing: -0.02em; text-wrap: balance">Heart failure self-care summary</h1>
+<p style="margin: 0; font-size: 17px; line-height: 26px">Prepared for <strong>Dr Lim, Heart Clinic</strong> · Review on <strong>Tue 13 Oct 2026, 10:30 AM</strong></p>
+</header>
+
+<section aria-label="Patient details" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0; border: 1.5px solid #16201E; border-radius: 12px; overflow: hidden; font-size: 15px; line-height: 22px">
+<div style="padding: 12px 16px; border-bottom: 1px solid #D9D5CC; border-right: 1px solid #D9D5CC"><span style="display: block; font-size: 13px; font-weight: 700; color: #5B605A">PATIENT</span>Mdm Tan · 72 years</div>
+<div style="padding: 12px 16px; border-bottom: 1px solid #D9D5CC"><span style="display: block; font-size: 13px; font-weight: 700; color: #5B605A">PATIENT ID</span>[Patient ID]</div>
+<div style="padding: 12px 16px; border-bottom: 1px solid #D9D5CC; border-right: 1px solid #D9D5CC"><span style="display: block; font-size: 13px; font-weight: 700; color: #5B605A">CONDITION</span>Heart failure · [EF % and NYHA class from discharge summary]</div>
+<div style="padding: 12px 16px; border-bottom: 1px solid #D9D5CC"><span style="display: block; font-size: 13px; font-weight: 700; color: #5B605A">DISCHARGED</span>27 Sep 2026</div>
+<div style="padding: 12px 16px; border-right: 1px solid #D9D5CC"><span style="display: block; font-size: 13px; font-weight: 700; color: #5B605A">REPORT PERIOD</span>1–7 Oct 2026 (weight trend since discharge)</div>
+<div style="padding: 12px 16px"><span style="display: block; font-size: 13px; font-weight: 700; color: #5B605A">DATA SOURCES</span>Patient entries, Bluetooth scale, meal photos</div>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 14px">
+<h2 style="margin: 0; font-size: 22px; line-height: 28px; font-weight: 700">Summary for the clinician</h2>
+<div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 15px; font-weight: 700">
+<span>Daily status, 1–7 Oct:</span>
+<span style="padding: 3px 12px; border-radius: 999px; background: #DDF1E5; color: #1B6F45; border: 1.5px solid #1B6F45">{{greenText}}</span>
+<span style="padding: 3px 12px; border-radius: 999px; background: #FDF2D8; color: #8A5B00; border: 1.5px solid #8A5B00">{{yellowText}}</span>
+<span style="padding: 3px 12px; border-radius: 999px; background: #FFFFFF; color: #16201E; border: 1.5px solid #16201E">{{redText}}</span>
+</div>
+<ul style="margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 8px; text-wrap: pretty">
+<li><strong>{{b1h}}</strong> {{b1}}</li>
+<li><strong>{{b2h}}</strong> {{b2}}</li>
+<li><strong>{{b3h}}</strong> {{b3}}</li>
+<li><strong>{{b4h}}</strong> {{b4}}</li>
+<li><strong>{{b5h}}</strong> {{b5}}</li>
+<li><strong>For discussion:</strong> diuretic timing on days out; afternoon tiredness and post-dose dizziness (bisoprolol?); significance of ankle swelling.</li>
+</ul>
+</section>
+
+<section aria-label="Key numbers" style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px">
+<div style="display: flex; flex-direction: column; gap: 2px; padding: 14px; border-radius: 12px; border: 1.5px solid #D9D5CC"><span style="font-size: 13px; font-weight: 700; color: #5B605A">WEIGHT TODAY</span><span style="font-size: 28px; line-height: 34px; font-weight: 700">{{kW}}</span><span style="font-size: 13px; line-height: 18px">{{kWs}}</span></div>
+<div style="display: flex; flex-direction: column; gap: 2px; padding: 14px; border-radius: 12px; border: 1.5px solid #D9D5CC"><span style="font-size: 13px; font-weight: 700; color: #5B605A">ADHERENCE</span><span style="font-size: 28px; line-height: 34px; font-weight: 700">{{kA}}</span><span style="font-size: 13px; line-height: 18px">{{kAs}}</span></div>
+<div style="display: flex; flex-direction: column; gap: 2px; padding: 14px; border-radius: 12px; border: 1.5px solid #D9D5CC"><span style="font-size: 13px; font-weight: 700; color: #5B605A">FLUID LIMIT KEPT</span><span style="font-size: 28px; line-height: 34px; font-weight: 700">{{kF}}</span><span style="font-size: 13px; line-height: 18px">{{kFs}}</span></div>
+<div style="display: flex; flex-direction: column; gap: 2px; padding: 14px; border-radius: 12px; border: 1.5px solid #D9D5CC"><span style="font-size: 13px; font-weight: 700; color: #5B605A">SODIUM TODAY</span><span style="font-size: 28px; line-height: 34px; font-weight: 700">{{kS}}</span><span style="font-size: 13px; line-height: 18px">{{kSs}}</span></div>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 10px">
+<h2 style="margin: 0; font-size: 22px; line-height: 28px; font-weight: 700">Weight</h2>
+<p style="margin: 0">Daily morning weight (after toilet, before breakfast), Bluetooth scale. {{wSince}}</p>
+<svg width="650" height="250" viewBox="0 0 650 250" role="img" aria-label="{{chartLabel}}" style="display: block">
+<rect x="50" y="20" width="580" height="30" fill="#FDF2D8"></rect>
+<line x1="50" y1="110" x2="630" y2="110" stroke="#E3DFD6" stroke-width="1"></line>
+<line x1="50" y1="200" x2="630" y2="200" stroke="#16201E" stroke-width="1.5"></line>
+<line x1="50" y1="50" x2="630" y2="50" stroke="#8A5B00" stroke-width="2" stroke-dasharray="8 6"></line>
+<line x1="50" y1="170" x2="630" y2="170" stroke="#5B605A" stroke-width="1.5" stroke-dasharray="4 5"></line>
+<text x="44" y="55" text-anchor="end" font-size="13" fill="#16201E">60.0</text>
+<text x="44" y="115" text-anchor="end" font-size="13" fill="#16201E">59.0</text>
+<text x="44" y="175" text-anchor="end" font-size="13" fill="#16201E">58.0</text>
+<text x="625" y="42" text-anchor="end" font-size="13" font-weight="700" fill="#8A5B00">Alert: call nurse above 60.0 kg (+2 kg in 3 days)</text>
+<text x="625" y="190" text-anchor="end" font-size="13" fill="#5B605A">Dry weight 58.0 kg</text>
+<polyline points="{{poly}}" fill="none" stroke="#1F6FB2" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"></polyline>
+<g fill="#1F6FB2" stroke="#FFFFFF" stroke-width="2"><circle cx="{{p0.x}}" cy="{{p0.y}}" r="5"></circle><circle cx="{{p1.x}}" cy="{{p1.y}}" r="5"></circle><circle cx="{{p2.x}}" cy="{{p2.y}}" r="5"></circle><circle cx="{{p3.x}}" cy="{{p3.y}}" r="5"></circle><circle cx="{{p4.x}}" cy="{{p4.y}}" r="5"></circle><circle cx="{{p5.x}}" cy="{{p5.y}}" r="5"></circle><circle cx="{{p6.x}}" cy="{{p6.y}}" r="5"></circle></g>
+<g font-size="13" font-weight="700" fill="#16201E" text-anchor="middle"><text x="{{p0.x}}" y="{{p0.ly}}">{{p0.w}}</text><text x="{{p1.x}}" y="{{p1.ly}}">{{p1.w}}</text><text x="{{p2.x}}" y="{{p2.ly}}">{{p2.w}}</text><text x="{{p3.x}}" y="{{p3.ly}}">{{p3.w}}</text><text x="{{p4.x}}" y="{{p4.ly}}">{{p4.w}}</text><text x="{{p5.x}}" y="{{p5.ly}}">{{p5.w}}</text><text x="{{p6.x}}" y="{{p6.ly}}">{{p6.w}}</text></g>
+<g font-size="13" fill="#16201E" text-anchor="middle"><text x="{{p0.x}}" y="222">{{p0.d}}</text><text x="{{p1.x}}" y="222">{{p1.d}}</text><text x="{{p2.x}}" y="222">{{p2.d}}</text><text x="{{p3.x}}" y="222">{{p3.d}}</text><text x="{{p4.x}}" y="222">{{p4.d}}</text><text x="{{p5.x}}" y="222">{{p5.d}}</text><text x="{{p6.x}}" y="222">{{p6.d}}</text></g>
+<text x="50" y="244" font-size="12" fill="#5B605A">kg</text>
+</svg>
+<p style="margin: 0; font-size: 13px; line-height: 18px; color: #5B605A">Figure 1. Morning weight, 1–7 Oct 2026. Shaded band: above the alert threshold.</p>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 10px">
+<h2 style="margin: 0; font-size: 22px; line-height: 28px; font-weight: 700">Daily log, 1–7 October</h2>
+<table style="width: 100%; border-collapse: collapse; font-size: 14px; line-height: 20px">
+<thead><tr style="background: #F5F3EE"><th style="text-align: left; padding: 8px 10px; border-bottom: 1.5px solid #16201E">Date</th><th style="text-align: left; padding: 8px 10px; border-bottom: 1.5px solid #16201E">Status</th><th style="text-align: right; padding: 8px 10px; border-bottom: 1.5px solid #16201E">Weight (kg)</th><th style="text-align: left; padding: 8px 10px; border-bottom: 1.5px solid #16201E">Fluid</th><th style="text-align: left; padding: 8px 10px; border-bottom: 1.5px solid #16201E">Medicines</th><th style="text-align: left; padding: 8px 10px; border-bottom: 1.5px solid #16201E">Symptoms (patient-reported)</th></tr></thead>
+<tbody>
+<tr style="{{r0.row}}"><td style="{{r0.c}}">{{r0.date}}</td><td style="{{r0.cs}}">{{r0.status}}</td><td style="{{r0.cr}}">{{r0.w}}</td><td style="{{r0.cf}}">{{r0.fluid}}</td><td style="{{r0.cm}}">{{r0.meds}}</td><td style="{{r0.c}}">{{r0.sym}}</td></tr>
+<tr style="{{r1.row}}"><td style="{{r1.c}}">{{r1.date}}</td><td style="{{r1.cs}}">{{r1.status}}</td><td style="{{r1.cr}}">{{r1.w}}</td><td style="{{r1.cf}}">{{r1.fluid}}</td><td style="{{r1.cm}}">{{r1.meds}}</td><td style="{{r1.c}}">{{r1.sym}}</td></tr>
+<tr style="{{r2.row}}"><td style="{{r2.c}}">{{r2.date}}</td><td style="{{r2.cs}}">{{r2.status}}</td><td style="{{r2.cr}}">{{r2.w}}</td><td style="{{r2.cf}}">{{r2.fluid}}</td><td style="{{r2.cm}}">{{r2.meds}}</td><td style="{{r2.c}}">{{r2.sym}}</td></tr>
+<tr style="{{r3.row}}"><td style="{{r3.c}}">{{r3.date}}</td><td style="{{r3.cs}}">{{r3.status}}</td><td style="{{r3.cr}}">{{r3.w}}</td><td style="{{r3.cf}}">{{r3.fluid}}</td><td style="{{r3.cm}}">{{r3.meds}}</td><td style="{{r3.c}}">{{r3.sym}}</td></tr>
+<tr style="{{r4.row}}"><td style="{{r4.c}}">{{r4.date}}</td><td style="{{r4.cs}}">{{r4.status}}</td><td style="{{r4.cr}}">{{r4.w}}</td><td style="{{r4.cf}}">{{r4.fluid}}</td><td style="{{r4.cm}}">{{r4.meds}}</td><td style="{{r4.c}}">{{r4.sym}}</td></tr>
+<tr style="{{r5.row}}"><td style="{{r5.c}}">{{r5.date}}</td><td style="{{r5.cs}}">{{r5.status}}</td><td style="{{r5.cr}}">{{r5.w}}</td><td style="{{r5.cf}}">{{r5.fluid}}</td><td style="{{r5.cm}}">{{r5.meds}}</td><td style="{{r5.c}}">{{r5.sym}}</td></tr>
+<tr style="{{r6.row}}"><td style="{{r6.c}}">{{r6.date}}</td><td style="{{r6.cs}}">{{r6.status}}</td><td style="{{r6.cr}}">{{r6.w}}</td><td style="{{r6.cf}}">{{r6.fluid}}</td><td style="{{r6.cm}}">{{r6.meds}}</td><td style="{{r6.c}}">{{r6.sym}}</td></tr>
+</tbody>
+</table>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 10px">
+<h2 style="margin: 0; font-size: 22px; line-height: 28px; font-weight: 700">Medicines</h2>
+<table style="width: 100%; border-collapse: collapse; font-size: 14px; line-height: 20px">
+<thead><tr style="background: #F5F3EE"><th style="text-align: left; padding: 8px 10px; border-bottom: 1.5px solid #16201E">Medicine</th><th style="text-align: left; padding: 8px 10px; border-bottom: 1.5px solid #16201E">Dose and time</th><th style="text-align: right; padding: 8px 10px; border-bottom: 1.5px solid #16201E">Taken, 1–7 Oct</th><th style="text-align: left; padding: 8px 10px; border-bottom: 1.5px solid #16201E">Notes</th></tr></thead>
+<tbody>
+<tr><td style="padding: 8px 10px; border-bottom: 1px solid #D9D5CC; font-weight: 700">{{m0.name}}</td><td style="padding: 8px 10px; border-bottom: 1px solid #D9D5CC">{{m0.dose}}</td><td style="{{m0.tStyle}}">{{m0.taken}}</td><td style="padding: 8px 10px; border-bottom: 1px solid #D9D5CC">{{m0.note}}</td></tr>
+<tr><td style="padding: 8px 10px; border-bottom: 1px solid #D9D5CC; font-weight: 700">{{m1.name}}</td><td style="padding: 8px 10px; border-bottom: 1px solid #D9D5CC">{{m1.dose}}</td><td style="{{m1.tStyle}}">{{m1.taken}}</td><td style="padding: 8px 10px; border-bottom: 1px solid #D9D5CC">{{m1.note}}</td></tr>
+<tr><td style="padding: 8px 10px; border-bottom: 1px solid #D9D5CC; font-weight: 700">{{m2.name}}</td><td style="padding: 8px 10px; border-bottom: 1px solid #D9D5CC">{{m2.dose}}</td><td style="{{m2.tStyle}}">{{m2.taken}}</td><td style="padding: 8px 10px; border-bottom: 1px solid #D9D5CC">{{m2.note}}</td></tr>
+<tr><td style="padding: 8px 10px; border-bottom: 1px solid #D9D5CC; font-weight: 700">{{m3.name}}</td><td style="padding: 8px 10px; border-bottom: 1px solid #D9D5CC">{{m3.dose}}</td><td style="{{m3.tStyle}}">{{m3.taken}}</td><td style="padding: 8px 10px; border-bottom: 1px solid #D9D5CC">{{m3.note}}</td></tr>
+<tr style="background: #F5F3EE"><td style="padding: 8px 10px; border-bottom: 1.5px solid #16201E; font-weight: 700">All doses due</td><td style="padding: 8px 10px; border-bottom: 1.5px solid #16201E">{{perDay}}</td><td style="padding: 8px 10px; border-bottom: 1.5px solid #16201E; text-align: right; font-weight: 700">{{adhTotal}}</td><td style="padding: 8px 10px; border-bottom: 1.5px solid #16201E">Confirmed by tap or voice in the app. No unknown products taken (one unrecognised product scanned; patient told to ask pharmacist).</td></tr>
+</tbody>
+</table>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 10px">
+<h2 style="margin: 0; font-size: 22px; line-height: 28px; font-weight: 700">Diet: fluid and sodium</h2>
+<p style="margin: 0">Fluid is logged in thermos-cap units (1 cap = 150 ml). Today: <strong>{{fluidToday}}</strong> of {{fluidLimit}} ({{fluidKinds}}). Sodium is estimated from meal photos.</p>
+<table style="width: 100%; border-collapse: collapse; font-size: 14px; line-height: 20px">
+<thead><tr style="background: #F5F3EE"><th style="text-align: left; padding: 8px 10px; border-bottom: 1.5px solid #16201E">Meal, 7 Oct</th><th style="text-align: right; padding: 8px 10px; border-bottom: 1.5px solid #16201E">Sodium</th><th style="text-align: right; padding: 8px 10px; border-bottom: 1.5px solid #16201E">Potassium</th><th style="text-align: right; padding: 8px 10px; border-bottom: 1.5px solid #16201E">Energy</th><th style="text-align: left; padding: 8px 10px; border-bottom: 1.5px solid #16201E">Rating</th></tr></thead>
+<tbody>
+<tr><td style="padding: 8px 10px; border-bottom: 1px solid #D9D5CC">Breakfast 7:30 AM · oat porridge with banana</td><td style="padding: 8px 10px; border-bottom: 1px solid #D9D5CC; text-align: right">Low</td><td style="padding: 8px 10px; border-bottom: 1px solid #D9D5CC; text-align: right">Not estimated</td><td style="padding: 8px 10px; border-bottom: 1px solid #D9D5CC; text-align: right">Not estimated</td><td style="padding: 8px 10px; border-bottom: 1px solid #D9D5CC">Salt low</td></tr>
+<tr><td style="padding: 8px 10px; border-bottom: 1.5px solid #16201E">Lunch 12:40 PM · fish soup with noodles</td><td style="padding: 8px 10px; border-bottom: 1.5px solid #16201E; text-align: right; font-weight: 700">1,100 mg</td><td style="padding: 8px 10px; border-bottom: 1.5px solid #16201E; text-align: right">650 mg</td><td style="padding: 8px 10px; border-bottom: 1.5px solid #16201E; text-align: right">420 kcal</td><td style="padding: 8px 10px; border-bottom: 1.5px solid #16201E; font-weight: 700">Salt high</td></tr>
+</tbody>
+</table>
+<p style="margin: 0">Sodium today: <strong>{{sodText}}</strong>. Most of the lunch sodium was in the soup broth; the app suggested drinking half the soup next time.</p>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 10px">
+<h2 style="margin: 0; font-size: 22px; line-height: 28px; font-weight: 700">Symptoms and alerts</h2>
+<ul style="margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 6px">
+<sc-for list="{{symLines}}" as="x" hint-placeholder-count="5"><li><strong>{{x.h}}</strong> {{x.t}}</li></sc-for>
+</ul>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 10px">
+<h2 style="margin: 0; font-size: 22px; line-height: 28px; font-weight: 700">Targets set by the care team</h2>
+<table style="width: 100%; border-collapse: collapse; font-size: 14px; line-height: 20px">
+<thead><tr style="background: #F5F3EE"><th style="text-align: left; padding: 8px 10px; border-bottom: 1.5px solid #16201E">Target</th><th style="text-align: right; padding: 8px 10px; border-bottom: 1.5px solid #16201E">Value</th><th style="text-align: left; padding: 8px 10px; border-bottom: 1.5px solid #16201E">Status this week</th></tr></thead>
+<tbody>
+<tr><td style="padding: 8px 10px; border-bottom: 1px solid #D9D5CC">Dry weight</td><td style="padding: 8px 10px; border-bottom: 1px solid #D9D5CC; text-align: right">{{dryKg}}</td><td style="padding: 8px 10px; border-bottom: 1px solid #D9D5CC">{{tDry}}</td></tr>
+<tr><td style="padding: 8px 10px; border-bottom: 1px solid #D9D5CC">Alert threshold</td><td style="padding: 8px 10px; border-bottom: 1px solid #D9D5CC; text-align: right">{{ruleText}}</td><td style="padding: 8px 10px; border-bottom: 1px solid #D9D5CC">{{tRule}}</td></tr>
+<tr><td style="padding: 8px 10px; border-bottom: 1px solid #D9D5CC">Fluid limit</td><td style="padding: 8px 10px; border-bottom: 1px solid #D9D5CC; text-align: right">{{fluidPerDay}}</td><td style="padding: 8px 10px; border-bottom: 1px solid #D9D5CC">{{tFluid}}</td></tr>
+<tr><td style="padding: 8px 10px; border-bottom: 1.5px solid #16201E">Sodium limit</td><td style="padding: 8px 10px; border-bottom: 1.5px solid #16201E; text-align: right">{{sodPerDay}}</td><td style="padding: 8px 10px; border-bottom: 1.5px solid #16201E">{{tSod}}</td></tr>
+</tbody>
+</table>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 10px">
+<h2 style="margin: 0; font-size: 22px; line-height: 28px; font-weight: 700">Questions from the patient</h2>
+<ol style="margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 6px">
+<sc-for list="{{questions}}" as="q" hint-placeholder-count="3"><li>{{q.t}}</li></sc-for>
+</ol>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 10px">
+<h2 style="margin: 0; font-size: 22px; line-height: 28px; font-weight: 700">Care team and upcoming</h2>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; font-size: 15px; line-height: 22px">
+<div style="padding: 14px; border-radius: 12px; border: 1.5px solid #D9D5CC"><strong>Dr Lim</strong>, Heart Clinic<br>Level 3, Room 12</div>
+<div style="padding: 14px; border-radius: 12px; border: 1.5px solid #D9D5CC"><strong>Heart failure nurse</strong><br>[Nurse hotline]</div>
+<div style="padding: 14px; border-radius: 12px; border: 1.5px solid #D9D5CC"><strong>Family contact:</strong> Tan Mei Ling (daughter)<br>[Family phone number] · receives yellow and red alerts</div>
+<div style="padding: 14px; border-radius: 12px; border: 1.5px solid #D9D5CC"><strong>Heart clinic:</strong> Tue 13 Oct, 10:30 AM<br><strong>Blood test:</strong> Tue 27 Oct, 9:00 AM, polyclinic lab</div>
+</div>
+</section>
+
+<footer style="padding-top: 16px; border-top: 1.5px solid #16201E; font-size: 13px; line-height: 19px; color: #5B605A">Generated by Ventra on 7 Oct 2026 at 9:41 AM from patient-entered data, a connected Bluetooth scale and meal-photo estimates. Self-reported values have not been clinically verified. This report supports, and does not replace, clinical assessment. Shared with the patient's consent.</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":794,"height":3700}}'>
+class Component extends DCLogic {
+  componentDidMount() { if (!window.VentraRecord) { this._vr = setInterval(() => { if (window.VentraRecord) { clearInterval(this._vr); this.forceUpdate(); } }, 50); } }
+  componentWillUnmount() { clearInterval(this._vr); }
+  renderVals() {
+    const R = window.VentraRecord; if (!R) return {};
+    const F = R.fmt, T = R.targets, P = R.periodDays, a = R.adherence(), fd = R.fluidDaysOk(), miss = R.missedIn();
+    const sd = (d) => R.dayShort(d).split(' ').slice(1).join(' ');            // "3 Oct"
+    const mon = sd(P[0]).split(' ')[1];
+    const dates = (ds) => F.list(ds.map((d) => String(R.dayNum(d)))) + ' ' + mon;   // "3 and 6 Oct"
+    const css = (str) => { const o = {}; String(str).split(';').forEach((kv) => { const i = kv.indexOf(':'); if (i > 0) o[kv.slice(0, i).trim().replace(/-([a-z])/g, (m, c) => c.toUpperCase())] = kv.slice(i + 1).trim(); }); return o; };
+    const cap = (t) => t.charAt(0).toUpperCase() + t.slice(1);
+    const zones = P.map((d) => R.zone(d));
+    const yDays = P.filter((d, i) => zones[i] === 'y'), rDays = P.filter((d, i) => zones[i] === 'r');
+    const gCount = zones.filter((z) => z === 'g').length;
+    const vd = R.vsDry(), dd = Math.round((R.weightToday - R.dischargeWeight) * 10) / 10;
+    const ruleHit = R.sinceDischarge.some((d) => R.weightAlert(d));
+    const clin = (d) => {   // clinician wording of a day's alert reasons
+      const out = [];
+      R.dosesOn(d).filter((x) => x.missed).forEach((x) => out.push('missed ' + x.med.generic.toLowerCase()));
+      const f = R.fluidOn(d); if (f > T.fluidMl) out.push('fluid ' + F.num(f) + ' ml (over limit)');
+      R.symptomsOn(d).filter((x) => x.key !== 'tired').forEach((x) => out.push(x.sev.toLowerCase() + ' ' + R.sym[x.key].short));
+      const wc = R.weightChange(T.alertDays, d); if (wc >= T.alertGainKg) out.push('weight +' + wc.toFixed(1) + ' kg in ' + T.alertDays + ' days');
+      return out;
+    };
+    // missed-dose sentence
+    let missTxt = 'No missed doses.';
+    if (miss.length) {
+      const gens = [...new Set(miss.map((m) => R.med(m.med).generic.toLowerCase()))];
+      const whys = [...new Set(miss.map((m) => m.why))];
+      missTxt = (miss.length === 1 ? 'The missed dose was ' : (miss.length === 2 ? 'Both' : 'All ' + miss.length) + ' missed doses were ') + F.list(gens) + ', on ' + dates(miss.map((m) => m.date)) +
+        (whys.length === 1 && whys[0] ? ', when the patient was ' + whys[0] + '.' : '.');
+    }
+    // symptoms summary
+    const symDays = (k) => R.symptomDays(k);
+    const allSym = R.data.symptoms.filter((x) => P.indexOf(x.date) >= 0);
+    const symParts = [];
+    if (symDays('ankles').length) symParts.push('ankle swelling ' + dates(symDays('ankles')));
+    if (symDays('dizzy').length) symParts.push('dizziness after morning pills ' + dates(symDays('dizzy')));
+    if (symDays('breath').length) symParts.push('breathlessness ' + dates(symDays('breath')));
+    if (symDays('tired').length) symParts.push('afternoon tiredness on ' + symDays('tired').length + ' days');
+    const meal = R.data.mealsToday.slice().sort((x, y) => y.sodiumMg - x.sodiumMg)[0];
+    // chart
+    const pts = P.map((d, i) => { const w = R.weight(d), y = 50 + (60 - w) * 60; return { x: 70 + i * 90, y: +y.toFixed(1), ly: +(y - 14).toFixed(1), w: w.toFixed(1), d: sd(d) }; });
+    const ws = P.map((d) => R.weight(d));
+    // daily log
+    const TD = 'padding: 8px 10px; border-bottom: ';
+    const rows = P.map((d, i) => {
+      const last = i === P.length - 1, bd = last ? '1.5px solid #16201E' : '1px solid #D9D5CC', z = zones[i], isT = d === R.today;
+      const ds = R.dosesOn(d), due = ds.filter((x) => x.due), tk = ds.filter((x) => x.taken), ms = ds.filter((x) => x.missed);
+      const nxt = ds.filter((x) => !x.due)[0];
+      const meds = isT ? tk.length + ' of ' + due.length + ' so far' + (nxt ? ' (' + F.clock(nxt.time) + ' due)' : '')
+        : tk.length + ' of ' + ds.length + (ms.length ? ' · ' + ms.map((x) => x.med.generic.toLowerCase()).join(', ') + ' missed' + (R.data.missed.find((m) => m.date === d && m.why === 'going out') ? ' (out)' : '') : '');
+      const sy = R.symptomsOn(d).map((x) => x.key === 'tired' ? 'Tired (afternoon)' : R.sym[x.key].label + ', ' + x.sev.toLowerCase()).join('; ');
+      const fOk = R.fluidOk(d);
+      const c = TD + bd;
+      return { row: css(z === 'y' ? 'background: #FDF2D8' : z === 'r' ? 'background: #FCE4DE' : ''),
+        c: css(c), cr: css(c + '; text-align: right'), cs: css(c + '; font-weight: 700; color: ' + (z === 'y' ? '#8A5B00' : z === 'r' ? '#B83A26' : '#1B6F45')),
+        cf: css(c + (fOk ? '' : '; font-weight: 700')), cm: css(c + (ms.length ? '; font-weight: 700' : '')),
+        date: R.dayShort(d).replace(/ \w+$/, ' ' + mon), status: z === 'y' ? 'Yellow' : z === 'r' ? 'Red' : 'Green',
+        w: R.weight(d).toFixed(1), fluid: isT ? F.num(R.fluidOn(d)) + ' ml so far' : (fOk ? 'Within limit' : 'Over limit'),
+        meds, sym: sy || (isT ? 'None so far' : 'None') };
+    });
+    // medicines table
+    const medRows = R.meds.map((m) => {
+      let due = 0, tk = 0; const md = [], pend = [];
+      P.forEach((d) => R.dosesOn(d).filter((x) => x.med.id === m.id).forEach((x) => { if (x.due) { due++; if (x.taken) tk++; else md.push(d); } else pend.push(x); }));
+      const notes = [];
+      if (md.length) { const why = miss.find((x) => x.med === m.id).why; notes.push('Missed ' + dates(md) + (why ? ' when ' + why : '') + '.' + (why === 'going out' ? ' Patient asks about timing on days out.' : '')); }
+      if (m.id === 'biso' && symDays('dizzy').length) notes.push('Mild dizziness after morning pills reported ' + dates(symDays('dizzy')) + '.');
+      pend.forEach((x) => notes.push('Evening dose on ' + sd(R.today) + ' due at ' + F.clock(x.time) + '.'));
+      return { name: m.generic, dose: m.strength + ' · ' + m.times.map(F.clock).join(' and '), taken: tk + ' of ' + due,
+        tStyle: css('padding: 8px 10px; border-bottom: 1px solid #D9D5CC; text-align: right' + (tk < due ? '; font-weight: 700' : '')),
+        note: notes.join(' ') || 'None' };
+    });
+    // symptoms & alerts list
+    const symLines = [];
+    R.data.alerts.filter((al) => P.indexOf(al.date) >= 0).forEach((al) => symLines.push({ h: sd(al.date) + ' · ' + cap(al.zone) + ' alert.',
+      t: cap(clin(al.date).join(', ')) + '. App advised calling the heart failure nurse' + (al.familyTold ? '; ' + R.patient.family.relation + ' notified.' : '.') }));
+    P.filter((d) => !R.alertOn(d)).forEach((d) => { const xs = R.symptomsOn(d).filter((x) => x.key !== 'tired');
+      if (xs.length) symLines.push({ h: sd(d) + '.', t: xs.map((x) => x.sev + ' ' + (x.key === 'dizzy' ? 'dizziness after morning pills' : R.sym[x.key].short)).join('; ') + '.' }); });
+    if (symDays('tired').length) symLines.push({ h: dates(symDays('tired')) + '.', t: 'Tired in the afternoons.' });
+    symLines.push({ h: '', t: (symDays('breath').length ? '' : 'No breathlessness, chest pain or fainting reported. ') + (rDays.length ? rDays.length + ' red-zone event(s).' : 'No red-zone events and no 995 calls.') });
+    const maxDev = Math.max.apply(null, P.map((d) => Math.abs(R.vsDry(d))));
+    const vals = {
+      greenText: gCount + ' green',
+      yellowText: yDays.length + ' yellow' + (yDays.length ? ' (' + dates(yDays) + ')' : ''),
+      redText: rDays.length + ' red' + (rDays.length ? '' : ' · no 995 calls'),
+      b1h: ruleHit ? 'Weight alert rule was met.' : 'Weight stable and below the alert line.',
+      b1: F.kg(R.weightToday) + ' today, ' + Math.abs(vd).toFixed(1) + ' kg ' + (vd >= 0 ? 'above' : 'below') + ' dry weight (' + F.kg(T.dryKg) + '). ' + (dd <= 0 ? 'Down ' : 'Up ') + Math.abs(dd).toFixed(1) + ' kg since discharge (' + F.kg(R.dischargeWeight) + '). ' + (ruleHit ? '' : 'Never met the +' + T.alertGainKg + ' kg in ' + T.alertDays + ' days alert rule.'),
+      b2h: 'Medicine adherence ' + a.pct + '%', b2: '(' + a.text + ' doses due). ' + missTxt,
+      b3h: yDays.length ? (yDays.length === 1 ? 'One yellow day' : yDays.length + ' yellow days') + ' (' + dates(yDays) + '):' : 'No yellow days.',
+      b3: yDays.length ? yDays.map((d) => cap(clin(d).join(', '))).join('; ') + (rDays.length ? '.' : ' on the same day. Resolved without escalation.') : '',
+      b4h: 'Fluid within ' + F.num(T.fluidMl) + ' ml limit on ' + fd.ok + ' of ' + fd.of + ' days.',
+      b4: 'Sodium today ' + F.num(R.sodiumToday) + ' of ' + F.num(T.sodiumMg) + ' mg' + (meal && meal.sodiumMg >= 1000 ? ' after a high-salt ' + meal.meal.toLowerCase() + ' (' + meal.what.toLowerCase() + ', about ' + F.num(meal.sodiumMg) + ' mg).' : '.'),
+      b5h: 'Symptoms (patient-reported' + (allSym.every((x) => x.sev === 'Mild') ? ', all mild' : '') + '):', b5: symParts.join('; ') + '.',
+      kW: F.kg(R.weightToday), kWs: F.signed(vd) + ' vs dry weight',
+      kA: a.pct + '%', kAs: a.text + ' doses', kF: fd.ok + ' of ' + fd.of, kFs: 'days under ' + F.num(T.fluidMl) + ' ml',
+      kS: F.num(R.sodiumToday) + ' mg', kSs: 'of ' + F.num(T.sodiumMg) + ' mg limit',
+      wSince: 'Since discharge: ' + F.kg(R.dischargeWeight) + ' (' + sd(R.data.discharge) + ') → ' + F.kg(R.weightToday) + ' (' + sd(R.today) + ').',
+      chartLabel: 'Daily weight ' + R.periodLabel + ', between ' + Math.min.apply(null, ws).toFixed(1) + ' and ' + Math.max.apply(null, ws).toFixed(1) + ' kg, below the ' + R.alertLineKg.toFixed(1) + ' kg alert line',
+      poly: pts.map((q) => q.x + ',' + q.y).join(' '),
+      perDay: R.dosesPerDay + ' doses a day', adhTotal: a.text + ' (' + a.pct + '%)',
+      fluidToday: F.num(R.fluidOn(R.today)) + ' ml so far', fluidLimit: F.num(T.fluidMl) + ' ml',
+      fluidKinds: [...new Set(R.drinksToday.map((x) => x.what.toLowerCase()))].join(', '),
+      sodText: F.num(R.sodiumToday) + ' of ' + F.num(T.sodiumMg) + ' mg',
+      symLines,
+      dryKg: F.kg(T.dryKg), tDry: 'Within ' + maxDev.toFixed(1) + ' kg every day', ruleText: '+' + T.alertGainKg + ' kg in ' + T.alertDays + ' days', tRule: ruleHit ? 'Reached' : 'Not reached',
+      fluidPerDay: F.num(T.fluidMl) + ' ml / day', tFluid: 'Kept ' + fd.ok + ' of ' + fd.of + ' days', sodPerDay: F.num(T.sodiumMg) + ' mg / day', tSod: F.num(R.sodiumToday) + ' mg so far today',
+      questions: R.questions().map((t) => ({ t }))
+    };
+    pts.forEach((q, i) => { vals['p' + i] = q; });
+    rows.forEach((r, i) => { vals['r' + i] = r; });
+    medRows.forEach((m, i) => { vals['m' + i] = m; });
+    return vals;
+  }
+}
+</script>
+</body>
+</html>

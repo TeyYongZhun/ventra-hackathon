@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Ventra — Calendar</title>
+<script src="./support.js"></script>
+<script src="./ventra-record.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500&amp;family=Instrument+Sans:wght@400..700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F5F3EE}
+a{color:#1F6FB2}a:hover{color:#175A92}
+button{font-family:inherit;cursor:pointer}
+[data-statusbar]{display:none}
+@media (min-width:560px) and (min-height:640px){
+body{background:#DCD8CF !important;overflow:hidden}
+body::before{content:"";position:fixed;inset:0;margin:auto;width:424px;height:min(844px,calc(100vh - 56px));pointer-events:none;background:linear-gradient(#2B3331,#2B3331) left 0 top 112px/4px 32px no-repeat,linear-gradient(#2B3331,#2B3331) left 0 top 170px/4px 62px no-repeat,linear-gradient(#2B3331,#2B3331) left 0 top 246px/4px 62px no-repeat,linear-gradient(#2B3331,#2B3331) right 0 top 196px/4px 98px no-repeat}
+body::after{content:"";position:fixed;left:50%;bottom:calc((100vh - min(844px,calc(100vh - 56px))) / 2 + 8px);width:134px;height:5px;margin-left:-67px;border-radius:999px;background:#16201E;z-index:20;pointer-events:none}
+div:has(> [data-statusbar]){position:fixed !important;inset:0 !important;margin:auto !important;height:min(844px,calc(100vh - 56px)) !important;min-height:0 !important;overflow-x:hidden !important;overflow-y:auto !important;border-radius:54px;box-shadow:0 0 0 11px #16201E,0 0 0 13px #4A5250,0 30px 80px rgba(22,32,30,0.35);scrollbar-width:none}
+div:has(> [data-statusbar])::-webkit-scrollbar{display:none}
+div:has(> [data-statusbar]) > *{flex-shrink:0 !important}
+[data-statusbar]{display:flex;order:-1;margin-top:0 !important}
+div:has(> [data-statusbar]){padding-top:0 !important}
+nav[aria-label="Main menu"]{padding-bottom:26px !important}
+[data-overlay]{position:fixed !important;inset:0 !important;margin:auto;width:390px;height:min(844px,calc(100vh - 56px));border-radius:54px;overflow:hidden;z-index:30}
+}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; min-height: 100vh; margin: 0 auto; box-sizing: border-box; padding: 28px 20px 0; display: flex; flex-direction: column; gap: 22px; background: #F5F3EE; color: #16201E; font-family: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif; font-variant-numeric: tabular-nums; overflow-x: clip">
+
+<header style="display: flex; align-items: center; gap: 12px">
+<h1 style="flex: 1; margin: 0; font-size: 38px; line-height: 44px; font-weight: 700; letter-spacing: -0.02em">Calendar</h1>
+<a href="EmergencyChoose.dc.html" style="height: 64px; padding: 0 20px; flex-shrink: 0; display: flex; align-items: center; gap: 8px; border-radius: 999px; background: #B83A26; color: #FFFFFF; text-decoration: none; font-size: 22px; font-weight: 700"><svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>SOS</a>
+</header>
+
+<section aria-label="This month" style="display: flex; align-items: center; gap: 16px; padding: 20px; border-radius: 24px; background: #DDF1E5; border: 3px solid #1B6F45">
+<span style="width: 64px; height: 64px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-radius: 999px; background: #1B6F45"><svg width="38" height="38" viewBox="0 0 24 24" fill="#D2EE63" aria-hidden="true"><path d="M12 2c.6 4.8 2.4 7.2 10 10-7.6 2.8-9.4 5.2-10 10-.6-4.8-2.4-7.2-10-10 7.6-2.8 9.4-5.2 10-10z"></path></svg></span>
+<span style="display: flex; flex-direction: column"><span style="font-size: 24px; line-height: 30px; font-weight: 700">{{greatText}}</span><span style="font-size: 19px; line-height: 26px">Weighed, took every pill and kept under your drink limit.</span></span>
+</section>
+
+<section aria-label="October 2026" style="display: flex; flex-direction: column; gap: 10px; padding: 16px 8px; border-radius: 24px; background: #FFFFFF">
+<h2 style="margin: 0; padding: 0 10px 4px; font-size: 26px; line-height: 32px; font-weight: 700">October 2026</h2>
+<div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 0; text-align: center; font-size: 17px; font-weight: 700; color: #5B605A">
+<span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span>
+</div>
+<div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); row-gap: 6px">
+<sc-for list="{{days}}" as="d" hint-placeholder-count="35">
+<span style="display: flex; align-items: center; justify-content: center; height: 56px"><span aria-label="{{d.label}}" style="{{d.style}}"><span>{{d.n}}</span><sc-if value="{{d.good}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="#1B6F45" aria-hidden="true"><path d="M12 2c.6 4.8 2.4 7.2 10 10-7.6 2.8-9.4 5.2-10 10-.6-4.8-2.4-7.2-10-10 7.6-2.8 9.4-5.2 10-10z"></path></svg></sc-if><sc-if value="{{d.warn}}" hint-placeholder-val="{{false}}"><span style="font-size: 14px; line-height: 14px; font-weight: 800; color: #8A5B00">!</span></sc-if><sc-if value="{{d.bad}}" hint-placeholder-val="{{false}}"><span style="font-size: 14px; line-height: 14px; font-weight: 800; color: #B83A26">!!</span></sc-if></span></span>
+</sc-for>
+</div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 10px; padding: 10px 10px 2px; font-size: 18px; line-height: 22px; font-weight: 600">
+<span style="display: flex; align-items: center; gap: 8px"><span style="width: 30px; height: 30px; flex-shrink: 0; box-sizing: border-box; display: flex; align-items: center; justify-content: center; border-radius: 8px; background: #DDF1E5; border: 2px solid #1B6F45"><svg width="14" height="14" viewBox="0 0 24 24" fill="#1B6F45" aria-hidden="true"><path d="M12 2c.6 4.8 2.4 7.2 10 10-7.6 2.8-9.4 5.2-10 10-.6-4.8-2.4-7.2-10-10 7.6-2.8 9.4-5.2 10-10z"></path></svg></span>Green · did well</span>
+<span style="display: flex; align-items: center; gap: 8px"><span style="width: 30px; height: 30px; flex-shrink: 0; box-sizing: border-box; display: flex; align-items: center; justify-content: center; border-radius: 8px; background: #F8DA98; border: 2px solid #8A5B00; font-size: 14px; font-weight: 800; color: #8A5B00">!</span>Yellow · warning</span>
+<span style="display: flex; align-items: center; gap: 8px"><span style="width: 30px; height: 30px; flex-shrink: 0; box-sizing: border-box; display: flex; align-items: center; justify-content: center; border-radius: 8px; background: #FCE4DE; border: 2px solid #B83A26; font-size: 14px; font-weight: 800; color: #B83A26">!!</span>Red · emergency</span>
+<span style="display: flex; align-items: center; gap: 8px"><span style="width: 30px; height: 30px; flex-shrink: 0; border-radius: 8px; background: #7CC7FE"></span>Clinic visit</span>
+<span style="display: flex; align-items: center; gap: 8px"><span style="width: 30px; height: 30px; flex-shrink: 0; box-sizing: border-box; border-radius: 8px; border: 4px solid #F2785C"></span>Today</span>
+</div>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 14px; padding: 22px; border-radius: 24px; background: #FFFFFF; border: 3px solid #1F6FB2">
+<span style="font-size: 19px; font-weight: 700; color: #1F6FB2">IN 6 DAYS</span>
+<div style="display: flex; align-items: center; gap: 16px">
+<div style="width: 80px; height: 88px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 14px; background: #7CC7FE; color: #16201E"><span style="font-size: 18px; font-weight: 700">TUE</span><span style="font-size: 38px; line-height: 42px; font-weight: 700">13</span></div>
+<div style="display: flex; flex-direction: column"><span style="font-size: 26px; line-height: 32px; font-weight: 700">Heart clinic</span><span style="font-size: 22px; line-height: 30px; font-weight: 600">10:30 AM</span><span style="font-size: 19px; line-height: 26px; color: #5B605A">Dr Lim · Level 3, Room 12</span></div>
+</div>
+<div style="padding: 16px; border-radius: 14px; background: #ECE9E2">
+<span style="font-size: 20px; font-weight: 700">Bring:</span>
+<span style="display: block; font-size: 20px; line-height: 30px">Medicine list · this phone · IC card</span>
+</div>
+<a href="VisitPrep.dc.html" style="height: 72px; display: flex; align-items: center; justify-content: center; border-radius: 999px; background: #7CC7FE; color: #16201E; text-decoration: none; font-size: 23px; font-weight: 700">Get ready for this visit</a>
+</section>
+
+<section style="display: flex; align-items: center; gap: 16px; padding: 20px; border-radius: 24px; background: #FFFFFF">
+<div style="width: 72px; height: 80px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 14px; background: #E3F2FF; color: #1F6FB2"><span style="font-size: 17px; font-weight: 700">TUE</span><span style="font-size: 34px; line-height: 38px; font-weight: 700">27</span></div>
+<div style="display: flex; flex-direction: column"><span style="font-size: 24px; line-height: 30px; font-weight: 700">Blood test</span><span style="font-size: 20px; line-height: 28px">9:00 AM · Polyclinic lab</span></div>
+</section>
+
+<button type="button" style="height: 72px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; gap: 10px; border-radius: 999px; border: 2.5px solid #16201E; background: #FFFFFF; color: #16201E; font-size: 23px; font-weight: 700"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>Add a visit</button>
+
+<a href="Report.dc.html" style="display: flex; flex-direction: column; gap: 16px; padding: 20px; border-radius: 32px; background: #1F6FB2; color: #FFFFFF; text-decoration: none; box-shadow: 0 12px 28px rgba(31,111,178,0.28)">
+<span style="display: flex; align-items: center; gap: 16px">
+<span aria-hidden="true" style="position: relative; width: 66px; height: 80px; flex-shrink: 0; box-sizing: border-box; display: flex; flex-direction: column; gap: 6px; padding: 12px 10px; border-radius: 10px; background: #FFFFFF; box-shadow: 6px 6px 0 #7CC7FE">
+<span style="width: 34px; height: 6px; border-radius: 3px; background: #16201E"></span>
+<span style="width: 44px; height: 4px; border-radius: 2px; background: #C9CED6"></span>
+<span style="width: 38px; height: 4px; border-radius: 2px; background: #C9CED6"></span>
+<span style="display: flex; align-items: flex-end; gap: 4px; height: 22px; margin-top: auto"><span style="width: 8px; height: 10px; border-radius: 2px; background: #7CC7FE"></span><span style="width: 8px; height: 16px; border-radius: 2px; background: #1F6FB2"></span><span style="width: 8px; height: 13px; border-radius: 2px; background: #7CC7FE"></span><span style="width: 8px; height: 22px; border-radius: 2px; background: #1F6FB2"></span></span>
+</span>
+<span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 16px; line-height: 20px; font-weight: 700; letter-spacing: 0.06em; color: #E3F2FF">FOR YOUR DOCTOR</span><span style="font-size: 26px; line-height: 32px; font-weight: 700">Summarize my report</span></span>
+</span>
+<span style="font-size: 20px; line-height: 28px; color: #E3F2FF">One PDF with your weight, medicine, drinks, salt and how you felt.</span>
+<span style="height: 68px; display: flex; align-items: center; justify-content: center; gap: 10px; border-radius: 999px; background: #FFFFFF; color: #16201E; font-size: 23px; font-weight: 700"><svg width="26" height="26" viewBox="0 0 24 24" fill="#1F6FB2" aria-hidden="true"><path d="M12 2c.6 4.8 2.4 7.2 10 10-7.6 2.8-9.4 5.2-10 10-.6-4.8-2.4-7.2-10-10 7.6-2.8 9.4-5.2 10-10z"></path></svg>Make my report</span>
+</a>
+
+<nav aria-label="More" style="display: flex; flex-direction: column; padding: 4px 20px; border-radius: 24px; background: #FFFFFF">
+<a href="Privacy.dc.html" style="min-height: 76px; display: flex; align-items: center; gap: 14px; color: #16201E; text-decoration: none; font-size: 22px; font-weight: 700"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path></svg><span style="flex: 1">Who sees my information</span><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></a>
+<a href="Family.dc.html" style="min-height: 76px; display: flex; align-items: center; gap: 14px; color: #16201E; text-decoration: none; font-size: 22px; font-weight: 700; border-top: 2px solid #E3DFD6"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg><span style="flex: 1">My family contacts</span><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></a>
+<a href="TextSound.dc.html" style="min-height: 76px; display: flex; align-items: center; gap: 14px; color: #16201E; text-decoration: none; font-size: 22px; font-weight: 700; border-top: 2px solid #E3DFD6"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7V4h16v3"></path><path d="M9 20h6"></path><path d="M12 4v16"></path></svg><span style="flex: 1">Text size and sound</span><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></a>
+</nav>
+
+<sc-if value="{{askOut}}" hint-placeholder-val="{{true}}">
+<button type="button" onClick="{{startOut}}" style="min-height: 72px; display: flex; align-items: center; justify-content: center; gap: 12px; border-radius: 999px; border: 3px solid #B83A26; background: #FFFFFF; color: #B83A26; font-size: 23px; font-weight: 700"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><path d="m16 17 5-5-5-5"></path><path d="M21 12H9"></path></svg>Log out</button>
+</sc-if>
+<sc-if value="{{confirmOut}}" hint-placeholder-val="{{false}}">
+<div role="group" aria-label="Log out?" style="display: flex; flex-direction: column; gap: 12px; padding: 18px; border-radius: 24px; background: #FCE4DE; border: 3px solid #B83A26">
+<p style="margin: 0; font-size: 23px; line-height: 30px; font-weight: 700">Log out of Ventra?</p>
+<p style="margin: 0; font-size: 19px; line-height: 27px">You won't get pill reminders or alerts until you log in again.</p>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+<a href="Welcome.dc.html" onClick="{{doLogout}}" style="min-height: 68px; display: flex; align-items: center; justify-content: center; border-radius: 999px; background: #B83A26; color: #FFFFFF; text-decoration: none; font-size: 21px; font-weight: 700">Yes, log out</a>
+<button type="button" onClick="{{cancelOut}}" style="min-height: 68px; border-radius: 999px; border: 2.5px solid #16201E; background: #FFFFFF; color: #16201E; font-size: 21px; font-weight: 700">Stay</button>
+</div>
+</div>
+</sc-if>
+
+<nav aria-label="Main menu" style="position: sticky; bottom: 0; z-index: 5; margin: auto -20px 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; padding: 8px 6px 4px; background: #FFFFFF; border-radius: 28px 28px 0 0; border-top: 1px solid #E3DFD6; box-shadow: 0 -6px 20px rgba(22,32,30,0.08)">
+<a href="Main.dc.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; height: 76px; border-radius: 20px; text-decoration: none; font-size: 15px; font-weight: 700; color: #16201E"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"></path></svg><span>Home</span></a>
+<a href="Fluid.dc.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; height: 76px; border-radius: 20px; text-decoration: none; font-size: 15px; font-weight: 700; color: #16201E"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg><span>Track</span></a>
+<a href="Talk.dc.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; height: 76px; border-radius: 20px; text-decoration: none; font-size: 15px; font-weight: 700; color: #16201E"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8V4H8"></path><rect width="16" height="12" x="4" y="8" rx="2"></rect><path d="M2 14h2"></path><path d="M20 14h2"></path><path d="M15 13v2"></path><path d="M9 13v2"></path></svg><span>Ask AI</span></a>
+<a href="Medicines.dc.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; height: 76px; border-radius: 20px; text-decoration: none; font-size: 15px; font-weight: 700; letter-spacing: -0.01em; color: #16201E"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"></path><path d="m8.5 8.5 7 7"></path></svg><span>Medicine</span></a>
+<a href="Calendar.dc.html" aria-current="page" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; height: 76px; border-radius: 20px; text-decoration: none; font-size: 15px; font-weight: 700; background: #7CC7FE; color: #16201E"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="3" width="7" height="7" rx="1.5"></rect><rect x="3" y="14" width="7" height="7" rx="1.5"></rect><rect x="14" y="14" width="7" height="7" rx="1.5"></rect></svg><span>More</span></a>
+</nav>
+<div data-statusbar="true" aria-hidden="true" style="position: sticky; top: 0; z-index: 6; align-self: stretch; margin: -28px -20px -6px; height: 54px; padding: 0 22px; box-sizing: border-box; align-items: center; justify-content: space-between; background: #F5F3EE; color: #16201E; font-size: 17px; line-height: 22px; font-weight: 600"><span style="width: 92px; text-align: center">9:41</span><span style="width: 124px; height: 36px; border-radius: 999px; background: #000000"></span><span style="width: 92px; display: flex; align-items: center; justify-content: center; gap: 6px"><svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor" aria-hidden="true"><rect x="0" y="8" width="3" height="4" rx="1"></rect><rect x="5" y="5.5" width="3" height="6.5" rx="1"></rect><rect x="10" y="3" width="3" height="9" rx="1"></rect><rect x="15" y="0" width="3" height="12" rx="1"></rect></svg><svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M1.5 4.2a9.5 9.5 0 0 1 13 0"></path><path d="M4.2 7.1a5.6 5.6 0 0 1 7.6 0"></path><circle cx="8" cy="10.2" r="1.4" fill="currentColor" stroke="none"></circle></svg><svg width="27" height="13" viewBox="0 0 27 13" fill="none" aria-hidden="true"><rect x="0.5" y="0.5" width="23" height="12" rx="3.5" stroke="currentColor" opacity="0.45"></rect><rect x="2.5" y="2.5" width="19" height="8" rx="2" fill="currentColor"></rect><path d="M25 4.5v4c.8-.3 1.5-1.1 1.5-2s-.7-1.7-1.5-2z" fill="currentColor" opacity="0.45"></path></svg></span></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":2400}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { out: false }; }
+  componentDidMount() { if (this.state.out) this.setState({ out: false }); if (!window.VentraRecord) { this._vr = setInterval(() => { if (window.VentraRecord) { clearInterval(this._vr); this.forceUpdate(); } }, 50); } }
+  renderVals() {
+    const visits = { 13: true, 27: true };
+    const R = window.VentraRecord; if (!R) return {};
+    const today = R.dayNum(R.today), mon = R.today.slice(0, 8);
+    // How each day went, from the record: g = green, y = yellow warning, r = red emergency; good = followed every rule
+    const zone = {}, good = {};
+    R.sinceDischarge.filter((d) => d.slice(0, 8) === mon).forEach((d) => { const z = R.zone(d); if (z) zone[R.dayNum(d)] = z; if (R.isGoodDay(d)) good[R.dayNum(d)] = true; });
+    const nGood = Object.keys(good).length;
+    const fill = { g: '#DDF1E5', y: '#F8DA98', r: '#FCE4DE' };
+    const edge = { g: '#1B6F45', y: '#8A5B00', r: '#B83A26' };
+    const word = { g: 'green day', y: 'yellow day, warning', r: 'red day, emergency' };
+    const blank = { n: '', label: '', style: {}, good: false, warn: false, bad: false };
+    const days = [];
+    for (let i = 0; i < 3; i++) days.push(blank);
+    for (let n = 1; n <= 31; n++) {
+      const v = visits[n], t = n === today, z = zone[n];
+      const bg = v ? '#7CC7FE' : z ? fill[z] : 'transparent';
+      const border = t ? '4px solid #F2785C' : z ? '2px solid ' + edge[z] : '2px solid transparent';
+      const parts = ['October ' + n];
+      if (z) parts.push(word[z]);
+      if (good[n]) parts.push('did well');
+      if (v) parts.push('clinic visit');
+      if (t) parts.push('today');
+      days.push({
+        n: String(n), label: parts.join(', '),
+        good: !!good[n], warn: z === 'y', bad: z === 'r',
+        style: { width: '46px', height: '52px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1px', borderRadius: '12px', fontSize: '20px', lineHeight: '22px', fontWeight: v || t || z ? 700 : 500, background: bg, color: '#16201E', border }
+      });
+    }
+    while (days.length % 7) days.push(blank);
+    return { askOut: !this.state.out, confirmOut: this.state.out, startOut: () => this.setState({ out: true }), cancelOut: () => this.setState({ out: false }), doLogout: () => this.setState({ out: false }), days, greatText: nGood + ' great day' + (nGood === 1 ? '' : 's') + ' this month' };
+  }
+}
+</script>
+</body>
+</html>

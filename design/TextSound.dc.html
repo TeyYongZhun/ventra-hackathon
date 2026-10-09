@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Ventra — Text size and sound</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500&amp;family=Instrument+Sans:wght@400..700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F5F3EE}
+a{color:#1F6FB2}a:hover{color:#175A92}
+button{font-family:inherit;cursor:pointer}
+[data-statusbar]{display:none}
+@media (min-width:560px) and (min-height:640px){
+body{background:#DCD8CF !important;overflow:hidden}
+body::before{content:"";position:fixed;inset:0;margin:auto;width:424px;height:min(844px,calc(100vh - 56px));pointer-events:none;background:linear-gradient(#2B3331,#2B3331) left 0 top 112px/4px 32px no-repeat,linear-gradient(#2B3331,#2B3331) left 0 top 170px/4px 62px no-repeat,linear-gradient(#2B3331,#2B3331) left 0 top 246px/4px 62px no-repeat,linear-gradient(#2B3331,#2B3331) right 0 top 196px/4px 98px no-repeat}
+body::after{content:"";position:fixed;left:50%;bottom:calc((100vh - min(844px,calc(100vh - 56px))) / 2 + 8px);width:134px;height:5px;margin-left:-67px;border-radius:999px;background:#16201E;z-index:20;pointer-events:none}
+div:has(> [data-statusbar]){position:fixed !important;inset:0 !important;margin:auto !important;height:min(844px,calc(100vh - 56px)) !important;min-height:0 !important;overflow-x:hidden !important;overflow-y:auto !important;border-radius:54px;box-shadow:0 0 0 11px #16201E,0 0 0 13px #4A5250,0 30px 80px rgba(22,32,30,0.35);scrollbar-width:none}
+div:has(> [data-statusbar])::-webkit-scrollbar{display:none}
+div:has(> [data-statusbar]) > *{flex-shrink:0 !important}
+[data-statusbar]{display:flex;order:-1;margin-top:0 !important}
+div:has(> [data-statusbar]){padding-top:0 !important}
+nav[aria-label="Main menu"]{padding-bottom:26px !important}
+[data-overlay]{position:fixed !important;inset:0 !important;margin:auto;width:390px;height:min(844px,calc(100vh - 56px));border-radius:54px;overflow:hidden;z-index:30}
+}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; min-height: 100vh; margin: 0 auto; box-sizing: border-box; padding: 28px 20px 32px; display: flex; flex-direction: column; gap: 26px; background: #F5F3EE; color: #16201E; font-family: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif; overflow-x: clip">
+
+<header style="display: flex; align-items: center; gap: 14px">
+<a href="Calendar.dc.html" aria-label="Back to More" style="width: 64px; height: 64px; flex-shrink: 0; box-sizing: border-box; display: flex; align-items: center; justify-content: center; border-radius: 999px; background: #FFFFFF; color: #16201E; border: 2.5px solid #16201E"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg></a>
+<a href="EmergencyChoose.dc.html" aria-label="SOS — get emergency help" style="height: 64px; padding: 0 16px; margin-left: auto; flex-shrink: 0; display: flex; align-items: center; gap: 8px; border-radius: 999px; background: #B83A26; color: #FFFFFF; text-decoration: none; font-size: 21px; font-weight: 700"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>SOS</a>
+</header>
+
+<h1 style="margin: 0; font-size: 38px; line-height: 44px; font-weight: 700; letter-spacing: -0.02em">Make it easy to read and hear</h1>
+
+<section style="display: flex; flex-direction: column; gap: 14px">
+<h2 style="margin: 0; font-size: 28px; line-height: 34px; font-weight: 700">Text size</h2>
+<button type="button" onClick="{{pickLarge}}" aria-pressed="{{largeOn}}" style="{{largeStyle}}">
+<span style="display: flex; align-items: center; justify-content: space-between; width: 100%"><span style="font-size: 24px; line-height: 30px; font-weight: 700">Large</span><sc-if value="{{largeOn}}" hint-placeholder-val="{{false}}"><span style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 999px; background: #7CC7FE; color: #16201E"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></span></sc-if></span>
+<span style="font-size: 22px; line-height: 30px">Drink 1 cap of water.</span>
+</button>
+<button type="button" onClick="{{pickXL}}" aria-pressed="{{xlOn}}" style="{{xlStyle}}">
+<span style="display: flex; align-items: center; justify-content: space-between; width: 100%"><span style="font-size: 24px; line-height: 30px; font-weight: 700">Extra large</span><sc-if value="{{xlOn}}" hint-placeholder-val="{{true}}"><span style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 999px; background: #7CC7FE; color: #16201E"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></span></sc-if></span>
+<span style="font-size: 30px; line-height: 38px">Drink 1 cap of water.</span>
+</button>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 14px">
+<h2 style="margin: 0; font-size: 28px; line-height: 34px; font-weight: 700">Voice</h2>
+<div style="display: flex; align-items: center; gap: 16px; padding: 18px; border-radius: 24px; background: #FFFFFF">
+<div style="width: 64px; height: 64px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-radius: 14px; background: #8D93F6; color: #16201E"><svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4V5z"></path><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg></div>
+<span style="flex: 1; font-size: 24px; line-height: 30px; font-weight: 700">Sound</span>
+<button type="button" style="height: 64px; padding: 0 24px; border-radius: 999px; border: 2.5px solid #16201E; background: #FFFFFF; color: #16201E; font-size: 22px; font-weight: 700">Test</button>
+</div>
+<div style="display: flex; align-items: center; gap: 16px; padding: 18px; border-radius: 24px; background: #FFFFFF">
+<div style="width: 64px; height: 64px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-radius: 14px; background: #8D93F6; color: #16201E"><svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"></rect><path d="M19 10v1a7 7 0 0 1-14 0v-1"></path><path d="M12 18v4"></path></svg></div>
+<span style="flex: 1; display: flex; flex-direction: column"><span style="font-size: 24px; line-height: 30px; font-weight: 700">Microphone</span><span style="font-size: 19px; line-height: 26px; color: #5B605A">Talk instead of type</span></span>
+<button type="button" onClick="{{toggleMic}}" aria-pressed="{{micOn}}" aria-label="Microphone" style="{{micTrack}}"><span style="{{micThumb}}"></span></button>
+</div>
+<span style="font-size: 20px; line-height: 28px; font-weight: 700; color: #1F6FB2">{{micText}}</span>
+</section>
+
+<div style="flex: 1"></div>
+<a href="Calendar.dc.html" style="height: 76px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-radius: 999px; background: #7CC7FE; color: #16201E; text-decoration: none; font-size: 26px; font-weight: 700">Save</a>
+<div data-statusbar="true" aria-hidden="true" style="position: sticky; top: 0; z-index: 6; align-self: stretch; margin: -28px -20px -10px; height: 54px; padding: 0 22px; box-sizing: border-box; align-items: center; justify-content: space-between; background: #F5F3EE; color: #16201E; font-size: 17px; line-height: 22px; font-weight: 600"><span style="width: 92px; text-align: center">9:41</span><span style="width: 124px; height: 36px; border-radius: 999px; background: #000000"></span><span style="width: 92px; display: flex; align-items: center; justify-content: center; gap: 6px"><svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor" aria-hidden="true"><rect x="0" y="8" width="3" height="4" rx="1"></rect><rect x="5" y="5.5" width="3" height="6.5" rx="1"></rect><rect x="10" y="3" width="3" height="9" rx="1"></rect><rect x="15" y="0" width="3" height="12" rx="1"></rect></svg><svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M1.5 4.2a9.5 9.5 0 0 1 13 0"></path><path d="M4.2 7.1a5.6 5.6 0 0 1 7.6 0"></path><circle cx="8" cy="10.2" r="1.4" fill="currentColor" stroke="none"></circle></svg><svg width="27" height="13" viewBox="0 0 27 13" fill="none" aria-hidden="true"><rect x="0.5" y="0.5" width="23" height="12" rx="3.5" stroke="currentColor" opacity="0.45"></rect><rect x="2.5" y="2.5" width="19" height="8" rx="2" fill="currentColor"></rect><path d="M25 4.5v4c.8-.3 1.5-1.1 1.5-2s-.7-1.7-1.5-2z" fill="currentColor" opacity="0.45"></path></svg></span></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1250}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { size: 'xl', mic: true }; }
+  renderVals() {
+    const card = (on) => ({ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '8px', padding: '22px', borderRadius: '24px', textAlign: 'left', color: '#16201E', background: on ? '#E3F2FF' : '#FFFFFF', border: on ? '4px solid #1F6FB2' : '4px solid #FFFFFF' });
+    const mic = this.state.mic;
+    return {
+      largeOn: this.state.size === 'large', xlOn: this.state.size === 'xl',
+      largeStyle: card(this.state.size === 'large'), xlStyle: card(this.state.size === 'xl'),
+      pickLarge: () => this.setState({ size: 'large' }), pickXL: () => this.setState({ size: 'xl' }),
+      micOn: mic, toggleMic: () => this.setState({ mic: !mic }),
+      micText: mic ? 'Microphone is ON' : 'Microphone is OFF',
+      micTrack: { position: 'relative', width: '84px', height: '50px', flexShrink: 0, borderRadius: '999px', padding: 0, background: mic ? '#7CC7FE' : '#FFFFFF', border: '3px solid #16201E' },
+      micThumb: { position: 'absolute', top: '4px', left: mic ? '38px' : '4px', width: '36px', height: '36px', borderRadius: '999px', background: '#16201E', transition: 'left 200ms ease-out' }
+    };
+  }
+}
+</script>
+</body>
+</html>
