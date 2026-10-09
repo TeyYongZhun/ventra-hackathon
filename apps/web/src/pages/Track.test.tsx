@@ -76,6 +76,6 @@ describe('Track · drinks tab', () => {
 
     await user.click(screen.getByRole('tab', { name: /Log weight/ }));
 
-    expect(await screen.findByText('Weight logging is coming soon.')).toBeTruthy();
+    expect(await screen.findByRole('link', { name: 'Type my weight' })).toBeTruthy();
   });
 });

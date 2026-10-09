@@ -2,7 +2,6 @@ import type {
   IsoDate,
   PatientInfo,
   Targets,
-  Medicine,
   SymptomKey,
   SymptomLog,
   AlertLog,
@@ -31,8 +30,15 @@ export interface SignupRequest {
   phone: string;
   pin: string;
   name: string;
-  age: number;
-  condition: string;
+}
+
+export interface MeResponse {
+  name: string;
+  is_demo: boolean;
+  // 'large' | 'xl' | null (not chosen yet)
+  text_size: string | null;
+  // False until the set-up steps are done (targets saved)
+  set_up: boolean;
 }
 
 export interface SignupResponse {
@@ -56,14 +62,13 @@ export interface LogoutResponse {
 // ------------------------------------------------------------------
 // Onboarding
 // ------------------------------------------------------------------
+// Partial update: send only what changed.
 export interface OnboardingProfileRequest {
-  name: string;
-  age: number;
-  condition: string;
+  name?: string;
+  age?: number;
+  condition?: string;
   dischargeDate?: string;
-  dischargeWeightKg?: number;
-  textSize?: string;
-  weighTime?: string;
+  textSize?: 'large' | 'xl';
 }
 
 export interface OnboardingTargetsRequest {
@@ -72,11 +77,14 @@ export interface OnboardingTargetsRequest {
   alertDays: number;
   fluidMl: number;
   sodiumMg: number;
-  capMl: number;
+  // Optional here; usually set in its own step (PUT /api/onboarding/cap)
+  capMl?: number;
 }
 
+// Medicines picked from MEDICINE_CATALOG, each with its times (minutes after midnight).
+// Replaces the patient's list.
 export interface OnboardingMedicationsRequest {
-  meds: Medicine[];
+  meds: Array<{ id: string; times: number[] }>;
 }
 
 export interface OnboardingCapRequest {
@@ -104,6 +112,10 @@ export interface MetricsResponse {
   pillsToday: PillsTodaySummary;
   weightChange: number | null;
   vsDry: number | null;
+  weightToday: number | null;
+  weightChange1: number | null;
+  // Every logged morning weight since discharge (or the first one), oldest first
+  weightHistory: Array<{ date: IsoDate; kg: number }>;
   weighStreak: number;
   fluidToday: number;
   fluidOk: boolean;
@@ -141,18 +153,23 @@ export interface FluidDeleteResponse {
 // ------------------------------------------------------------------
 // Meals
 // ------------------------------------------------------------------
+// Manual food log: pick a food from FOODS (packages/core/foods.ts). The server fills in the
+// nutrition values and the meal name (Breakfast/Lunch/Dinner/Snack) from the time.
 export interface MealCreateRequest {
+  foodId: string;
+}
+
+export interface MealListEntry {
+  id: number;
+  time: string;
   meal: string;
   what: string;
   sodiumMg: number;
-  kcal: number;
-  potassiumMg: number;
-  phosphorusMg: number;
-  carbs: { g: number; what: string };
-  protein: { g: number; what: string };
-  fat: { g: number; what: string };
-  plate: [number, number, number];
   tip: string;
+}
+
+export interface MealListResponse {
+  entries: MealListEntry[];
 }
 
 export interface MealEntryResponse {

@@ -11,11 +11,16 @@ import Alert from './pages/Alert';
 import NurseCall from './pages/NurseCall';
 import Family from './pages/Family';
 import Emergency, { EmergencyCall, EmergencyCountdown } from './pages/Emergency';
+import Report from './pages/Report';
+import WeighEnter from './pages/WeighEnter';
+import SignUp from './pages/SignUp';
+import Setup from './pages/Setup';
 
 function App() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/signup" element={<SignUp />} />
       <Route element={<RequireAuth />}>
         <Route element={<Layout />}>
           <Route path="/" element={<Navigate to="/home" replace />} />
@@ -27,8 +32,11 @@ function App() {
           <Route path="/alert" element={<Alert />} />
           <Route path="/nurse" element={<NurseCall />} />
           <Route path="/family" element={<Family />} />
+          <Route path="/report" element={<Report />} />
+          <Route path="/weigh" element={<WeighEnter />} />
         </Route>
-        {/* Full-screen emergency flow: no menu, nothing to distract. */}
+        {/* Set-up for a new patient, then the full-screen emergency flow: no menu. */}
+        <Route path="/setup/:step" element={<Setup />} />
         <Route path="/emergency" element={<Emergency />} />
         <Route path="/emergency/countdown" element={<EmergencyCountdown />} />
         <Route path="/emergency/call" element={<EmergencyCall />} />

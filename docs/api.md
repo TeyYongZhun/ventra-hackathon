@@ -96,9 +96,12 @@ Return the logged-in patient's display identity.
 ```json
 {
   "name": "Mdm Tan",
-  "is_demo": true
+  "is_demo": true,
+  "text_size": null,
+  "set_up": true
 }
 ```
+`text_size`: `large` | `xl` | `null`. `set_up` is `false` for a new patient until the care targets are saved.
 
 **Errors:** `UNAUTHORIZED`
 
@@ -122,120 +125,58 @@ Clear the session cookie.
 
 ## Onboarding
 
-All onboarding routes save one setup step for the logged-in patient.
+Set-up steps after sign-up. A new patient starts empty (no targets, medicines or history). `GET /api/me` returns `set_up: false` until the targets are saved, and the app sends the patient through set-up first.
 
 ### PUT /api/onboarding/profile
+Partial update: send only what changed.
 
-**Session required:** Yes
-
-**Request body:**
 ```json
-{
-  "name": "string",
-  "age": 72,
-  "condition": "string",
-  "dischargeDate": "2026-09-27",
-  "dischargeWeightKg": 59.2,
-  "textSize": "string",
-  "weighTime": "7:10 AM"
-}
+{ "age": 68, "textSize": "xl" }
 ```
+Fields: `name`, `age` (18–120), `condition`, `dischargeDate` (YYYY-MM-DD), `textSize` (`large` | `xl`).
 
-**Success 200:**
-```json
-{ "ok": true }
-```
+**Success 200:** `{ "ok": true }` · **Errors:** `VALIDATION_ERROR`, `UNAUTHORIZED`
 
 ---
 
 ### PUT /api/onboarding/targets
+Filled in by clinic staff. Creates or replaces the care targets.
 
-**Session required:** Yes
-
-**Request body:**
 ```json
-{
-  "dryKg": 58.0,
-  "alertGainKg": 2.0,
-  "alertDays": 3,
-  "fluidMl": 1500,
-  "sodiumMg": 2000,
-  "capMl": 150
-}
+{ "dryKg": 70, "fluidMl": 1200, "sodiumMg": 2000, "alertGainKg": 2, "alertDays": 3 }
 ```
+Sanity ranges: dry weight 25–250 kg, fluid 500–5,000 ml, sodium 500–6,000 mg, gain 0.5–10 kg, days 1–14. `capMl` is optional here.
 
-**Success 200:**
-```json
-{ "ok": true }
-```
+**Success 200:** `{ "ok": true }` · **Errors:** `VALIDATION_ERROR`, `UNAUTHORIZED`
 
 ---
 
 ### PUT /api/onboarding/medications
+Replaces the medicine list with picks from `MEDICINE_CATALOG` (`packages/core/medicines.ts`), each with its times in minutes after midnight.
 
-**Session required:** Yes
-
-**Request body:**
 ```json
-{
-  "meds": [
-    {
-      "id": "furo",
-      "name": "Water pill",
-      "generic": "Furosemide",
-      "strength": "40 mg",
-      "times": [480],
-      "purpose": "Helps your body get rid of extra water...",
-      "looks": "Small white round tablet",
-      "tile": "#DCE3EC",
-      "round": { "size": 36, "bg": "#FFFFFF", "border": "#C9CED6", "line": "#C9CED6" }
-    }
-  ]
-}
+{ "meds": [{ "id": "furo", "times": [480] }, { "id": "dapa", "times": [480] }] }
 ```
 
-**Success 200:**
-```json
-{ "ok": true }
-```
+**Success 200:** `{ "ok": true }` · **Errors:** `VALIDATION_ERROR`, `NOT_FOUND` (id not in the catalog), `UNAUTHORIZED`
 
 ---
 
 ### PUT /api/onboarding/cap
-
-**Session required:** Yes
-
-**Request body:**
 ```json
-{
-  "capMl": 150
-}
+{ "capMl": 200 }
 ```
-
-**Success 200:**
-```json
-{ "ok": true }
-```
+**Success 200:** `{ "ok": true }` · **Errors:** `VALIDATION_ERROR`, `CONFLICT` (save the targets first), `UNAUTHORIZED`
 
 ---
 
 ### PUT /api/onboarding/contact
+One family contact; editing keeps an existing Telegram link.
 
-**Session required:** Yes
-
-**Request body:**
 ```json
-{
-  "name": "Mei Ling",
-  "relation": "daughter",
-  "phone": "+65xxxx"
-}
+{ "name": "Lee Wei", "relation": "son", "phone": "91234567" }
 ```
-
-**Success 200:**
-```json
-{ "ok": true }
-```
+**Success 200:** `{ "ok": true }` · **Errors:** `VALIDATION_ERROR`, `UNAUTHORIZED`
 
 ---
 
@@ -438,68 +379,31 @@ Undo the most recent fluid entry for the same day only. Soft delete (`deleted_at
 
 ## Meals
 
+Manual food log (photo scanning is optional and not built). Foods come from `FOODS` in `packages/core/foods.ts`: common Singapore meals with **approximate** sodium per serving. Today's total feeds `sodiumToday` in `GET /api/metrics`.
+
+### GET /api/meals
+Today's meals, newest first.
+
+```json
+{ "entries": [{ "id": 3, "time": "12:30 PM", "meal": "Lunch", "what": "Chicken rice", "sodiumMg": 1300, "tip": "Ask for less dark sauce and chilli, and skip the soup." }] }
+```
+
+---
+
 ### POST /api/meals
-Log a meal after vision confirmation.
-
-**Session required:** Yes
-
-**Request body:**
 ```json
-{
-  "meal": "Dinner",
-  "what": "Steamed fish with rice and vegetables",
-  "sodiumMg": 450,
-  "kcal": 480,
-  "potassiumMg": 720,
-  "phosphorusMg": 320,
-  "carbs": { "g": 60, "what": "Rice" },
-  "protein": { "g": 28, "what": "Fish" },
-  "fat": { "g": 10, "what": "Oil" },
-  "plate": [0.5, 0.25, 0.25],
-  "tip": "Great pick — steaming keeps the salt low. Skip extra soy sauce."
-}
+{ "foodId": "chicken-rice" }
 ```
+The server fills in the nutrition values and names the meal from the Singapore time (Breakfast before 11 AM, Lunch before 4 PM, Dinner from 6 PM, otherwise Snack).
 
-**Success 200:**
-```json
-{
-  "id": 1,
-  "date": "2026-10-07",
-  "time": "6:30 PM",
-  "meal": "Dinner",
-  "what": "Steamed fish with rice and vegetables",
-  "sodiumMg": 450,
-  "kcal": 480,
-  "potassiumMg": 720,
-  "phosphorusMg": 320,
-  "carbsJson": "{\"g\":60,\"what\":\"Rice\"}",
-  "proteinJson": "{\"g\":28,\"what\":\"Fish\"}",
-  "fatJson": "{\"g\":10,\"what\":\"Oil\"}",
-  "plateJson": "[0.5,0.25,0.25]",
-  "tip": "Great pick — steaming keeps the salt low. Skip extra soy sauce."
-}
-```
-
-**Errors:** `VALIDATION_ERROR`, `UNAUTHORIZED`
+**Success 200:** the new entry (same shape as above) · **Errors:** `VALIDATION_ERROR`, `NOT_FOUND` (unknown food), `UNAUTHORIZED`
 
 ---
 
 ### DELETE /api/meals/last
-Undo the most recent meal entry.
+Undo the latest meal logged today.
 
-**Session required:** Yes
-
-**Request body:** none
-
-**Success 200:**
-```json
-{
-  "ok": true,
-  "deletedId": 1
-}
-```
-
-**Errors:** `NOT_FOUND`
+**Success 200:** `{ "ok": true, "deletedId": 3 }` · **Errors:** `NOT_FOUND` (nothing logged today), `UNAUTHORIZED`
 
 ---
 
@@ -751,7 +655,7 @@ Ask the AI a question. Every question and answer passes the code guardrail in `p
 1. Session required; body validated with zod.
 2. `screenInput`: `emergency` and `dose` questions return the fixed line and never reach the AI. These are never rate limited.
 3. Rate limit: 8 AI calls per minute for the whole app (ADP free plan allows 10).
-4. ADP is called with the question only. `visitor_biz_id` and `session_id` are HMAC pseudonyms; no name, phone or patient id is sent.
+4. ADP is called with the question plus the patient's own numbers for today (`questionWithContext` in `packages/core/context.ts`): drink limit and intake, salt limit and intake, weight and dry weight, cap size. So "How much can I drink today?" gets their real number. Never sent: name, phone, patient id, medicines or dose times. `visitor_biz_id` and `session_id` are HMAC pseudonyms. Only the question itself is saved in `chat_messages`.
 5. `screenOutput` checks the answer; blocked answers become the `unsure` line.
 6. Question and reply are saved to `chat_messages` with `request_id` and `latency_ms`.
 
@@ -895,32 +799,33 @@ Called by the SOS call screen after the 10-second countdown. Messages the linked
 
 ## Report
 
-### GET /api/report.pdf
-Download the patient's PDF report.
+### GET /api/report
+The doctor report data, built by `buildReport` in `packages/core/report.ts` from the same functions as Home, Medicine and Track, so the numbers always match. The app renders it as a page that prints or saves as PDF on A4 (browser print).
 
-**Session required:** Yes
-
-**Request body:** none
-
-**Success 200:** `application/pdf` binary stream.
-
-**Errors:** `UNAUTHORIZED`, `NOT_FOUND`
-
----
-
-### POST /api/report/send
-Email or send the PDF report to the configured family contact.
-
-**Session required:** Yes
-
-**Request body:** none
-
-**Success 200:**
+**Success 200 (shape):**
 ```json
-{ "ok": true }
+{
+  "patient": { "name": "Mdm Tan", "age": 72, "condition": "heart failure", "family": { "name": "Mei Ling", "relation": "daughter" } },
+  "today": "2026-10-07",
+  "period": { "from": "2026-10-01", "to": "2026-10-07" },
+  "discharge": "2026-09-27",
+  "targets": { "dryKg": 58, "alertGainKg": 2, "alertDays": 3, "fluidMl": 1500, "sodiumMg": 2000, "capMl": 150 },
+  "weightToday": 58.4,
+  "vsDry": 0.4,
+  "weightChange": 0.2,
+  "adherence": { "due": 34, "taken": 32, "missed": 2, "pct": 94, "text": "32 of 34" },
+  "fluidDays": { "ok": 6, "of": 7 },
+  "sodiumToday": 1600,
+  "yellowDays": ["2026-10-03"],
+  "summary": ["Status: 6 green and 1 yellow day (3 Oct).", "…"],
+  "days": [{ "date": "2026-10-03", "zone": "yellow", "weightKg": 58.0, "fluid": "1,750 ml · over limit", "fluidOver": true, "medicines": "4 of 5 · missed furosemide", "missed": true, "symptoms": "Swollen ankles (mild)" }],
+  "medicines": [{ "name": "Water pill", "generic": "Furosemide", "dose": "40 mg · 8 AM", "taken": 5, "due": 7, "missedDates": ["2026-10-03", "2026-10-06"] }],
+  "meals": [{ "time": "12:40 PM", "meal": "Lunch", "what": "Fish soup with noodles", "sodiumMg": 1100, "kcal": 420 }],
+  "weights": [{ "date": "2026-09-27", "kg": 59.2 }]
+}
 ```
 
-**Errors:** `UNAUTHORIZED`, `NOT_FOUND` (no contact configured)
+**Errors:** `UNAUTHORIZED`
 
 ---
 

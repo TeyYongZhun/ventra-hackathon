@@ -200,6 +200,6 @@ describe('auth and patient scoping', () => {
     });
 
     expect(me.statusCode).toBe(200);
-    expect(me.json()).toEqual({ name: 'Mdm Tan', is_demo: true });
+    expect(me.json()).toEqual({ name: 'Mdm Tan', is_demo: true, text_size: null, set_up: true });
   });
 });

@@ -12,8 +12,11 @@ import { registerAskRoutes } from './routes/ask.js';
 import { registerDemoRoutes } from './routes/demo.js';
 import { registerFamilyRoutes } from './routes/family.js';
 import { registerLogRoutes } from './routes/logs.js';
+import { registerMealRoutes } from './routes/meals.js';
 import { registerMetricsRoutes } from './routes/metrics.js';
+import { registerOnboardingRoutes } from './routes/onboarding.js';
 import { registerTelegramRoutes } from './routes/telegram.js';
+import type { MeResponse } from '@ventra/core';
 import type { AdpClient } from './services/adp.js';
 import { notifyAlert } from './services/family.js';
 import type { TelegramClient } from './services/telegram.js';
@@ -183,7 +186,7 @@ export function createApiApp(options: CreateApiAppOptions) {
         pinHash,
         name: body.name,
         age: 0,
-        condition: '',
+        condition: 'heart failure',
         isDemo: false,
       }).returning({ id: schema.patients.id }).get();
 
@@ -255,6 +258,7 @@ export function createApiApp(options: CreateApiAppOptions) {
     const patient = db.select({
       name: schema.patients.name,
       isDemo: schema.patients.isDemo,
+      textSize: schema.patients.textSize,
     })
       .from(schema.patients)
       .where(eq(schema.patients.id, patientId))
@@ -264,7 +268,17 @@ export function createApiApp(options: CreateApiAppOptions) {
       return sendError(reply, 401, 'UNAUTHORIZED', 'Session required');
     }
 
-    return { name: patient.name, is_demo: patient.isDemo };
+    const targets = db.select({ id: schema.careTargets.id })
+      .from(schema.careTargets)
+      .where(eq(schema.careTargets.patientId, patientId))
+      .get();
+
+    return {
+      name: patient.name,
+      is_demo: patient.isDemo,
+      text_size: patient.textSize,
+      set_up: Boolean(targets),
+    } satisfies MeResponse;
   });
 
   const { telegram } = options;
@@ -283,6 +297,8 @@ export function createApiApp(options: CreateApiAppOptions) {
   registerFamilyRoutes(app, { db, now, telegram });
   registerTelegramRoutes(app, { db, now, telegram, webhookSecret: options.telegramWebhookSecret });
   registerDemoRoutes(app, { db, now });
+  registerMealRoutes(app, { db, now });
+  registerOnboardingRoutes(app, { db, now });
   registerAskRoutes(app, {
     db,
     adp: options.adp,

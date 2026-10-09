@@ -3,8 +3,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useDemoReset, useDemoYellowDay, useLogout, useMe } from '../lib/api';
 
 const ITEMS = [
+  { to: '/report', label: 'My report', sub: 'For your doctor — print or save as PDF' },
   { to: '/family', label: 'Summary for my family', sub: 'What your family sees on Telegram' },
   { to: '/alert', label: 'My alert and nurse script', sub: 'What to tell the nurse' },
+  { to: '/setup/1', label: 'Text size and set-up', sub: 'Text size, targets, medicines, cap, contact' },
 ];
 
 const rowStyle = {
@@ -47,12 +49,6 @@ export default function More() {
             {chevron}
           </Link>
         ))}
-        <div style={{ ...rowStyle, opacity: 0.55 }} aria-disabled="true">
-          <span style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-            <span style={{ fontSize: 'var(--text-body)', lineHeight: '28px', fontWeight: 700 }}>My report</span>
-            <span style={{ fontSize: 18, lineHeight: '24px', color: 'var(--color-ink-muted)' }}>Coming soon</span>
-          </span>
-        </div>
       </nav>
 
       {me.data?.is_demo && (

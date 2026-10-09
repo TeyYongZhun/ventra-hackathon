@@ -8,7 +8,18 @@ import type {
   FluidEntryResponse,
   FluidDeleteResponse,
   MealCreateRequest,
-  MealEntryResponse,
+  MealListEntry,
+  MealListResponse,
+  MeResponse,
+  OnboardingCapRequest,
+  OnboardingContactRequest,
+  OnboardingMedicationsRequest,
+  OnboardingProfileRequest,
+  OnboardingResponse,
+  OnboardingTargetsRequest,
+  Report,
+  SignupRequest,
+  SignupResponse,
   MealDeleteResponse,
   WeightCreateRequest,
   WeightEntryResponse,
@@ -38,7 +49,7 @@ import type {
   EmergencyNotifyRequest,
   EmergencyNotifyResponse,
 } from '@ventra/core';
-import { alertHeadline, familySummaryLines, mdmTanSeed, nurseScript, reasons, screenInput } from '@ventra/core';
+import { alertHeadline, buildReport, familySummaryLines, findFood, mdmTanSeed, nurseScript, reasons, screenInput } from '@ventra/core';
 import { getMockMetrics } from './mock-data';
 
 const isMockApi =
@@ -46,6 +57,11 @@ const isMockApi =
   (typeof process !== 'undefined' && process.env.VITEST === 'true');
 
 let mockSession = false;
+let mockSetUp = true;
+let mockMeals: MealListEntry[] = [
+  { id: 2, time: '12:40 PM', meal: 'Lunch', what: 'Fish soup with noodles', sodiumMg: 1100, tip: 'Most of the salt is in the soup — try drinking only half next time.' },
+  { id: 1, time: '7:30 AM', meal: 'Breakfast', what: 'Oat porridge with banana', sodiumMg: 500, tip: 'A good choice.' },
+];
 const mockFamily = {
   share: { weight: false, drinks: false, symptoms: false },
   sentToday: false,
@@ -66,6 +82,7 @@ function apiError(code: string, message: string): Error {
 function mockResponse(path: string, init?: RequestInit): unknown {
   if (path === '/api/auth/login') {
     mockSession = true;
+    mockSetUp = true;
     return { ok: true } satisfies LoginResponse;
   }
   if (path === '/api/auth/logout') {
@@ -74,7 +91,7 @@ function mockResponse(path: string, init?: RequestInit): unknown {
   }
   if (path === '/api/me') {
     if (!mockSession) throw unauthorized();
-    return { name: 'Mdm Tan', is_demo: true };
+    return { name: 'Mdm Tan', is_demo: true, text_size: null, set_up: mockSetUp } satisfies MeResponse;
   }
   if (path.startsWith('/api/metrics')) {
     if (!mockSession) throw unauthorized();
@@ -100,28 +117,34 @@ function mockResponse(path: string, init?: RequestInit): unknown {
     if (!mockSession) throw unauthorized();
     if (init?.method === 'POST') {
       const body = JSON.parse((init.body as string) || '{}') as MealCreateRequest;
-      return {
-        id: 1,
-        date: '2026-10-07',
-        time: '6:30 PM',
-        meal: body.meal,
-        what: body.what,
-        sodiumMg: body.sodiumMg,
-        kcal: body.kcal,
-        potassiumMg: body.potassiumMg,
-        phosphorusMg: body.phosphorusMg,
-        carbsJson: JSON.stringify(body.carbs),
-        proteinJson: JSON.stringify(body.protein),
-        fatJson: JSON.stringify(body.fat),
-        plateJson: JSON.stringify(body.plate),
-        tip: body.tip,
-      } satisfies MealEntryResponse;
+      const food = findFood(body.foodId);
+      if (!food) throw apiError('NOT_FOUND', 'Unknown food');
+      const entry = { id: mockMeals.length + 10, time: '12:30 PM', meal: 'Lunch', what: food.what, sodiumMg: food.sodiumMg, tip: food.tip };
+      mockMeals = [entry, ...mockMeals];
+      return entry satisfies MealListEntry;
     }
-    return { ok: true };
+    return { entries: mockMeals } satisfies MealListResponse;
   }
   if (path === '/api/meals/last') {
     if (!mockSession) throw unauthorized();
-    return { ok: true, deletedId: 1 } satisfies MealDeleteResponse;
+    const [last, ...rest] = mockMeals;
+    if (!last) throw apiError('NOT_FOUND', 'No meal to undo today');
+    mockMeals = rest;
+    return { ok: true, deletedId: last.id } satisfies MealDeleteResponse;
+  }
+  if (path === '/api/report') {
+    if (!mockSession) throw unauthorized();
+    return buildReport(mdmTanSeed) satisfies Report;
+  }
+  if (path === '/api/auth/signup') {
+    mockSession = true;
+    mockSetUp = false;
+    return { ok: true, patientId: 2 };
+  }
+  if (path.startsWith('/api/onboarding/')) {
+    if (!mockSession) throw unauthorized();
+    if (path === '/api/onboarding/targets') mockSetUp = true;
+    return { ok: true } satisfies OnboardingResponse;
   }
   if (path === '/api/weight') {
     if (!mockSession) throw unauthorized();
@@ -274,7 +297,7 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
 /* ------------------------------------------------------------------ */
 
 export function useMe() {
-  return useQuery<{ name: string; is_demo: boolean }>({
+  return useQuery<MeResponse>({
     queryKey: ['me'],
     queryFn: () => apiFetch('/api/me'),
     retry: false,
@@ -348,11 +371,21 @@ export function useDeleteLastFluid() {
 /* Meals                                                              */
 /* ------------------------------------------------------------------ */
 
+export function useMeals() {
+  return useQuery<MealListResponse>({
+    queryKey: ['meals'],
+    queryFn: () => apiFetch('/api/meals'),
+  });
+}
+
 export function useAddMeal() {
   const qc = useQueryClient();
-  return useMutation<MealEntryResponse, Error, MealCreateRequest>({
+  return useMutation<MealListEntry, Error, MealCreateRequest>({
     mutationFn: (body) => apiFetch('/api/meals', { method: 'POST', body: JSON.stringify(body) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['metrics'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['meals'] });
+      qc.invalidateQueries({ queryKey: ['metrics'] });
+    },
   });
 }
 
@@ -360,9 +393,49 @@ export function useDeleteLastMeal() {
   const qc = useQueryClient();
   return useMutation<MealDeleteResponse, Error, void>({
     mutationFn: () => apiFetch('/api/meals/last', { method: 'DELETE' }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['metrics'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['meals'] });
+      qc.invalidateQueries({ queryKey: ['metrics'] });
+    },
   });
 }
+
+/* ------------------------------------------------------------------ */
+/* Report                                                             */
+/* ------------------------------------------------------------------ */
+
+export function useReport() {
+  return useQuery<Report>({
+    queryKey: ['report'],
+    queryFn: () => apiFetch('/api/report'),
+  });
+}
+
+/* ------------------------------------------------------------------ */
+/* Sign-up and set-up                                                 */
+/* ------------------------------------------------------------------ */
+
+export function useSignup() {
+  const qc = useQueryClient();
+  return useMutation<SignupResponse, Error & { code?: string }, SignupRequest>({
+    mutationFn: (body) => apiFetch('/api/auth/signup', { method: 'POST', body: JSON.stringify(body) }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['me'] }),
+  });
+}
+
+function useOnboardingStep<T>(path: string) {
+  const qc = useQueryClient();
+  return useMutation<OnboardingResponse, Error, T>({
+    mutationFn: (body) => apiFetch(path, { method: 'PUT', body: JSON.stringify(body) }),
+    onSuccess: () => qc.invalidateQueries(),
+  });
+}
+
+export const useSaveProfile = () => useOnboardingStep<OnboardingProfileRequest>('/api/onboarding/profile');
+export const useSaveTargets = () => useOnboardingStep<OnboardingTargetsRequest>('/api/onboarding/targets');
+export const useSaveCap = () => useOnboardingStep<OnboardingCapRequest>('/api/onboarding/cap');
+export const useSaveMedications = () => useOnboardingStep<OnboardingMedicationsRequest>('/api/onboarding/medications');
+export const useSaveContact = () => useOnboardingStep<OnboardingContactRequest>('/api/onboarding/contact');
 
 /* ------------------------------------------------------------------ */
 /* Weight                                                             */

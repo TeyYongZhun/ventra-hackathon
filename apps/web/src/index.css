@@ -48,3 +48,27 @@ body {
   20% { opacity: 1; }
   100% { opacity: 0; transform: translate(-50%, 90px); }
 }
+
+/* Printing the doctor report (Report page): only the report itself, on plain paper. */
+@media print {
+  [data-noprint] {
+    display: none !important;
+  }
+  body {
+    background: #FFFFFF;
+  }
+  main {
+    padding: 0 !important;
+  }
+  .report-sheet {
+    padding: 0 !important;
+    border-radius: 0 !important;
+  }
+  tr {
+    break-inside: avoid;
+  }
+  @page {
+    size: A4;
+    margin: 14mm;
+  }
+}

@@ -7,13 +7,13 @@ describe('TrackTabs', () => {
   it('renders three tabs with correct labels', () => {
     render(<TrackTabs activeTab="drinks" onChange={() => {}} />);
     expect(screen.getByRole('tab', { name: /Log drinks/i })).toBeTruthy();
-    expect(screen.getByRole('tab', { name: /Scan meal/i })).toBeTruthy();
+    expect(screen.getByRole('tab', { name: /Log meals/i })).toBeTruthy();
     expect(screen.getByRole('tab', { name: /Log weight/i })).toBeTruthy();
   });
 
   it('marks the active tab with aria-selected', () => {
     render(<TrackTabs activeTab="meal" onChange={() => {}} />);
-    expect(screen.getByRole('tab', { name: /Scan meal/i }).getAttribute('aria-selected')).toBe('true');
+    expect(screen.getByRole('tab', { name: /Log meals/i }).getAttribute('aria-selected')).toBe('true');
     expect(screen.getByRole('tab', { name: /Log drinks/i }).getAttribute('aria-selected')).toBe('false');
   });
 

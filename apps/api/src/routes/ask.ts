@@ -5,6 +5,7 @@ import {
   SAFE_REPLIES,
   screenInput,
   screenOutput,
+  questionWithContext,
   type AskReplyKind,
   type AskResponse,
 } from '@ventra/core';
@@ -13,6 +14,7 @@ import * as schema from '../db/schema.js';
 import { patientScope } from '../db/scope.js';
 import { sendError } from '../errors.js';
 import { AdpError, type AdpClient } from '../services/adp.js';
+import { loadRecordNow } from '../services/alerts.js';
 import { sgDate } from '../time.js';
 
 // ADP free plan allows 10 requests per minute for the whole app; stay under it.
@@ -99,8 +101,10 @@ export function registerAskRoutes(app: FastifyInstance, options: AskRouteOptions
 
     let answer: string;
     try {
+      // The patient's own numbers (drinks, salt, weight — no medicines, no identity) go
+      // with the question so answers like "How much can I drink today?" use them.
       answer = await adp.ask({
-        question,
+        question: questionWithContext(question, loadRecordNow(db, scope.patientId, now())),
         requestId,
         sessionId: pseudonym('session', `${scope.patientId}:${sgDate(now())}`),
         visitorId: pseudonym('visitor', String(scope.patientId)),

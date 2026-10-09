@@ -82,7 +82,7 @@ function HomeView({ metrics }: { metrics: MetricsResponse }) {
       ariaLabel: `Calendar, today is ${dayHeading(metrics.today)}`,
     },
     { label: 'Visit prep', bg: '#C9EEE9', icon: <VisitPrepIcon />, to: '/more' },
-    { label: 'My report', bg: '#D6DEF7', icon: <ReportIcon />, to: '/more' },
+    { label: 'My report', bg: '#D6DEF7', icon: <ReportIcon />, to: '/report' },
   ];
 
   return (

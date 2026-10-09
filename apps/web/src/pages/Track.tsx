@@ -1,6 +1,8 @@
 import { useSearchParams } from 'react-router-dom';
 import { TrackTabs } from '../components';
 import { DrinksTab } from './DrinksTab';
+import { MealsTab } from './MealsTab';
+import { WeightTab } from './WeightTab';
 
 type TrackTab = 'drinks' | 'meal' | 'weight';
 
@@ -21,14 +23,8 @@ export default function Track() {
         Track
       </h1>
       <TrackTabs activeTab={tab} onChange={(next) => setParams({ tab: next }, { replace: true })} />
-      <div role="tabpanel" aria-label={tab === 'drinks' ? 'Log drinks' : tab === 'meal' ? 'Scan meal' : 'Log weight'}>
-        {tab === 'drinks' ? (
-          <DrinksTab />
-        ) : (
-          <p style={{ margin: 0, fontSize: 'var(--text-body)', lineHeight: 'var(--lh-body)', color: 'var(--color-ink-muted)' }}>
-            {tab === 'meal' ? 'Meal logging' : 'Weight logging'} is coming soon.
-          </p>
-        )}
+      <div role="tabpanel" aria-label={tab === 'drinks' ? 'Log drinks' : tab === 'meal' ? 'Log meals' : 'Log weight'}>
+        {tab === 'drinks' ? <DrinksTab /> : tab === 'meal' ? <MealsTab /> : <WeightTab />}
       </div>
     </div>
   );

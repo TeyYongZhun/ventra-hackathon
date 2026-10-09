@@ -2,7 +2,7 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { BottomNav, SOSButton } from './index';
 import type { NavTab } from './BottomNav';
 
-const PARENT_TAB: Record<string, NavTab> = { alert: 'home', nurse: 'home', family: 'more' };
+const PARENT_TAB: Record<string, NavTab> = { alert: 'home', nurse: 'home', family: 'more', report: 'more', weigh: 'track' };
 
 export function Layout() {
   const location = useLocation();
@@ -25,6 +25,7 @@ export function Layout() {
         <Outlet />
       </main>
       <div
+        data-noprint
         style={{
           position: 'fixed',
           bottom: 100,
@@ -35,6 +36,7 @@ export function Layout() {
         <SOSButton />
       </div>
       <div
+        data-noprint
         style={{
           position: 'fixed',
           bottom: 0,
