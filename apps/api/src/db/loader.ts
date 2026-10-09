@@ -75,8 +75,9 @@ export function loadPatientRecord(
 
   const takenAt: TakenAt = {};
   for (const d of doseRows.filter((d) => d.status === 'taken' && d.takenAt)) {
-    if (!takenAt[d.date]) takenAt[d.date] = {};
-    takenAt[d.date][d.time] = d.takenAt!;
+    const date = d.date as IsoDate;
+    if (!takenAt[date]) takenAt[date] = {};
+    takenAt[date][d.time] = d.takenAt!;
   }
 
   // Load weights
