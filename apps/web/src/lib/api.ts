@@ -33,7 +33,12 @@ import type {
   UiFlagsUpdateRequest,
   UiFlagsUpdateResponse,
   DemoResetResponse,
+  AskRequest,
+  AskResponse,
+  EmergencyNotifyRequest,
+  EmergencyNotifyResponse,
 } from '@ventra/core';
+import { alertHeadline, familySummaryLines, mdmTanSeed, nurseScript, reasons, screenInput } from '@ventra/core';
 import { getMockMetrics } from './mock-data';
 
 const isMockApi =
@@ -41,10 +46,20 @@ const isMockApi =
   (typeof process !== 'undefined' && process.env.VITEST === 'true');
 
 let mockSession = false;
+const mockFamily = {
+  share: { weight: false, drinks: false, symptoms: false },
+  sentToday: false,
+};
 
 function unauthorized(): Error {
   const err = new Error('Session required');
   (err as Error & { status?: number }).status = 401;
+  return err;
+}
+
+function apiError(code: string, message: string): Error {
+  const err = new Error(message);
+  (err as Error & { code?: string }).code = code;
   return err;
 }
 
@@ -124,10 +139,17 @@ function mockResponse(path: string, init?: RequestInit): unknown {
   }
   if (path === '/api/alerts/latest') {
     if (!mockSession) throw unauthorized();
+    // Mock patient: today (7 Oct) is green, so the script is for the latest alert day.
+    const date = '2026-10-03' as const;
     return {
-      zone: 'green',
-      reasons: [],
-      script: [],
+      zone: 'yellow',
+      date,
+      time: '6:10 PM',
+      headline: alertHeadline(mdmTanSeed, date),
+      reasons: reasons(mdmTanSeed, date),
+      script: nurseScript(mdmTanSeed, date),
+      familyTold: true,
+      family: mdmTanSeed.patient.family,
     } satisfies AlertsLatestResponse;
   }
   if (path === '/api/voice/transcribe') {
@@ -153,12 +175,33 @@ function mockResponse(path: string, init?: RequestInit): unknown {
   if (path === '/api/family/settings') {
     if (!mockSession) throw unauthorized();
     if (init?.method === 'PUT') {
+      const body = JSON.parse((init.body as string) || '{}') as FamilySettingsUpdateRequest;
+      mockFamily.share = {
+        weight: body.weight ?? mockFamily.share.weight,
+        drinks: body.drinks ?? mockFamily.share.drinks,
+        symptoms: body.symptoms ?? mockFamily.share.symptoms,
+      };
       return { ok: true } satisfies FamilySettingsUpdateResponse;
     }
-    return { enabled: true, alerts: true, status: true, medicines: true, dailySummary: true } satisfies FamilySettingsResponse;
+    return {
+      enabled: true,
+      alerts: true,
+      status: true,
+      medicines: true,
+      dailySummary: true,
+      ...mockFamily.share,
+      family: mdmTanSeed.patient.family,
+      linked: true,
+      linkCode: null,
+      linkUrl: null,
+      sentToday: mockFamily.sentToday,
+      preview: familySummaryLines(mdmTanSeed, mockFamily.share),
+    } satisfies FamilySettingsResponse;
   }
   if (path === '/api/family/summary/send') {
     if (!mockSession) throw unauthorized();
+    if (mockFamily.sentToday) throw apiError('CONFLICT', "Today's summary was already sent");
+    mockFamily.sentToday = true;
     return { ok: true, sentAt: new Date().toISOString() } satisfies FamilySummarySendResponse;
   }
   if (path === '/api/report/send') {
@@ -171,6 +214,29 @@ function mockResponse(path: string, init?: RequestInit): unknown {
       return { ok: true } satisfies UiFlagsUpdateResponse;
     }
     return {} satisfies UiFlagsResponse;
+  }
+  if (path === '/api/ask') {
+    if (!mockSession) throw unauthorized();
+    // Same code guardrail as the server, so fixed safety replies match.
+    const body = JSON.parse((init?.body as string) || '{}') as AskRequest;
+    const screened = screenInput(body.question ?? '');
+    if (!screened.allowed) {
+      const kind = screened.reason === 'invalid' ? 'unsure' : screened.reason;
+      return { reply: screened.reply, kind, request_id: 'mock' } satisfies AskResponse;
+    }
+    return {
+      reply: 'Your water pill helps your body pass extra salt and water, so you have less swelling and breathlessness.',
+      kind: 'answer',
+      request_id: 'mock',
+    } satisfies AskResponse;
+  }
+  if (path === '/api/emergency/notify') {
+    if (!mockSession) throw unauthorized();
+    return { told: true, family: mdmTanSeed.patient.family } satisfies EmergencyNotifyResponse;
+  }
+  if (path === '/api/demo/yellow-day') {
+    if (!mockSession) throw unauthorized();
+    return { ok: true } satisfies DemoResetResponse;
   }
   if (path === '/api/demo/reset') {
     if (!mockSession) throw unauthorized();
@@ -335,6 +401,26 @@ export function useAddSymptom() {
 }
 
 /* ------------------------------------------------------------------ */
+/* Ask AI                                                             */
+/* ------------------------------------------------------------------ */
+
+export function useAsk() {
+  return useMutation<AskResponse, Error & { code?: string }, AskRequest>({
+    mutationFn: (body) => apiFetch('/api/ask', { method: 'POST', body: JSON.stringify(body) }),
+  });
+}
+
+/* ------------------------------------------------------------------ */
+/* Emergency                                                          */
+/* ------------------------------------------------------------------ */
+
+export function useEmergencyNotify() {
+  return useMutation<EmergencyNotifyResponse, Error, EmergencyNotifyRequest>({
+    mutationFn: (body) => apiFetch('/api/emergency/notify', { method: 'POST', body: JSON.stringify(body) }),
+  });
+}
+
+/* ------------------------------------------------------------------ */
 /* Alerts                                                             */
 /* ------------------------------------------------------------------ */
 
@@ -398,8 +484,10 @@ export function useUpdateFamilySettings() {
 }
 
 export function useSendFamilySummary() {
-  return useMutation<FamilySummarySendResponse, Error, void>({
+  const qc = useQueryClient();
+  return useMutation<FamilySummarySendResponse, Error & { code?: string }, void>({
     mutationFn: () => apiFetch('/api/family/summary/send', { method: 'POST' }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['family', 'settings'] }),
   });
 }
 
@@ -440,6 +528,14 @@ export function useDemoReset() {
   const qc = useQueryClient();
   return useMutation<DemoResetResponse, Error, void>({
     mutationFn: () => apiFetch('/api/demo/reset', { method: 'POST' }),
+    onSuccess: () => qc.invalidateQueries(),
+  });
+}
+
+export function useDemoYellowDay() {
+  const qc = useQueryClient();
+  return useMutation<DemoResetResponse, Error, void>({
+    mutationFn: () => apiFetch('/api/demo/yellow-day', { method: 'POST' }),
     onSuccess: () => qc.invalidateQueries(),
   });
 }

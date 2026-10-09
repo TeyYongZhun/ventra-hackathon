@@ -34,45 +34,53 @@ This means:
 
 ## Hugging Face Spaces
 
-A `Dockerfile.hf` is already included. It runs the API on port `7860` (required by Spaces).
+`Dockerfile.hf` runs the app on port `7860` as user `1000` (both required by Spaces). Spaces only build a file named **`Dockerfile`** at the root of the Space, and read settings from front matter at the top of the Space's **`README.md`**. So the Space gets a copy of this repo where `Dockerfile.hf` becomes `Dockerfile`.
 
-### 1. Create a Space
-- Go to [huggingface.co/spaces](https://huggingface.co/spaces)
-- Click **Create new Space**
-- Choose **Docker** → **Blank**
+### 1. Create the Space (once)
+- Go to [huggingface.co/new-space](https://huggingface.co/new-space)
+- SDK: **Docker** → **Blank**, hardware **CPU basic (free)**, visibility **Public**
 
-### 2. Push this repo
+### 2. Add secrets (Space → Settings → Variables and secrets)
+
+| Name | Value |
+|---|---|
+| `ADP_KEY_GENERAL` | ADP app key (secret) |
+| `TELEGRAM_BOT_TOKEN` | Bot token from BotFather (secret) |
+| `TELEGRAM_WEBHOOK_SECRET` | Any long random string (secret) |
+| `SESSION_SECRET` | Any long random string (secret) |
+| `PUBLIC_URL` | `https://<owner>-<space>.hf.space` (variable) |
+| `DEMO_FAMILY_CHAT_ID` | Optional. Telegram chat id of the demo family phone, so it stays linked after the Space restarts (variable) |
+
+On start the server registers the Telegram webhook at `PUBLIC_URL/api/telegram/webhook`, migrates the database and rebuilds the demo patient.
+
+### 3. Push
 
 ```bash
-git clone https://huggingface.co/spaces/YOUR_USERNAME/ventra
-cd ventra
-# copy your project files here
-git add .
-git commit -m "Initial deploy"
-git push
+git remote add hf https://huggingface.co/spaces/<owner>/<space>   # once
+git switch -c hf-deploy
+cp Dockerfile.hf Dockerfile
+# Put this front matter at the very top of README.md:
+#   ---
+#   title: Ventra
+#   emoji: 💙
+#   colorFrom: blue
+#   colorTo: green
+#   sdk: docker
+#   app_port: 7860
+#   pinned: false
+#   ---
+git commit -am "chore: Hugging Face Space build"
+git push hf hf-deploy:main --force
+git switch main && git branch -D hf-deploy
 ```
 
-Or use the Hugging Face UI to upload files.
+Pushing asks for your Hugging Face username and an access token with **write** permission.
 
-### 3. Required files
-Make sure these are in the root of the Space:
+### 4. Check
+- Open **`https://<owner>-<space>.hf.space`** directly (not the huggingface.co/spaces page). The embedded page runs the app in a third-party iframe, where the login cookie is blocked.
+- `/api/health` returns `{"ok":true}`; log in as Mdm Tan (81234567 / 1234).
 
-- `Dockerfile.hf`
-- `package.json`
-- `pnpm-workspace.yaml`
-- `pnpm-lock.yaml`
-- `apps/`, `packages/`, `design/` (full repo)
-
-### 4. Build settings
-Set the Space to use the custom Dockerfile:
-- Go to **Settings** → **Space Hardware**
-- Select **CPU (free)**
-- The `Dockerfile.hf` will be auto-detected, or set **Dockerfile location** to `Dockerfile.hf`
-
-### 5. Access the app
-Once built, open the Space URL. The API serves the built React app at `/`.
-
-> **Note:** Hugging Face Spaces sleeps after inactivity. The first visit after sleep will take ~30–60 seconds to cold-start.
+> **Note:** Free Spaces sleep after about 48 hours without visits and wipe the disk on restart. The demo patient is rebuilt on every start; real sign-ups are lost. Open the link a few minutes before judging to wake it.
 
 ---
 

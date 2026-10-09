@@ -7,10 +7,16 @@ import { z } from 'zod';
 import * as schema from './db/schema.js';
 import { requirePatientId } from './db/scope.js';
 import { sendError } from './errors.js';
+import { registerAlertRoutes } from './routes/alerts.js';
 import { registerAskRoutes } from './routes/ask.js';
+import { registerDemoRoutes } from './routes/demo.js';
+import { registerFamilyRoutes } from './routes/family.js';
 import { registerLogRoutes } from './routes/logs.js';
 import { registerMetricsRoutes } from './routes/metrics.js';
+import { registerTelegramRoutes } from './routes/telegram.js';
 import type { AdpClient } from './services/adp.js';
+import { notifyAlert } from './services/family.js';
+import type { TelegramClient } from './services/telegram.js';
 
 export type ApiDb = BetterSQLite3Database<typeof schema>;
 
@@ -26,6 +32,8 @@ export interface CreateApiAppOptions {
   loginAttempts?: Map<string, LoginAttempt>;
   adp?: AdpClient;
   pseudonymSecret?: string;
+  telegram?: TelegramClient;
+  telegramWebhookSecret?: string;
 }
 
 const SESSION_COOKIE = 'ventra_session';
@@ -83,7 +91,9 @@ function clearSessionCookie(): string {
 function isApiAuthExempt(method: string, path: string): boolean {
   return path === '/api/health'
     || (method === 'POST' && path === '/api/auth/signup')
-    || (method === 'POST' && path === '/api/auth/login');
+    || (method === 'POST' && path === '/api/auth/login')
+    // Telegram's servers call this; it checks its own secret header instead.
+    || (method === 'POST' && path === '/api/telegram/webhook');
 }
 
 function isSqliteUniqueConstraint(error: unknown): boolean {
@@ -257,8 +267,22 @@ export function createApiApp(options: CreateApiAppOptions) {
     return { name: patient.name, is_demo: patient.isDemo };
   });
 
+  const { telegram } = options;
+
   registerMetricsRoutes(app, { db, now });
-  registerLogRoutes(app, { db, now });
+  registerLogRoutes(app, {
+    db,
+    now,
+    // Alerts are always shared: tell the family without making the patient wait.
+    onAlert: (patientId, alertId) => {
+      notifyAlert(db, telegram, patientId, alertId, now())
+        .catch((error) => app.log.error({ err: error, alertId }, 'Failed to tell family about alert'));
+    },
+  });
+  registerAlertRoutes(app, { db, now });
+  registerFamilyRoutes(app, { db, now, telegram });
+  registerTelegramRoutes(app, { db, now, telegram, webhookSecret: options.telegramWebhookSecret });
+  registerDemoRoutes(app, { db, now });
   registerAskRoutes(app, {
     db,
     adp: options.adp,

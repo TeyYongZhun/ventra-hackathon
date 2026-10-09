@@ -226,6 +226,16 @@ function listJoin(values: string[]): string {
   return `${values.slice(0, -1).join(', ')} and ${values[values.length - 1]}`;
 }
 
+export function symptomLabel(key: SymptomKey): string {
+  return SYMPTOMS[key].label;
+}
+
+// "Fri 9 Oct"
+export function dayShort(date: IsoDate): string {
+  const parsed = new Date(parseDate(date));
+  return `${(DAY_LONG[parsed.getUTCDay()] ?? '').slice(0, 3)} ${parsed.getUTCDate()} ${MONTH_SHORT[parsed.getUTCMonth()]}`;
+}
+
 function dayName(date: IsoDate): string {
   return DAY_LONG[new Date(parseDate(date)).getUTCDay()] ?? '';
 }

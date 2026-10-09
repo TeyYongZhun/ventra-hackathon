@@ -2,11 +2,15 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { BottomNav, SOSButton } from './index';
 import type { NavTab } from './BottomNav';
 
+const PARENT_TAB: Record<string, NavTab> = { alert: 'home', nurse: 'home', family: 'more' };
+
 export function Layout() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const activeTab = (location.pathname.slice(1) || 'home') as NavTab;
+  // Sub-screens light up the tab they belong to.
+  const segment = location.pathname.split('/')[1] || 'home';
+  const activeTab = (PARENT_TAB[segment] ?? segment) as NavTab;
 
   return (
     <div

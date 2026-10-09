@@ -11,6 +11,7 @@ export function LockedSwitch({ label }: LockedSwitchProps) {
         alignItems: 'center',
         gap: 12,
       }}
+      role="img"
       aria-label={label ? `${label}, locked on` : 'Locked on'}
     >
       <span

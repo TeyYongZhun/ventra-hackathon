@@ -6,6 +6,15 @@ import bcryptjs from 'bcryptjs';
 import { addDays, mdmTanSeed, type IsoDate, type MealLog } from '@ventra/core';
 import * as schema from './schema.js';
 
+type Db = BetterSQLite3Database<typeof schema>;
+
+export interface DemoDataOptions {
+  // Yellow-day demo: today's water pill is recorded as missed instead of taken.
+  yellowDay?: boolean;
+  // Telegram chat to keep (or set) on the demo family contact.
+  familyChatId?: string | null;
+}
+
 function daysBetween(from: IsoDate, to: IsoDate): number {
   return Math.round((Date.parse(to) - Date.parse(from)) / 864e5);
 }
@@ -27,39 +36,31 @@ function mealRow(meal: MealLog) {
   };
 }
 
-// Inserts Mdm Tan from the core fixture, shifting every date so her last day is `today`.
-// The server passes today's Singapore date, so the demo history always ends today.
-export async function seedDemoPatient(
-  db: BetterSQLite3Database<typeof schema>,
-  today: IsoDate = mdmTanSeed.today,
-): Promise<number> {
+// Writes Mdm Tan's synthetic history for an existing patient row, from the core fixture,
+// with every date shifted so her last day is `today`.
+function insertDemoData(db: Db, patientId: number, today: IsoDate, options: DemoDataOptions = {}) {
   const record = mdmTanSeed;
   const offset = daysBetween(record.today, today);
   const day = (date: IsoDate) => addDays(date, offset);
+  const waterPill = record.meds.find((med) => med.name === 'Water pill');
+  const isYellowDayPill = (date: IsoDate, med: string) =>
+    Boolean(options.yellowDay) && date === record.today && med === waterPill?.id;
 
-  // Hash PIN 1234
-  const pinHash = await bcryptjs.hash('1234', 10);
-
-  const patientResult = db.insert(schema.patients).values({
-    phone: '81234567',
-    pinHash,
+  db.update(schema.patients).set({
     name: record.patient.name,
     age: record.patient.age,
     condition: record.patient.condition,
     dischargeDate: day(record.discharge),
     dischargeWeightKg: record.weights[record.discharge] ?? null,
-    textSize: null,
     weighTime: record.weighTime,
-    isDemo: true,
-  }).returning({ id: schema.patients.id }).get();
-
-  const patientId = patientResult.id;
+  }).where(eq(schema.patients.id, patientId)).run();
 
   db.insert(schema.contacts).values({
     patientId,
     name: record.patient.family.name,
     relation: record.patient.family.relation,
     phone: null,
+    telegramChatId: options.familyChatId ?? null,
   }).run();
 
   db.insert(schema.careTargets).values({ patientId, ...record.targets }).run();
@@ -80,7 +81,11 @@ export async function seedDemoPatient(
     }).run();
   }
 
-  for (const dose of record.missed) {
+  const missed = [...record.missed];
+  if (options.yellowDay && waterPill) {
+    missed.push({ date: record.today, med: waterPill.id, time: waterPill.times[0] ?? 480, why: 'demo' });
+  }
+  for (const dose of missed) {
     db.insert(schema.doseEvents).values({
       patientId,
       date: day(dose.date),
@@ -94,6 +99,7 @@ export async function seedDemoPatient(
   }
 
   for (const dose of record.taken) {
+    if (isYellowDayPill(dose.date, dose.med)) continue;
     db.insert(schema.doseEvents).values({
       patientId,
       date: day(dose.date),
@@ -156,41 +162,66 @@ export async function seedDemoPatient(
       familyTold: alert.familyTold,
     }).run();
   }
-
-  return patientId;
 }
 
-export async function reseedDemoPatient(
-  db: BetterSQLite3Database<typeof schema>,
-  today: IsoDate = mdmTanSeed.today,
-): Promise<number> {
-  // Find existing demo patient
+// Removes everything logged for a patient except the patient row and sessions.
+function clearPatientData(db: Db, patientId: number) {
+  db.delete(schema.careTargets).where(eq(schema.careTargets.patientId, patientId)).run();
+  db.delete(schema.medications).where(eq(schema.medications.patientId, patientId)).run();
+  db.delete(schema.doseEvents).where(eq(schema.doseEvents.patientId, patientId)).run();
+  db.delete(schema.weights).where(eq(schema.weights.patientId, patientId)).run();
+  db.delete(schema.fluidEntries).where(eq(schema.fluidEntries.patientId, patientId)).run();
+  db.delete(schema.meals).where(eq(schema.meals.patientId, patientId)).run();
+  db.delete(schema.symptoms).where(eq(schema.symptoms.patientId, patientId)).run();
+  db.delete(schema.alerts).where(eq(schema.alerts.patientId, patientId)).run();
+  db.delete(schema.contacts).where(eq(schema.contacts.patientId, patientId)).run();
+  db.delete(schema.shareSettings).where(eq(schema.shareSettings.patientId, patientId)).run();
+  db.delete(schema.summaries).where(eq(schema.summaries.patientId, patientId)).run();
+  db.delete(schema.uiFlags).where(eq(schema.uiFlags.patientId, patientId)).run();
+  db.delete(schema.chatMessages).where(eq(schema.chatMessages.patientId, patientId)).run();
+}
+
+// Inserts Mdm Tan (phone 81234567, PIN 1234) with history ending on `today`.
+export async function seedDemoPatient(db: Db, today: IsoDate = mdmTanSeed.today, options: DemoDataOptions = {}): Promise<number> {
+  const record = mdmTanSeed;
+  const pinHash = await bcryptjs.hash('1234', 10);
+
+  const patient = db.insert(schema.patients).values({
+    phone: '81234567',
+    pinHash,
+    name: record.patient.name,
+    age: record.patient.age,
+    condition: record.patient.condition,
+    textSize: null,
+    isDemo: true,
+  }).returning({ id: schema.patients.id }).get();
+
+  insertDemoData(db, patient.id, today, options);
+  return patient.id;
+}
+
+// Rebuilds the demo patient's data in place, keeping the patient id, sessions and the
+// family's Telegram link. Creates the demo patient if there is none.
+export async function reseedDemoPatient(db: Db, today: IsoDate = mdmTanSeed.today, options: DemoDataOptions = {}): Promise<number> {
   const existing = db.select({ id: schema.patients.id })
     .from(schema.patients)
     .where(eq(schema.patients.isDemo, true))
     .get();
 
-  if (existing) {
-    const patientId = existing.id;
-    // Delete related data in child tables first
-    db.delete(schema.sessions).where(eq(schema.sessions.patientId, patientId)).run();
-    db.delete(schema.careTargets).where(eq(schema.careTargets.patientId, patientId)).run();
-    db.delete(schema.medications).where(eq(schema.medications.patientId, patientId)).run();
-    db.delete(schema.doseEvents).where(eq(schema.doseEvents.patientId, patientId)).run();
-    db.delete(schema.weights).where(eq(schema.weights.patientId, patientId)).run();
-    db.delete(schema.fluidEntries).where(eq(schema.fluidEntries.patientId, patientId)).run();
-    db.delete(schema.meals).where(eq(schema.meals.patientId, patientId)).run();
-    db.delete(schema.symptoms).where(eq(schema.symptoms.patientId, patientId)).run();
-    db.delete(schema.alerts).where(eq(schema.alerts.patientId, patientId)).run();
-    db.delete(schema.contacts).where(eq(schema.contacts.patientId, patientId)).run();
-    db.delete(schema.shareSettings).where(eq(schema.shareSettings.patientId, patientId)).run();
-    db.delete(schema.summaries).where(eq(schema.summaries.patientId, patientId)).run();
-    db.delete(schema.uiFlags).where(eq(schema.uiFlags.patientId, patientId)).run();
-    db.delete(schema.chatMessages).where(eq(schema.chatMessages.patientId, patientId)).run();
-    db.delete(schema.patients).where(eq(schema.patients.id, patientId)).run();
+  if (!existing) {
+    return seedDemoPatient(db, today, options);
   }
 
-  return seedDemoPatient(db, today);
+  const linkedChat = db.select({ chatId: schema.contacts.telegramChatId })
+    .from(schema.contacts)
+    .where(eq(schema.contacts.patientId, existing.id))
+    .get()?.chatId;
+
+  db.transaction((tx) => {
+    clearPatientData(tx, existing.id);
+    insertDemoData(tx, existing.id, today, { ...options, familyChatId: linkedChat ?? options.familyChatId ?? null });
+  });
+  return existing.id;
 }
 
 // CLI runner

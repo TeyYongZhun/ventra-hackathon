@@ -7,7 +7,10 @@ import Track from './pages/Track';
 import Medicine from './pages/Medicine';
 import AskAI from './pages/AskAI';
 import More from './pages/More';
-import Emergency from './pages/Emergency';
+import Alert from './pages/Alert';
+import NurseCall from './pages/NurseCall';
+import Family from './pages/Family';
+import Emergency, { EmergencyCall, EmergencyCountdown } from './pages/Emergency';
 
 function App() {
   return (
@@ -21,9 +24,16 @@ function App() {
           <Route path="/medicine" element={<Medicine />} />
           <Route path="/ask" element={<AskAI />} />
           <Route path="/more" element={<More />} />
-          <Route path="/emergency" element={<Emergency />} />
+          <Route path="/alert" element={<Alert />} />
+          <Route path="/nurse" element={<NurseCall />} />
+          <Route path="/family" element={<Family />} />
         </Route>
+        {/* Full-screen emergency flow: no menu, nothing to distract. */}
+        <Route path="/emergency" element={<Emergency />} />
+        <Route path="/emergency/countdown" element={<EmergencyCountdown />} />
+        <Route path="/emergency/call" element={<EmergencyCall />} />
       </Route>
+      <Route path="*" element={<Navigate to="/home" replace />} />
     </Routes>
   );
 }

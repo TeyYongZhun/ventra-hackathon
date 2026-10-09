@@ -15,6 +15,13 @@
       "when": 1791540305986,
       "tag": "0001_unique_silverclaw",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1791542860135,
+      "tag": "0002_rare_lady_mastermind",
+      "breakpoints": true
     }
   ]
 }

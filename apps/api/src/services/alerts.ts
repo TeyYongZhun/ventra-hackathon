@@ -10,21 +10,21 @@ export function loadRecordNow(db: ApiDb, patientId: number, nowMs: number): Pati
 
 // Runs the fixed alert rules (packages/core/rules.ts) after a write.
 // Records at most one alert per day, the first time today turns yellow.
-export function runAlertRules(db: ApiDb, patientId: number, nowMs: number): { zone: AlertZone; created: boolean } {
+export function runAlertRules(db: ApiDb, patientId: number, nowMs: number): { zone: AlertZone; alertId: number | null } {
   const record = loadRecordNow(db, patientId, nowMs);
   const { zone } = evaluate(record, record.today);
 
   if (zone === 'green' || alertOn(record, record.today)) {
-    return { zone, created: false };
+    return { zone, alertId: null };
   }
 
-  db.insert(schema.alerts).values({
+  const alert = db.insert(schema.alerts).values({
     patientId,
     date: record.today,
     time: sgClock(nowMs),
     zone,
     familyTold: false,
-  }).run();
+  }).returning({ id: schema.alerts.id }).get();
 
-  return { zone, created: true };
+  return { zone, alertId: alert.id };
 }

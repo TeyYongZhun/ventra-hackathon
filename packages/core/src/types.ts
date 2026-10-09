@@ -3,18 +3,16 @@ import type {
   PatientInfo,
   Targets,
   Medicine,
-  MealLog,
-  DrinkLog,
   SymptomKey,
   SymptomLog,
   AlertLog,
-  DoseStatus,
   AdherenceSummary,
   PillsTodaySummary,
   Reason,
   ScriptLine,
 } from './record.js';
 import type { AlertZone } from './rules.js';
+import type { SummaryLine } from './family.js';
 
 // ------------------------------------------------------------------
 // Standard error shape
@@ -224,10 +222,18 @@ export interface SymptomEntryResponse {
 // ------------------------------------------------------------------
 // Alerts
 // ------------------------------------------------------------------
+// The day the nurse script is about: today if today has an alert or is yellow,
+// otherwise the most recent alert day, otherwise today.
 export interface AlertsLatestResponse {
   zone: AlertZone;
+  date: IsoDate;
+  // Time the alert was raised; null when that day has no alert
+  time: string | null;
+  headline: string;
   reasons: Reason[];
   script: ScriptLine[];
+  familyTold: boolean;
+  family: { name: string; relation: string };
 }
 
 // ------------------------------------------------------------------
@@ -310,16 +316,30 @@ export interface VisionMedboxResponse {
 // ------------------------------------------------------------------
 // Family
 // ------------------------------------------------------------------
+// alerts, status, medicines and dailySummary are always true (locked for safety).
 export interface FamilySettingsResponse {
   enabled: boolean;
   alerts: boolean;
   status: boolean;
   medicines: boolean;
   dailySummary: boolean;
+  weight: boolean;
+  drinks: boolean;
+  symptoms: boolean;
+  family: { name: string; relation: string } | null;
+  // Telegram link state. linkCode/linkUrl are only set while not linked.
+  linked: boolean;
+  linkCode: string | null;
+  linkUrl: string | null;
+  sentToday: boolean;
+  preview: SummaryLine[];
 }
 
+// Locked keys (alerts, status, medicines) are ignored if sent.
 export interface FamilySettingsUpdateRequest {
-  enabled?: boolean;
+  weight?: boolean;
+  drinks?: boolean;
+  symptoms?: boolean;
 }
 
 export interface FamilySettingsUpdateResponse {
@@ -329,6 +349,18 @@ export interface FamilySettingsUpdateResponse {
 export interface FamilySummarySendResponse {
   ok: true;
   sentAt: string;
+}
+
+// POST /api/emergency/notify { what }: told is true only if the family message was delivered.
+export type EmergencyWhat = "Can't breathe" | 'Chest pain' | 'Fainted or very dizzy' | 'Other emergency';
+
+export interface EmergencyNotifyRequest {
+  what: EmergencyWhat;
+}
+
+export interface EmergencyNotifyResponse {
+  told: boolean;
+  family: { name: string; relation: string } | null;
 }
 
 // ------------------------------------------------------------------

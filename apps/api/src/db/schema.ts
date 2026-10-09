@@ -137,14 +137,23 @@ export const contacts = sqliteTable('contacts', {
   name: text('name').notNull(),
   relation: text('relation').notNull(),
   phone: text('phone'),
+  // Set when the family member sends /start <code> to the Telegram bot.
+  telegramChatId: text('telegram_chat_id'),
+  // One-time code shown in the app; cleared once used.
+  linkCode: text('link_code'),
+  linkCodeExpiresAt: text('link_code_expires_at'),
 }, (table) => ({
   patientIdIdx: index('contacts_patient_id_idx').on(table.patientId),
 }));
 
+// Alerts, status and medicines are always shared (not stored); these three are the patient's choice.
 export const shareSettings = sqliteTable('share_settings', {
   id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
   patientId: integer('patient_id').notNull().references(() => patients.id),
   enabled: integer('enabled', { mode: 'boolean' }).notNull().default(true),
+  weight: integer('weight', { mode: 'boolean' }).notNull().default(false),
+  drinks: integer('drinks', { mode: 'boolean' }).notNull().default(false),
+  symptoms: integer('symptoms', { mode: 'boolean' }).notNull().default(false),
 }, (table) => ({
   patientIdIdx: index('share_settings_patient_id_idx').on(table.patientId),
 }));

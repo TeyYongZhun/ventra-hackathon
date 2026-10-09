@@ -1,0 +1,10 @@
+# Never send local installs, builds or secrets into an image.
+**/node_modules
+**/dist
+apps/web/dev-dist
+**/data
+.env
+.env.*
+!.env.example
+.git
+evidence

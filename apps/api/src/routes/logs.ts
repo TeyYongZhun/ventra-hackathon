@@ -40,11 +40,18 @@ const doseConfirmSchema = z.object({
 export interface LogRouteOptions {
   db: ApiDb;
   now: () => number;
+  // Called when a write turns today yellow for the first time (e.g. to tell the family).
+  onAlert?: (patientId: number, alertId: number) => void;
 }
 
 // Raw-event logging. Every write is scoped to the session patient and re-runs the alert rules.
 export function registerLogRoutes(app: FastifyInstance, options: LogRouteOptions) {
-  const { db, now } = options;
+  const { db, now, onAlert } = options;
+
+  function afterWrite(patientId: number, nowMs: number) {
+    const { alertId } = runAlertRules(db, patientId, nowMs);
+    if (alertId != null) onAlert?.(patientId, alertId);
+  }
 
   app.get('/api/fluid', async (request) => {
     const scope = patientScope(request);
@@ -84,7 +91,7 @@ export function registerLogRoutes(app: FastifyInstance, options: LogRouteOptions
       ml: schema.fluidEntries.ml,
     }).get();
 
-    runAlertRules(db, scope.patientId, nowMs);
+    afterWrite(scope.patientId, nowMs);
     return { ...entry, date: entry.date as IsoDate } satisfies FluidEntryResponse;
   });
 
@@ -110,7 +117,7 @@ export function registerLogRoutes(app: FastifyInstance, options: LogRouteOptions
       .where(and(scope.where(schema.fluidEntries.patientId), eq(schema.fluidEntries.id, last.id)))
       .run();
 
-    runAlertRules(db, scope.patientId, nowMs);
+    afterWrite(scope.patientId, nowMs);
     return { ok: true, deletedId: last.id } satisfies FluidDeleteResponse;
   });
 
@@ -137,7 +144,7 @@ export function registerLogRoutes(app: FastifyInstance, options: LogRouteOptions
         .returning({ id: schema.weights.id }).get().id;
     }
 
-    runAlertRules(db, scope.patientId, nowMs);
+    afterWrite(scope.patientId, nowMs);
     return { id, date, weightKg } satisfies WeightEntryResponse;
   });
 
@@ -168,7 +175,7 @@ export function registerLogRoutes(app: FastifyInstance, options: LogRouteOptions
         .returning({ id: schema.symptoms.id }).get().id;
     }
 
-    runAlertRules(db, scope.patientId, nowMs);
+    afterWrite(scope.patientId, nowMs);
     return { id, date, key, sev } satisfies SymptomEntryResponse;
   });
 
@@ -219,7 +226,7 @@ export function registerLogRoutes(app: FastifyInstance, options: LogRouteOptions
       locked: true,
     })).run();
 
-    runAlertRules(db, scope.patientId, nowMs);
+    afterWrite(scope.patientId, nowMs);
     return { ok: true, takenAt } satisfies DoseConfirmResponse;
   });
 }

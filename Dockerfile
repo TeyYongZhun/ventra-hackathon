@@ -5,11 +5,11 @@ RUN corepack enable
 
 FROM base AS deps
 WORKDIR /app
-COPY pnpm-workspace.yaml package.json ./
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 COPY packages/core/package.json ./packages/core/
 COPY apps/web/package.json ./apps/web/
 COPY apps/api/package.json ./apps/api/
-RUN pnpm install
+RUN pnpm install --frozen-lockfile
 
 FROM deps AS build
 WORKDIR /app
@@ -20,6 +20,8 @@ FROM base AS production
 ENV NODE_ENV=production
 WORKDIR /app
 COPY --from=build /app/packages/core/dist ./packages/core/dist
+# The API imports @ventra/core through this package.json (exports → dist).
+COPY --from=build /app/packages/core/package.json ./packages/core/package.json
 COPY --from=build /app/apps/web/dist ./apps/web/dist
 COPY --from=build /app/apps/api/dist ./apps/api/dist
 COPY --from=build /app/apps/api/drizzle ./apps/api/drizzle

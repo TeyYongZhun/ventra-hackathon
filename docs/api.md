@@ -26,6 +26,9 @@ Common codes:
 - `CONFLICT` — business rule blocked the action (e.g. undoing fluid from a previous day)
 - `TOO_MANY_ATTEMPTS` — 5 wrong PIN attempts locked login for 5 minutes
 - `RATE_LIMITED` — too many AI questions this minute (`Retry-After` header says when to retry)
+- `FORBIDDEN` — demo tools used by a patient who is not the demo patient
+- `NOT_LINKED` — the family member has not connected Telegram yet
+- `UNAVAILABLE` / `SEND_FAILED` — Telegram is not set up on the server / did not accept the message
 - `INTERNAL_ERROR` — unexpected server error
 
 ---
@@ -587,34 +590,35 @@ Log a symptom. `key`: `ankles` | `tired` | `dizzy` | `breath`; `sev`: `Mild` | `
 
 ## Alerts
 
+Alert rules run in code (`packages/core/rules.ts`) after every write. The first time a day turns yellow an alert is recorded and, because alerts are always shared, the linked family member gets a Telegram message straight away (`familyTold` becomes `true` once it is delivered).
+
 ### GET /api/alerts/latest
-Returns the latest alert with reasons and nurse script.
+The yellow alert and nurse script. The day shown is today if today is yellow or has an alert; otherwise the most recent alert day; otherwise today.
 
 **Session required:** Yes
-
-**Request body:** none
 
 **Success 200:**
 ```json
 {
   "zone": "yellow",
+  "date": "2026-10-07",
+  "time": "10:30 AM",
+  "headline": "Signs of extra fluid in your body",
   "reasons": [
-    { "key": "weight", "chip": "Weight up 2.1 kg in 3 days" },
-    { "key": "missed", "chip": "Missed water pill (8:00 AM)" },
-    { "key": "fluid", "chip": "Drank 1,750 ml \u00b7 limit 1,500" },
+    { "key": "missed", "chip": "Missed water pill (8 AM)" },
+    { "key": "fluid", "chip": "Drank 1,750 ml · limit 1,500" },
     { "key": "sym", "chip": "Swollen ankles (mild)" }
   ],
   "script": [
-    { "i": 0, "segs": [{ "t": "\u201cHello, I am ", "b": false }, { "t": "Mdm Tan", "b": true }, { "t": ". I have heart failure.", "b": false }] },
-    { "i": 1, "segs": [{ "t": "My weight went up from ", "b": false }, { "t": "58.0 kg to 60.1 kg", "b": true }, { "t": " in 3 days.", "b": false }] },
-    { "i": 2, "segs": [{ "t": "I have ", "b": false }, { "t": "swollen ankles", "b": true }, { "t": " (mild).", "b": false }] },
-    { "i": 3, "segs": [{ "t": "I drank ", "b": false }, { "t": "1,750 ml", "b": true }, { "t": " today. My limit is 1,500 ml.", "b": false }] },
-    { "i": 4, "segs": [{ "t": "I missed my ", "b": false }, { "t": "water pill (furosemide 40 mg)", "b": true }, { "t": " at 8:00 AM. I took my other medicines.\u201d", "b": false }] }
-  ]
+    { "i": 0, "segs": [{ "t": "“Hello, I am ", "b": false }, { "t": "Mdm Tan", "b": true }, { "t": ". I have heart failure.", "b": false }] }
+  ],
+  "familyTold": true,
+  "family": { "name": "Mei Ling", "relation": "daughter" }
 }
 ```
+`time` is `null` when the day shown has no alert.
 
-**Errors:** `UNAUTHORIZED`, `NOT_FOUND` (no alerts yet)
+**Errors:** `UNAUTHORIZED`
 
 ---
 
@@ -807,11 +811,11 @@ Upload a photo of a medicine box for identification.
 
 ## Family
 
+Family members get messages on Telegram. Alerts, status and medicines are always shared (locked); weight, drinks and how I feel are the patient's choice. All family text comes from `packages/core/family.ts`, so the in-app preview matches what is sent.
+
 ### GET /api/family/settings
 
 **Session required:** Yes
-
-**Request body:** none
 
 **Success 200:**
 ```json
@@ -820,51 +824,72 @@ Upload a photo of a medicine box for identification.
   "alerts": true,
   "status": true,
   "medicines": true,
-  "dailySummary": true
+  "dailySummary": true,
+  "weight": false,
+  "drinks": false,
+  "symptoms": false,
+  "family": { "name": "Mei Ling", "relation": "daughter" },
+  "linked": false,
+  "linkCode": "K7Q2MX",
+  "linkUrl": "https://t.me/VentraCareBot?start=K7Q2MX",
+  "sentToday": false,
+  "preview": [
+    { "key": "alerts", "label": "Alerts", "value": "None today" },
+    { "key": "status", "label": "Status", "value": "Green — on track" },
+    { "key": "medicines", "label": "Medicines", "value": "4 of 5 taken · 8 PM still to take" }
+  ]
 }
 ```
+While not linked, a one-time `linkCode` (6 characters, valid 24 hours) is created and reused until it expires. `linkUrl` is set when the bot username is known.
 
 **Errors:** `UNAUTHORIZED`
 
 ---
 
 ### PUT /api/family/settings
-Update family-sharing settings. Locked keys (`alerts`, `status`, `medicines`) are ignored on PUT.
-
-**Session required:** Yes
+Change the patient's own choices. Locked keys (`alerts`, `status`, `medicines`) are ignored if sent.
 
 **Request body:**
 ```json
-{
-  "enabled": true
-}
+{ "weight": true, "drinks": false, "symptoms": true }
 ```
 
-**Success 200:**
-```json
-{ "ok": true }
-```
+**Success 200:** `{ "ok": true }`
 
 **Errors:** `VALIDATION_ERROR`, `UNAUTHORIZED`
 
 ---
 
 ### POST /api/family/summary/send
-Manually send the daily family summary and mark today as sent.
-
-**Session required:** Yes
-
-**Request body:** none
+Send today's summary now. Once sent, the 10 PM summary is skipped for today.
 
 **Success 200:**
 ```json
-{
-  "ok": true,
-  "sentAt": "2026-10-07T14:32:00.000Z"
-}
+{ "ok": true, "sentAt": "2026-10-07T14:32:00.000Z" }
 ```
 
-**Errors:** `CONFLICT` (already sent today), `UNAUTHORIZED`
+**Errors:** `CONFLICT` (already sent today), `NOT_LINKED` (409, family has not connected Telegram), `UNAVAILABLE` (503, no bot token on the server), `SEND_FAILED` (502), `UNAUTHORIZED`
+
+**Nightly job:** at `FAMILY_SUMMARY_CRON` (default `0 22 * * *`, Asia/Singapore) the server sends today's summary to every linked family member not yet sent today.
+
+---
+
+### POST /api/emergency/notify
+Called by the SOS call screen after the 10-second countdown. Messages the linked family member. The 995 call itself is simulated in this prototype.
+
+**Request body:**
+```json
+{ "what": "Can't breathe" }
+```
+`what`: `Can't breathe` | `Chest pain` | `Fainted or very dizzy` | `Other emergency`
+
+**Success 200:**
+```json
+{ "told": true, "family": { "name": "Mei Ling", "relation": "daughter" } }
+```
+`told` is `true` only if the message was delivered.
+
+**Errors:** `VALIDATION_ERROR`, `UNAUTHORIZED`
 
 ---
 
@@ -902,24 +927,20 @@ Email or send the PDF report to the configured family contact.
 ## Telegram
 
 ### POST /api/telegram/webhook
-Handle Telegram bot updates. A `/start <code>` message links a family contact to the patient.
+Telegram Bot API updates. Called by Telegram's servers, so no session; instead Telegram must send the `X-Telegram-Bot-Api-Secret-Token` header equal to `TELEGRAM_WEBHOOK_SECRET`.
 
-**Session required:** No (called by Telegram servers)
+A message `/start <code>` from the family member's phone links their chat to the patient who showed the code, and the bot replies to confirm. Wrong or expired codes get a short reply; other messages are ignored.
 
-**Request body:**
+**Request body:** a Telegram `Update`, e.g.
 ```json
-{
-  "code": "abc123",
-  "chatId": 123456789
-}
+{ "update_id": 1, "message": { "message_id": 1, "chat": { "id": 123456789, "type": "private" }, "text": "/start K7Q2MX" } }
 ```
 
-**Success 200:**
-```json
-{ "ok": true }
-```
+**Success 200:** `{ "ok": true }` (always, so Telegram does not retry)
 
-**Errors:** `VALIDATION_ERROR`, `NOT_FOUND` (code invalid or expired)
+**Errors:** `UNAUTHORIZED` (missing or wrong secret header)
+
+The production server registers this webhook on start when `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET` and an `https://` `PUBLIC_URL` are set.
 
 ---
 
@@ -967,19 +988,21 @@ Set a UI flag.
 
 ## Demo
 
+Only the demo patient (`is_demo`) can use these; anyone else gets `FORBIDDEN`. Both rebuild Mdm Tan's synthetic data in place with her history ending today. The caller stays logged in and the family's Telegram link is kept.
+
 ### POST /api/demo/reset
-Reset the demo patient (`Mdm Tan`) to the seed fixture state.
+Back to the normal green demo day.
 
-**Session required:** Yes
+**Success 200:** `{ "ok": true }`
 
-**Request body:** none
+**Errors:** `UNAUTHORIZED`, `FORBIDDEN`
 
-**Success 200:**
-```json
-{ "ok": true }
-```
+### POST /api/demo/yellow-day
+Same history, but today's water pill is recorded as missed. Logging drinks past the limit or swollen ankles then turns the day yellow and alerts the family.
 
-**Errors:** `UNAUTHORIZED`, `FORBIDDEN` (caller is not the demo patient)
+**Success 200:** `{ "ok": true }`
+
+**Errors:** `UNAUTHORIZED`, `FORBIDDEN`
 
 ---
 

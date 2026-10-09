@@ -6,11 +6,13 @@ interface StatusCardProps {
   subText: ReactNode;
   // Small label above the headline, e.g. "GREEN · ALL GOOD"
   chip?: string;
+  // Optional link row at the bottom, e.g. "What to do now ›"
+  footer?: ReactNode;
 }
 
 // Matches design/Main.dc.html (status card). Colour is never the only signal:
 // the icon, chip and headline all say the same thing.
-export function StatusCard({ variant, headline, subText, chip }: StatusCardProps) {
+export function StatusCard({ variant, headline, subText, chip, footer }: StatusCardProps) {
   const isGreen = variant === 'green';
 
   const bg = isGreen ? 'var(--color-green-soft)' : 'var(--color-yellow-soft)';
@@ -80,6 +82,7 @@ export function StatusCard({ variant, headline, subText, chip }: StatusCardProps
         </div>
       </div>
       <div style={{ margin: 0, fontSize: 'var(--text-body)', lineHeight: 'var(--lh-body)' }}>{subText}</div>
+      {footer && <div style={{ paddingTop: 14, borderTop: `2px solid ${ink}` }}>{footer}</div>}
     </div>
   );
 }
