@@ -1,8 +1,11 @@
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { BottomNav, SOSButton } from './index';
+import { BottomNav, SOSSlot } from './index';
 import type { NavTab } from './BottomNav';
 
-const PARENT_TAB: Record<string, NavTab> = { alert: 'home', nurse: 'home', family: 'more', report: 'more', weigh: 'track', feel: 'track' };
+// Pages that show SOS in their own header row (Home next to the date, others next to Back).
+const OWN_SOS = new Set(['home', 'status', 'cap']);
+
+const PARENT_TAB: Record<string, NavTab> = { alert: 'home', status: 'home', nurse: 'home', family: 'more', report: 'more', weigh: 'track', feel: 'track', cap: 'track' };
 
 export function Layout() {
   const location = useLocation();
@@ -22,19 +25,14 @@ export function Layout() {
       }}
     >
       <main style={{ flex: 1, padding: '1.5rem', paddingBottom: 140 }}>
+        {/* These pages put SOS in their own header row. */}
+        {!OWN_SOS.has(segment) && (
+          <div data-noprint style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 'var(--space-4)' }}>
+            <SOSSlot />
+          </div>
+        )}
         <Outlet />
       </main>
-      <div
-        data-noprint
-        style={{
-          position: 'fixed',
-          bottom: 100,
-          right: 20,
-          zIndex: 50,
-        }}
-      >
-        <SOSButton />
-      </div>
       <div
         data-noprint
         style={{

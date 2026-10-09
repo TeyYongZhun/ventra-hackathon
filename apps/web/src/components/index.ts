@@ -1,4 +1,5 @@
 export { SOSButton } from './SOSButton';
+export { SOSSlot } from './SOSSlot';
 export { StatusCard } from './StatusCard';
 export { IconTile } from './IconTile';
 export { TrackTabs } from './TrackTabs';

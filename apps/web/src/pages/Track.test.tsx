@@ -44,7 +44,7 @@ describe('Track · drinks tab', () => {
     for (const name of ['Add ¼ cap, 38 ml', 'Add ½ cap, 75 ml', 'Add ¾ cap, 113 ml', 'Add Full cap, 150 ml']) {
       expect(screen.getByRole('button', { name })).toBeTruthy();
     }
-    expect(screen.getByText('1 full cap = 150 ml')).toBeTruthy();
+    expect(screen.getByRole('link', { name: '1 full cap = 150 ml · Change my cap size' }).getAttribute('href')).toBe('/cap');
   });
 
   it("lists today's drinks", async () => {
@@ -77,5 +77,30 @@ describe('Track · drinks tab', () => {
     await user.click(screen.getByRole('tab', { name: /Log weight/ }));
 
     expect(await screen.findByRole('link', { name: 'Type my weight' })).toBeTruthy();
+  });
+});
+
+describe('Track · change cap size', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it('opens from the drinks tab, starts on the current size and saves back to drinks', async () => {
+    const user = await openTrack();
+
+    await user.click(screen.getByRole('link', { name: /1 full cap = 150 ml · Change my cap size/ }));
+    expect(await screen.findByRole('heading', { level: 1, name: 'How much does your cap hold?' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Back to drinks' }).getAttribute('href')).toBe('/track?tab=drinks');
+    expect(screen.getByRole('link', { name: /Emergency SOS/i })).toBeTruthy();
+
+    const sizes = screen.getByRole('radiogroup', { name: 'Cap size' });
+    expect(within(sizes).getByRole('radio', { name: '150 ml' }).getAttribute('aria-checked')).toBe('true');
+
+    await user.click(within(sizes).getByRole('radio', { name: 'Other' }));
+    await user.click(screen.getByRole('button', { name: '10 ml more' }));
+    expect(within(sizes).getByRole('radio', { name: 'Other · 190 ml' }).getAttribute('aria-checked')).toBe('true');
+
+    await user.click(screen.getByRole('button', { name: 'Save cap size' }));
+    expect(await screen.findByRole('tabpanel', { name: 'Log drinks' })).toBeTruthy();
   });
 });

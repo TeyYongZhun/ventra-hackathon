@@ -16,6 +16,8 @@ import WeighEnter from './pages/WeighEnter';
 import SignUp from './pages/SignUp';
 import Setup from './pages/Setup';
 import Feel from './pages/Feel';
+import Status from './pages/Status';
+import CapSize from './pages/CapSize';
 
 function App() {
   return (
@@ -31,11 +33,14 @@ function App() {
           <Route path="/ask" element={<AskAI />} />
           <Route path="/more" element={<More />} />
           <Route path="/alert" element={<Alert />} />
+          <Route path="/status" element={<Navigate to="/status/green" replace />} />
+          <Route path="/status/:colour" element={<Status />} />
           <Route path="/nurse" element={<NurseCall />} />
           <Route path="/family" element={<Family />} />
           <Route path="/report" element={<Report />} />
           <Route path="/weigh" element={<WeighEnter />} />
           <Route path="/feel" element={<Feel />} />
+          <Route path="/cap" element={<CapSize />} />
         </Route>
         {/* Set-up for a new patient, then the full-screen emergency flow: no menu. */}
         <Route path="/setup/:step" element={<Setup />} />

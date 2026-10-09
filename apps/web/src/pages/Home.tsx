@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import type { MetricsResponse } from '@ventra/core';
-import { IconTile, StatusCard } from '../components';
+import { IconTile, SOSSlot, StatusCard } from '../components';
 import {
   AskAiIcon,
   CalendarIcon,
@@ -88,16 +88,35 @@ function HomeView({ metrics }: { metrics: MetricsResponse }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
       <header style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-        <span style={{ fontSize: 18, lineHeight: '24px', fontWeight: 700, color: 'var(--color-ink-muted)' }}>
-          {dayHeading(metrics.today)}
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+          <span style={{ fontSize: 18, lineHeight: '24px', fontWeight: 700, color: 'var(--color-ink-muted)' }}>
+            {dayHeading(metrics.today)}
+          </span>
+          <SOSSlot />
+        </div>
         <h1 style={{ margin: 0, fontSize: 'var(--text-h1)', lineHeight: 'var(--lh-h1)', fontWeight: 700, letterSpacing: '-0.02em' }}>
           {greeting(new Date().getHours())}, {metrics.patient.name}
         </h1>
       </header>
 
       {isGreen ? (
-        <StatusCard variant="green" chip="GREEN · ALL GOOD" headline="You're on track today" subText={statusLine(metrics)} />
+        <StatusCard
+          variant="green"
+          chip="GREEN · ALL GOOD"
+          headline="You're on track today"
+          subText={statusLine(metrics)}
+          footer={
+            <Link
+              to="/status/green"
+              style={{ minHeight: 'var(--touch-min)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, color: 'var(--color-green)', textDecoration: 'none', fontSize: 21, fontWeight: 700 }}
+            >
+              See what green means
+              <svg width={30} height={30} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.75} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="m9 18 6-6-6-6" />
+              </svg>
+            </Link>
+          }
+        />
       ) : (
         <StatusCard
           variant="yellow"
@@ -156,7 +175,7 @@ function HomeView({ metrics }: { metrics: MetricsResponse }) {
 
 function DailyNote({ text, onClose }: { text: string; onClose: () => void }) {
   return (
-    // Sits above the bottom menu (40) but below the SOS button (50): SOS always stays reachable.
+    // Sits above the bottom menu (40) but below SOS (50): SOS always stays reachable.
     <div
       style={{
         position: 'fixed',

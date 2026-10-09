@@ -275,11 +275,12 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
 
   const res = await fetch(path, {
     credentials: 'include',
+    ...init,
     headers: {
-      'Content-Type': 'application/json',
+      // Only when there is a body: Fastify rejects an empty body sent as JSON (400).
+      ...(init?.body != null ? { 'Content-Type': 'application/json' } : {}),
       ...(init?.headers as Record<string, string> | undefined),
     },
-    ...init,
   });
 
   if (!res.ok) {

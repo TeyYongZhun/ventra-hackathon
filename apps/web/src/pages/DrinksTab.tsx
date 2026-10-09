@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { Link } from 'react-router-dom';
 import type { FluidEntryResponse, MetricsResponse } from '@ventra/core';
 import { LoadError, Loading } from '../components/QueryState';
 import { WaterBottle } from '../components/WaterBottle';
@@ -132,14 +133,21 @@ function DrinksView({ metrics, todayEntries }: { metrics: MetricsResponse; today
                 </button>
               ))}
             </div>
-            <p style={{ margin: 0, minHeight: 'var(--touch-min)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, color: 'var(--color-blue-ink)', fontSize: 21, fontWeight: 700 }}>
-              1 full cap = {capMl} ml
-            </p>
+            <Link to="/cap" style={capLink}>
+              <DropIcon />
+              <span>1 full cap = {capMl} ml · Change my cap size</span>
+            </Link>
           </>
         ) : (
-          <p style={{ margin: 0, fontSize: 'var(--text-body)', lineHeight: 'var(--lh-body)' }}>
-            Your cap size is not set yet, so drinks can't be logged here.
-          </p>
+          <>
+            <p style={{ margin: 0, fontSize: 'var(--text-body)', lineHeight: 'var(--lh-body)' }}>
+              Your cap size is not set yet, so drinks can't be logged here.
+            </p>
+            <Link to="/cap" style={capLink}>
+              <DropIcon />
+              <span>Set my cap size</span>
+            </Link>
+          </>
         )}
         <p aria-live="polite" role="status" style={{ margin: 0, minHeight: 'var(--lh-body)', fontSize: 'var(--text-caption)', fontWeight: 600 }}>
           {message}
@@ -228,5 +236,26 @@ function CupIcon({ fraction }: { fraction: number }) {
         <span style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: `${fraction * 100}%`, background: 'var(--color-water)' }} />
       </span>
     </span>
+  );
+}
+
+// "1 full cap = 150 ml · Change my cap size" (design/Fluid.dc.html) → /cap
+const capLink: CSSProperties = {
+  minHeight: 'var(--touch-min)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: 10,
+  color: 'var(--color-blue-ink)',
+  fontSize: 21,
+  lineHeight: '28px',
+  fontWeight: 700,
+};
+
+function DropIcon() {
+  return (
+    <svg style={{ flexShrink: 0 }} width={26} height={26} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.25} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5S5 13 5 15a7 7 0 0 0 7 7z" />
+    </svg>
   );
 }
