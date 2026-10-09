@@ -1,0 +1,98 @@
+/* Ventra Design Tokens — source of truth: design/*.dc.html */
+
+:root {
+  /* Action blue */
+  --color-blue: #7CC7FE;
+  --color-blue-ink: #1F6FB2;
+  --color-blue-soft: #E3F2FF;
+  --color-water: #4F8FD6;
+
+  /* Traffic light — status only */
+  --color-green: #1B6F45;
+  --color-green-soft: #DDF1E5;
+  --color-yellow: #F8DA98;
+  --color-yellow-ink: #8A5B00;
+  --color-yellow-soft: #FDF2D8;
+  --color-red: #B83A26;
+  --color-red-soft: #FCE4DE;
+  --color-lamp-red: #FF5A43;
+  --color-lamp-yellow: #FFC233;
+  --color-lamp-green: #3CCB7F;
+  --color-lamp-off: #3A4442;
+
+  /* Neutrals */
+  --color-canvas: #F5F3EE;
+  --color-surface: #FFFFFF;
+  --color-sunken: #ECE9E2;
+  --color-line: #E3DFD6;
+  --color-ink: #16201E;
+  --color-ink-muted: #5B605A;
+
+  /* Topic tints */
+  --color-sky: #B7D5F4;
+  --color-sky-soft: #E6F0FB;
+  --color-butter: #F8DA98;
+  --color-butter-soft: #FDF2D8;
+  --color-coral: #F2785C;
+  --color-coral-soft: #FDE5DD;
+  --color-iris: #8D93F6;
+  --color-iris-soft: #E8E9FD;
+  --color-zest: #D2EE63;
+  --color-zest-soft: #F2F9D6;
+
+  /* Typography — Instrument Sans */
+  --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, monospace;
+
+  --text-display: 60px;
+  --lh-display: 62px;
+  --text-big-number: 52px;
+  --lh-big-number: 56px;
+  --text-h1: 38px;
+  --lh-h1: 44px;
+  --text-h2: 30px;
+  --lh-h2: 36px;
+  --text-h3: 26px;
+  --lh-h3: 32px;
+  --text-title: 24px;
+  --lh-title: 30px;
+  --text-body: 22px;
+  --lh-body: 32px;
+  --text-caption: 19px;
+  --lh-caption: 26px;
+  --text-tag: 17px;
+  --lh-tag: 22px;
+  --text-mono: 15px;
+  --lh-mono: 22px;
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 28px;
+  --space-8: 32px;
+  --space-9: 36px;
+  --space-10: 40px;
+
+  /* Touch targets */
+  --touch-min: 64px;
+  --touch-tab: 76px;
+  --touch-button: 76px;
+  --touch-back: 64px;
+
+  /* Radii */
+  --radius-sm: 12px;
+  --radius-md: 20px;
+  --radius-lg: 24px;
+  --radius-xl: 30px;
+  --radius-pill: 999px;
+
+  /* Shadows */
+  --shadow-card: 0 6px 14px rgba(22, 32, 30, 0.12);
+  --shadow-nav: 0 -6px 20px rgba(22, 32, 30, 0.08);
+  --shadow-modal: 0 24px 60px rgba(22, 32, 30, 0.35);
+  --shadow-tab: 0 2px 8px rgba(22, 32, 30, 0.14);
+}
