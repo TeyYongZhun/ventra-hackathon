@@ -77,19 +77,23 @@ function isDoseQuestion(n: string): boolean {
 
 export function screenInput(question: string): InputScreenResult {
   const trimmed = question.trim();
-  if (trimmed.length === 0 || trimmed.length > MAX_QUESTION_CHARS) {
+  if (trimmed.length === 0) {
     return { allowed: false, reason: 'invalid', reply: SAFE_REPLIES.unsure };
   }
 
   const n = normalise(trimmed);
 
-  // Emergency wins over everything else.
+  // Emergency wins over everything else, even in a very long message.
   if (EMERGENCY_PATTERNS.some((p) => p.test(n))) {
     return { allowed: false, reason: 'emergency', reply: SAFE_REPLIES.emergency };
   }
 
   if (isDoseQuestion(n)) {
     return { allowed: false, reason: 'dose', reply: SAFE_REPLIES.dose };
+  }
+
+  if (trimmed.length > MAX_QUESTION_CHARS) {
+    return { allowed: false, reason: 'invalid', reply: SAFE_REPLIES.unsure };
   }
 
   return { allowed: true };

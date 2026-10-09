@@ -101,6 +101,17 @@ describe('screenInput: invalid input', () => {
     const r = screenInput('a'.repeat(MAX_QUESTION_CHARS + 1));
     expect(r).toMatchObject({ allowed: false, reason: 'invalid' });
   });
+
+  it('still returns 995 when an emergency is buried in an over-long message', () => {
+    const long = `${'I have been feeling tired for a while. '.repeat(20)}Now I cant breathe.`;
+    expect(long.length).toBeGreaterThan(MAX_QUESTION_CHARS);
+    expect(screenInput(long)).toMatchObject({ allowed: false, reason: 'emergency' });
+  });
+
+  it('still refuses dose questions in an over-long message', () => {
+    const long = `${'I have been feeling tired for a while. '.repeat(20)}Can I skip my water pill?`;
+    expect(screenInput(long)).toMatchObject({ allowed: false, reason: 'dose' });
+  });
 });
 
 describe('screenOutput: safe answers pass', () => {

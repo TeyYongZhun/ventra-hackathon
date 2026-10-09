@@ -267,14 +267,21 @@ export interface TtsResponse {
 }
 
 // ------------------------------------------------------------------
-// AI Chat
+// Ask AI
 // ------------------------------------------------------------------
-export interface AiChatRequest {
-  mode: 'general' | 'medicine';
-  text: string;
+export interface AskRequest {
+  question: string;
 }
 
-// Response is SSE — no JSON response type.
+// answer: checked AI answer · emergency: 995 line (show SOS card)
+// dose: refuse line (show nurse card) · unsure: fallback line
+export type AskReplyKind = 'answer' | 'emergency' | 'dose' | 'unsure';
+
+export interface AskResponse {
+  reply: string;
+  kind: AskReplyKind;
+  request_id: string;
+}
 
 // ------------------------------------------------------------------
 // Vision

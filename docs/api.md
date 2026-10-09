@@ -25,6 +25,7 @@ Common codes:
 - `NOT_FOUND` — resource does not exist
 - `CONFLICT` — business rule blocked the action (e.g. undoing fluid from a previous day)
 - `TOO_MANY_ATTEMPTS` — 5 wrong PIN attempts locked login for 5 minutes
+- `RATE_LIMITED` — too many AI questions this minute (`Retry-After` header says when to retry)
 - `INTERNAL_ERROR` — unexpected server error
 
 ---
@@ -700,25 +701,46 @@ Request a cached MP3 of the given text.
 
 ---
 
-## AI Chat
+## Ask AI
 
-### POST /api/ai/chat
-Chat with the AI. Returns a server-sent events (SSE) stream.
+### POST /api/ask
+Ask the AI a question. Every question and answer passes the code guardrail in `packages/core/src/guardrail.ts`. The response is plain JSON (not a stream), because the full answer must be checked before the patient sees it.
 
 **Session required:** Yes
 
 **Request body:**
 ```json
 {
-  "mode": "general",
-  "text": "What foods are low in sodium?"
+  "question": "What is bisoprolol for?"
+}
+```
+`question`: 1–2000 characters after trimming. Any `patient_id` in the body is ignored.
+
+**Success 200:**
+```json
+{
+  "reply": "Bisoprolol helps your heart beat slower and more steadily. It eases the heart's workload over time.",
+  "kind": "answer",
+  "request_id": "6f1c2a4e-0b7d-4f43-9a51-2d8e3c7b9f10"
 }
 ```
 
-**Success 200:** `text/event-stream`  
-Each event is a JSON string chunk. The server runs safety checks before and after generation.
+| `kind` | When | `reply` | UI |
+|---|---|---|---|
+| `answer` | AI answered and the answer passed the output check | AI text | Chat bubble |
+| `emergency` | Question has emergency words (e.g. "I can't breathe", chest pain) | `Please call 995 now.` | SOS card |
+| `dose` | Question asks to skip, stop, change, double or time a medicine | `I can't advise on that. Please ask your pharmacist or doctor.` | Nurse card |
+| `unsure` | Answer blocked (dose advice, source wording, too long), AI slow/down/not configured, or question over 500 characters | `I'm not able to answer that confidently. Please check with your pharmacist or doctor.` | Chat bubble |
 
-**Errors:** `VALIDATION_ERROR`, `UNAUTHORIZED`, `UNPROCESSABLE_ENTITY` (safety check failed)
+**Flow:**
+1. Session required; body validated with zod.
+2. `screenInput`: `emergency` and `dose` questions return the fixed line and never reach the AI. These are never rate limited.
+3. Rate limit: 8 AI calls per minute for the whole app (ADP free plan allows 10).
+4. ADP is called with the question only. `visitor_biz_id` and `session_id` are HMAC pseudonyms; no name, phone or patient id is sent.
+5. `screenOutput` checks the answer; blocked answers become the `unsure` line.
+6. Question and reply are saved to `chat_messages` with `request_id` and `latency_ms`.
+
+**Errors:** `VALIDATION_ERROR`, `UNAUTHORIZED`, `RATE_LIMITED` (429)
 
 ---
 

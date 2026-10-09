@@ -6,6 +6,9 @@ import bcryptjs from 'bcryptjs';
 import { z } from 'zod';
 import * as schema from './db/schema.js';
 import { patientScope, requirePatientId } from './db/scope.js';
+import { sendError } from './errors.js';
+import { registerAskRoutes } from './routes/ask.js';
+import type { AdpClient } from './services/adp.js';
 
 export type ApiDb = BetterSQLite3Database<typeof schema>;
 
@@ -19,6 +22,8 @@ export interface CreateApiAppOptions {
   logger?: FastifyServerOptions['logger'];
   now?: () => number;
   loginAttempts?: Map<string, LoginAttempt>;
+  adp?: AdpClient;
+  pseudonymSecret?: string;
 }
 
 const SESSION_COOKIE = 'ventra_session';
@@ -44,14 +49,6 @@ const fluidSchema = z.object({
   what: z.string().trim().min(1).max(100),
   ml: z.number().int().positive().max(5000),
 });
-
-function errorBody(code: string, message: string) {
-  return { error: { code, message } };
-}
-
-function sendError(reply: FastifyReply, status: number, code: string, message: string) {
-  return reply.status(status).send(errorBody(code, message));
-}
 
 function parseCookie(cookieHeader: string | undefined, name: string): string | undefined {
   if (!cookieHeader) return undefined;
@@ -314,6 +311,13 @@ export function createApiApp(options: CreateApiAppOptions) {
       .all();
 
     return { entries };
+  });
+
+  registerAskRoutes(app, {
+    db,
+    adp: options.adp,
+    now,
+    pseudonymSecret: options.pseudonymSecret || process.env.SESSION_SECRET || 'ventra-dev-pseudonym-salt',
   });
 
   return app;

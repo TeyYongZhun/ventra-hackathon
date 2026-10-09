@@ -173,6 +173,8 @@ export const chatMessages = sqliteTable('chat_messages', {
   role: text('role').notNull(),
   content: text('content').notNull(),
   createdAt: text('created_at').notNull(),
+  requestId: text('request_id'),
+  latencyMs: integer('latency_ms'),
 }, (table) => ({
   patientIdIdx: index('chat_messages_patient_id_idx').on(table.patientId),
 }));
