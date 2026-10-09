@@ -6,7 +6,7 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3000
-      - DB_PATH=/data/ventra.sqlite
+      - DATABASE_PATH=/data/ventra.db
     volumes:
       - data:/data
     restart: unless-stopped

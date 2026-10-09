@@ -5,6 +5,6 @@ export default defineConfig({
   out: './drizzle',
   dialect: 'sqlite',
   dbCredentials: {
-    url: process.env.DB_PATH || './data/ventra.sqlite',
+    url: process.env.DATABASE_PATH || './data/ventra.db',
   },
 });

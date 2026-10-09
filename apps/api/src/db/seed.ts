@@ -304,7 +304,7 @@ export async function reseedDemoPatient(db: BetterSQLite3Database<typeof schema>
 
 // CLI runner
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const dbPath = process.env.DB_PATH || './data/ventra.sqlite';
+  const dbPath = process.env.DATABASE_PATH || './data/ventra.db';
   const sqlite = new Database(dbPath);
   const db = drizzle(sqlite, { schema });
   seedDemoPatient(db)

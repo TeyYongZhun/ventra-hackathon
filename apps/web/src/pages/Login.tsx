@@ -7,7 +7,7 @@ export default function Login() {
 
   const handleLogin = () => {
     login.mutate(
-      { phone: '99999999', pin: '1234' },
+      { phone: '81234567', pin: '1234' },
       {
         onSuccess: () => navigate('/home'),
       }
@@ -49,6 +49,11 @@ export default function Login() {
       >
         {login.isPending ? 'Logging in…' : 'Log in as demo patient'}
       </button>
+      {login.isError && (
+        <p style={{ color: 'var(--color-red)', fontSize: 'var(--text-body)', margin: 0 }}>
+          {login.error?.message || 'Login failed'}
+        </p>
+      )}
     </div>
   );
 }
