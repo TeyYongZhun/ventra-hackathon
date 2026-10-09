@@ -234,7 +234,7 @@ function weightOn(record: PatientRecord, date: IsoDate): number | null {
   return record.weights[date] ?? null;
 }
 
-function alertOn(record: PatientRecord, date: IsoDate): AlertLog | null {
+export function alertOn(record: PatientRecord, date: IsoDate): AlertLog | null {
   return record.alerts.find((alert) => alert.date === date) ?? null;
 }
 

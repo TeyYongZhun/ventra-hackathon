@@ -1,6 +1,4 @@
-import React from 'react';
-
-type NavTab = 'home' | 'track' | 'ask' | 'medicine' | 'more';
+export type NavTab = 'home' | 'track' | 'ask' | 'medicine' | 'more';
 
 interface BottomNavProps {
   activeTab: NavTab;
