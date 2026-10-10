@@ -27,6 +27,18 @@ describe('Emergency', () => {
     expect(screen.getByText('Demo: no real call is made. In a real emergency, call 995 yourself.')).toBeTruthy();
   });
 
+  it('turns the whole screen red, status bar included, and puts it back when leaving', async () => {
+    const user = await openSos();
+    const theme = () => document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')?.content;
+    expect(theme()).toBe('#B83A26');
+    expect(document.body.style.background).toBe('rgb(184, 58, 38)');
+
+    await user.click(screen.getByRole('link', { name: 'Back — I pressed this by mistake' }));
+    await screen.findByRole('heading', { level: 1, name: /, Mdm Tan$/ });
+    expect(theme()).toBe('#F5F3EE');
+    expect(document.body.style.background).toBe('');
+  });
+
   it('counts down from 10 and can be cancelled', async () => {
     const user = await openSos();
 

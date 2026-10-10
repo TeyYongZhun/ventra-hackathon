@@ -16,6 +16,7 @@ import { registerMealRoutes } from './routes/meals.js';
 import { registerMetricsRoutes } from './routes/metrics.js';
 import { registerOnboardingRoutes } from './routes/onboarding.js';
 import { registerTelegramRoutes } from './routes/telegram.js';
+import { registerVisitRoutes } from './routes/visits.js';
 import type { MeResponse } from '@ventra/core';
 import type { AdpClient } from './services/adp.js';
 import { notifyAlert } from './services/family.js';
@@ -298,6 +299,7 @@ export function createApiApp(options: CreateApiAppOptions) {
   registerTelegramRoutes(app, { db, now, telegram, webhookSecret: options.telegramWebhookSecret });
   registerDemoRoutes(app, { db, now });
   registerMealRoutes(app, { db, now });
+  registerVisitRoutes(app, { db, now });
   registerOnboardingRoutes(app, { db, now });
   registerAskRoutes(app, {
     db,

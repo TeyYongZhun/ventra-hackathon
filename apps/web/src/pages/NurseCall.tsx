@@ -3,10 +3,13 @@ import { Link } from 'react-router-dom';
 import { SOSSlot } from '../components';
 import { NurseScript } from '../components/NurseScript';
 import { useLatestAlert, useMetrics } from '../lib/api';
+import { SCREEN, useScreenColour } from '../lib/screenColour';
 
 // G2 · Calling the nurse (design/NurseCall.dc.html). A simulated call: no real call is made.
 // Full screen like the design (no bottom menu), so it brings its own page padding and SOS.
 export default function NurseCall() {
+  // Blue header at the top, off-white page below.
+  useScreenColour(SCREEN.blue, SCREEN.canvas);
   const alert = useLatestAlert();
   const metrics = useMetrics();
   const [seconds, setSeconds] = useState(0);

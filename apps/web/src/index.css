@@ -95,20 +95,53 @@ body {
   animation-delay: 1s;
 }
 
-/* Bottom menu: the selected Ask AI tab glows with a slowly moving blue → iris gradient. */
+/* Bottom menu: the selected Ask AI tab glows with a slowly moving blue → iris gradient, with a
+   deeper gradient outline (second layer, shown only in the 3px border area). */
 @keyframes nav-ai-gradient {
   0% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
   100% { background-position: 0% 50%; }
 }
 .nav-ai-active {
-  background: linear-gradient(120deg, #7CC7FE, #8D93F6, #B8BCFA, #7CC7FE, #8D93F6);
-  background-size: 300% 300%;
+  border: 3px solid transparent;
+  background:
+    linear-gradient(120deg, #7CC7FE, #8D93F6, #B8BCFA, #7CC7FE, #8D93F6) padding-box,
+    linear-gradient(120deg, #4A4FC2, #1F6FB2, #8D93F6, #4A4FC2, #1F6FB2) border-box;
+  background-size: 300% 300%, 300% 300%;
   animation: nav-ai-gradient 6s ease-in-out infinite;
 }
 @media (prefers-reduced-motion: reduce) {
   .nav-ai-active {
     animation: none;
     background-position: 50% 50%;
+  }
+}
+
+/* Login hero: the pale ring round the heart logo beats (a quick double pulse), and a soft
+   ripple spreads out from it on each beat. */
+@keyframes hero-beat {
+  0%, 100% { transform: scale(1); }
+  14% { transform: scale(1.07); }
+  28% { transform: scale(1); }
+  42% { transform: scale(1.05); }
+  70% { transform: scale(1); }
+}
+@keyframes hero-ripple {
+  0% { transform: scale(1); opacity: 0.7; }
+  70%, 100% { transform: scale(1.45); opacity: 0; }
+}
+.hero-ring {
+  animation: hero-beat 1.6s ease-in-out infinite;
+}
+.hero-ripple {
+  animation: hero-ripple 1.6s ease-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-ring,
+  .hero-ripple {
+    animation: none;
+  }
+  .hero-ripple {
+    display: none;
   }
 }

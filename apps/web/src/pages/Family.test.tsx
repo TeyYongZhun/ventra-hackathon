@@ -76,4 +76,27 @@ describe('More, alert, nurse call and family', () => {
     expect(await screen.findByText("Sent to Mei Ling for today. Tonight's 10 PM summary is skipped.")).toBeTruthy();
     expect((screen.getByRole('button', { name: "Send today's summary now" }) as HTMLButtonElement).disabled).toBe(true);
   });
+
+  // Last: changes the mock's Telegram link for the rest of this file.
+  it('resets the Telegram link (asking first when linked) and gives a new code', async () => {
+    const user = await openMore();
+    await user.click(screen.getByRole('link', { name: /My family contacts/ }));
+    const linked = await screen.findByRole('region', { name: 'Telegram link' });
+    expect(within(linked).getByText(/is connected on Telegram/)).toBeTruthy();
+
+    expect(screen.queryByText('Demo only')).toBeNull();
+
+    await user.click(within(linked).getByRole('button', { name: 'Unlink and get a new code' }));
+    // Unlinking stops alerts reaching the family, so it asks first.
+    await user.click(within(linked).getByRole('button', { name: 'Keep linked' }));
+    expect(screen.getByRole('region', { name: 'Telegram link' })).toBeTruthy();
+    await user.click(within(linked).getByRole('button', { name: 'Unlink and get a new code' }));
+    await user.click(within(linked).getByRole('button', { name: 'Yes, unlink' }));
+
+    const connect = await screen.findByRole('region', { name: 'Connect Telegram' });
+    expect(within(connect).getByText('CODE01')).toBeTruthy();
+
+    await user.click(within(connect).getByRole('button', { name: 'Get a new code' }));
+    expect(await within(screen.getByRole('region', { name: 'Connect Telegram' })).findByText('CODE02')).toBeTruthy();
+  });
 });

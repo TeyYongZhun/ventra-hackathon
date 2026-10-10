@@ -21,13 +21,26 @@ export default function Login() {
       : '';
 
   return (
-    <div style={{ minHeight: '100vh', maxWidth: 480, margin: '0 auto', padding: '40px 20px 32px', display: 'flex', flexDirection: 'column', gap: 20, background: 'var(--color-canvas)' }}>
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, textAlign: 'center' }}>
-        <h1 style={{ margin: 0, fontSize: 52, lineHeight: '56px', fontWeight: 700, letterSpacing: '-0.03em' }}>Ventra</h1>
-        <p style={{ margin: 0, fontSize: 'var(--text-title)', lineHeight: 'var(--lh-title)', fontWeight: 700 }}>Your daily heart helper.</p>
-        <p style={{ margin: 0, fontSize: 20, lineHeight: '28px', color: 'var(--color-ink-muted)' }}>
-          We help with water, weight, meals and medicine — every day.
-        </p>
+    <div style={{ minHeight: '100vh', maxWidth: 480, margin: '0 auto', padding: '32px 20px 32px', display: 'flex', flexDirection: 'column', gap: 24, background: 'var(--color-canvas)' }}>
+      {/* Hero from design/Welcome.dc.html: blue card, soft rings, sparkles, the heart logo
+          (public/logo-heart.png) in the white centre. The pale ring pulses like a heartbeat. */}
+      <div aria-hidden="true" style={{ position: 'relative', height: 260, flexShrink: 0, borderRadius: 32, background: 'var(--color-blue)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {/* Pulsing ring around the logo, plus a ripple that spreads out on each beat (index.css). */}
+        <div className="hero-ripple" style={{ position: 'absolute', width: 220, height: 220, borderRadius: 'var(--radius-pill)', background: '#B5DFFF' }} />
+        <div className="hero-ring" style={{ position: 'absolute', width: 220, height: 220, borderRadius: 'var(--radius-pill)', background: '#B5DFFF' }} />
+        <div style={{ position: 'absolute', width: 160, height: 160, borderRadius: 'var(--radius-pill)', background: 'var(--color-surface)' }} />
+        <img src="/logo-heart.png" alt="" width={100} height={100} style={{ position: 'relative', display: 'block' }} />
+        <svg style={{ position: 'absolute', top: 32, right: 40 }} width={44} height={44} viewBox="0 0 24 24" fill="#D2EE63">
+          <path d="M12 2c.6 4.8 2.4 7.2 10 10-7.6 2.8-9.4 5.2-10 10-.6-4.8-2.4-7.2-10-10 7.6-2.8 9.4-5.2 10-10z" />
+        </svg>
+        <svg style={{ position: 'absolute', bottom: 40, left: 44 }} width={26} height={26} viewBox="0 0 24 24" fill="#D2EE63">
+          <path d="M12 2c.6 4.8 2.4 7.2 10 10-7.6 2.8-9.4 5.2-10 10-.6-4.8-2.4-7.2-10-10 7.6-2.8 9.4-5.2 10-10z" />
+        </svg>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <h1 style={{ margin: 0, fontSize: 60, lineHeight: '62px', fontWeight: 700, letterSpacing: '-0.03em' }}>Ventra</h1>
+        <p style={{ margin: 0, fontSize: 26, lineHeight: '36px', fontWeight: 500 }}>Your daily heart helper.</p>
       </div>
 
       <form

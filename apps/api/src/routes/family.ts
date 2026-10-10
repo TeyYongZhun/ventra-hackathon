@@ -91,6 +91,18 @@ export function registerFamilyRoutes(app: FastifyInstance, options: FamilyRouteO
     return { ok: true } satisfies FamilySettingsUpdateResponse;
   });
 
+  // Telegram re-link: forget the linked family chat and the old code, so the next
+  // GET /api/family/settings makes a fresh code (24 hours) to link a Telegram account with.
+  // Until it is linked again, alerts and summaries are not sent to the family.
+  app.post('/api/family/telegram/reset', async (request) => {
+    const scope = patientScope(request);
+    db.update(schema.contacts)
+      .set({ telegramChatId: null, linkCode: null, linkCodeExpiresAt: null })
+      .where(scope.where(schema.contacts.patientId))
+      .run();
+    return { ok: true } satisfies FamilySettingsUpdateResponse;
+  });
+
   // SOS: after the 10-second countdown, tell the linked family member straight away.
   // The 995 call itself is simulated in this prototype.
   app.post('/api/emergency/notify', async (request, reply) => {

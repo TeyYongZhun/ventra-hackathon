@@ -1,13 +1,14 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { symptomLabel, type Report as ReportData } from '@ventra/core';
 import { PageHeader } from '../components';
+import { DateBox } from '../components/VisitCards';
 import { LoadError, Loading } from '../components/QueryState';
-import { useMetrics, useReport } from '../lib/api';
+import { useMetrics, useReport, useVisits } from '../lib/api';
 import { dayHeading } from '../lib/copy';
 
 // E2 · Doctor visit prep (design/VisitPrep.dc.html), from the Home tile "Visit prep".
 // Built from GET /api/report and the weight history in /api/metrics. Questions are made from
-// the patient's own logs. Left out (no data or connection yet): the appointment card,
+// the patient's own logs; the next visit (GET /api/visits) sits at the top. Left out (no data or connection yet):
 // "Add my own question" and "Send to doctor or family".
 const header = <PageHeader back={{ to: '/more', label: 'Back to calendar' }} title="For my doctor" titleSize={32} />;
 const canSpeak = () => typeof window !== 'undefined' && 'speechSynthesis' in window;
@@ -29,6 +30,7 @@ function countDays(report: ReportData, label: string): number {
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
 function VisitPrepView({ report, history }: { report: ReportData; history: Array<{ date: string; kg: number }> }) {
+  const next = useVisits().data?.visits[0];
   const ankles = countDays(report, symptomLabel('ankles'));
   const tired = countDays(report, symptomLabel('tired'));
   const missed = report.medicines.filter((med) => med.missedDates.length > 0);
@@ -65,6 +67,16 @@ function VisitPrepView({ report, history }: { report: ReportData; history: Array
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
       <div data-noprint>{header}</div>
+
+      {next && (
+        <div aria-label={`Next visit: ${next.title}`} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: 20, borderRadius: 24, background: 'var(--color-blue)', color: 'var(--color-ink)' }}>
+          <DateBox iso={next.date} size="small" tone="white" />
+          <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+            <span style={{ fontSize: 24, lineHeight: '30px', fontWeight: 700 }}>{next.title}</span>
+            <span style={{ fontSize: 20, lineHeight: '28px' }}>{[next.time, next.doctor].filter(Boolean).join(' · ')}</span>
+          </div>
+        </div>
+      )}
 
       <section style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <h2 style={{ margin: 0, fontSize: 28, lineHeight: '34px', fontWeight: 700 }}>Since you left hospital</h2>

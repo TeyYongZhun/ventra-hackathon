@@ -79,7 +79,7 @@ export function BottomNav({ activeTab, onChange }: BottomNavProps) {
     >
       {tabs.map((tab) => {
         const isActive = tab.id === activeTab;
-        // Ask AI gets a slowly moving blue-to-iris gradient when selected (index.css · .nav-ai-active).
+        // Ask AI gets a slowly moving blue-to-iris gradient fill and outline when selected (index.css · .nav-ai-active).
         const aiActive = isActive && tab.id === 'ask';
         return (
           <button
@@ -99,7 +99,8 @@ export function BottomNav({ activeTab, onChange }: BottomNavProps) {
               borderRadius: 20,
               background: aiActive ? undefined : isActive ? 'var(--color-blue)' : 'transparent',
               color: 'var(--color-ink)',
-              border: 'none',
+              // The Ask AI gradient draws its own outline in the border area.
+              border: aiActive ? undefined : 'none',
               fontFamily: 'inherit',
               fontSize: 15,
               fontWeight: 700,

@@ -149,6 +149,10 @@ function insertDemoData(db: Db, patientId: number, today: IsoDate, options: Demo
     db.insert(schema.meals).values({ patientId, date: today, ...mealRow(record.demoScan), isDemoScan: true }).run();
   }
 
+  // Upcoming visits (design/Calendar.dc.html): heart clinic in 6 days, blood test in 20.
+  db.insert(schema.visits).values({ patientId, date: day('2026-10-13'), time: '10:30 AM', title: 'Heart clinic', doctor: 'Dr Lim', place: 'Level 3, Room 12', bring: 'Medicine list · this phone · IC card' }).run();
+  db.insert(schema.visits).values({ patientId, date: day('2026-10-27'), time: '9:00 AM', title: 'Blood test', doctor: null, place: 'Polyclinic lab', bring: null }).run();
+
   for (const symptom of record.symptoms) {
     db.insert(schema.symptoms).values({ patientId, date: day(symptom.date), key: symptom.key, sev: symptom.sev }).run();
   }
@@ -179,6 +183,7 @@ function clearPatientData(db: Db, patientId: number) {
   db.delete(schema.summaries).where(eq(schema.summaries.patientId, patientId)).run();
   db.delete(schema.uiFlags).where(eq(schema.uiFlags.patientId, patientId)).run();
   db.delete(schema.chatMessages).where(eq(schema.chatMessages.patientId, patientId)).run();
+  db.delete(schema.visits).where(eq(schema.visits.patientId, patientId)).run();
 }
 
 // Inserts Mdm Tan (phone 81234567, PIN 1234) with history ending on `today`.

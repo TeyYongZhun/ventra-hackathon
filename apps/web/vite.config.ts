@@ -8,6 +8,8 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      // Heart logo (public/): favicons, iPhone home-screen icon and the login logo.
+      includeAssets: ['favicon-32x32.png', 'favicon-48x48.png', 'apple-touch-icon.png', 'logo-heart.png'],
       devOptions: {
         enabled: true,
       },

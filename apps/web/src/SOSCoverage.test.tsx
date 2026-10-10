@@ -11,7 +11,7 @@ const ROUTES = [
   '/home', '/track?tab=drinks', '/track?tab=meal', '/track?tab=weight', '/medicine', '/ask', '/more',
   '/alert', '/status/green', '/status/yellow', '/status/red', '/nurse', '/family', '/report', '/report/full',
   '/weigh', '/weigh/how', '/feel', '/cap', '/privacy', '/settings/text', '/visit',
-  '/settings', '/settings/numbers', '/settings/medicines', '/settings/contact',
+  '/settings', '/settings/numbers', '/settings/medicines', '/settings/contact', '/visits/new',
 ];
 
 function open(route: string) {

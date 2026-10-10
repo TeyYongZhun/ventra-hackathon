@@ -434,3 +434,38 @@ export interface UiFlagsUpdateResponse {
 export interface DemoResetResponse {
   ok: true;
 }
+
+// ------------------------------------------------------------------
+// Visits (Calendar: clinic visits and tests)
+// ------------------------------------------------------------------
+export interface VisitEntry {
+  id: number;
+  date: IsoDate;
+  // "10:30 AM"
+  time: string;
+  title: string;
+  doctor: string | null;
+  place: string | null;
+  // What to bring, e.g. "Medicine list · this phone · IC card"
+  bring: string | null;
+}
+
+export interface VisitListResponse {
+  today: IsoDate;
+  // Upcoming visits (today onwards), soonest first
+  visits: VisitEntry[];
+}
+
+export interface VisitCreateRequest {
+  date: IsoDate;
+  time: string;
+  title: string;
+  doctor?: string;
+  place?: string;
+  bring?: string;
+}
+
+export interface VisitDeleteResponse {
+  ok: true;
+  deletedId: number;
+}

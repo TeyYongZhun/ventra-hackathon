@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import type { FamilySettingsResponse, FamilySettingsUpdateRequest } from '@ventra/core';
 import { LockedSwitch, PageHeader } from '../components';
 import { LoadError, Loading } from '../components/QueryState';
-import { useFamilySettings, useSendFamilySummary, useUpdateFamilySettings } from '../lib/api';
+import { useFamilySettings, useResetTelegramLink, useSendFamilySummary, useUpdateFamilySettings } from '../lib/api';
 
 // F3 · Summary for my family (design/Family.dc.html). The preview is built by
 // packages/core (familySummaryLines), the same text the family gets on Telegram.
@@ -50,7 +50,8 @@ function FamilyView({ settings }: { settings: FamilySettingsResponse }) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
       {header}
 
-      {!settings.linked && <ConnectTelegram settings={settings} />}
+      {!settings.linked && <ConnectTelegram settings={settings} reset={settings.linkCode ? <ResetLink linked={false} name={name} /> : null} />}
+      {settings.linked && <LinkedTelegram name={name} />}
 
       <section aria-label="Preview" style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: 22, borderRadius: 'var(--radius-lg)', background: 'var(--color-zest-soft)', border: '3px solid var(--color-ink)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
@@ -124,7 +125,7 @@ function FamilyView({ settings }: { settings: FamilySettingsResponse }) {
   );
 }
 
-function ConnectTelegram({ settings }: { settings: FamilySettingsResponse }) {
+function ConnectTelegram({ settings, reset }: { settings: FamilySettingsResponse; reset?: ReactNode }) {
   const name = settings.family?.name ?? 'your family member';
   return (
     <section aria-label="Connect Telegram" style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: 22, borderRadius: 'var(--radius-lg)', background: 'var(--color-blue-soft)', border: '3px solid var(--color-blue-ink)' }}>
@@ -148,6 +149,74 @@ function ConnectTelegram({ settings }: { settings: FamilySettingsResponse }) {
       ) : (
         <p style={{ margin: 0, fontSize: 20, lineHeight: '28px' }}>Add a family contact first.</p>
       )}
+      {reset}
     </section>
+  );
+}
+
+// Already linked: say so, with the reset to link a different Telegram account.
+function LinkedTelegram({ name }: { name: string }) {
+  return (
+    <section aria-label="Telegram link" style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: 22, borderRadius: 'var(--radius-lg)', background: 'var(--color-green-soft)', border: '3px solid var(--color-green)' }}>
+      <p style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 10, fontSize: 21, lineHeight: '28px', fontWeight: 700 }}>
+        <svg style={{ flexShrink: 0, color: 'var(--color-green)' }} width={26} height={26} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>
+        {name} is connected on Telegram
+      </p>
+      <ResetLink linked name={name} />
+    </section>
+  );
+}
+
+// Unlinks the family's Telegram (if linked) and makes a new code; the Connect card then shows
+// the new code and link. Unlinking stops alerts reaching the family until they link again, so
+// it asks first; a new code while not linked needs no check.
+function ResetLink({ linked, name }: { linked: boolean; name: string }) {
+  const reset = useResetTelegramLink();
+  const [confirming, setConfirming] = useState(false);
+
+  if (confirming) {
+    return (
+      <div role="group" aria-label="Unlink Telegram?" style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: 16, borderRadius: 20, background: 'var(--color-red-soft)', border: '3px solid var(--color-red)' }}>
+        <p style={{ margin: 0, fontSize: 20, lineHeight: '28px', fontWeight: 700 }}>Unlink {name}'s Telegram?</p>
+        <p style={{ margin: 0, fontSize: 18, lineHeight: '26px' }}>{name} won't get alerts or summaries until they link again with the new code.</p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10 }}>
+          <button
+            type="button"
+            disabled={reset.isPending}
+            onClick={() => reset.mutate(undefined, { onSettled: () => setConfirming(false) })}
+            style={{ minHeight: 'var(--touch-min)', borderRadius: 'var(--radius-pill)', border: 0, background: 'var(--color-red)', color: 'var(--color-surface)', fontFamily: 'inherit', fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
+          >
+            {reset.isPending ? 'Unlinking…' : 'Yes, unlink'}
+          </button>
+          <button
+            type="button"
+            onClick={() => setConfirming(false)}
+            style={{ minHeight: 'var(--touch-min)', borderRadius: 'var(--radius-pill)', border: '2.5px solid var(--color-ink)', background: 'var(--color-surface)', color: 'var(--color-ink)', fontFamily: 'inherit', fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
+          >
+            Keep linked
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingTop: 12, borderTop: '2px dashed var(--color-line)' }}>
+      <button
+        type="button"
+        disabled={reset.isPending}
+        onClick={() => (linked ? setConfirming(true) : reset.mutate())}
+        style={{ minHeight: 'var(--touch-min)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, borderRadius: 'var(--radius-pill)', border: '2.5px solid var(--color-ink)', background: 'var(--color-surface)', color: 'var(--color-ink)', fontFamily: 'inherit', fontSize: 20, fontWeight: 700, cursor: reset.isPending ? 'wait' : 'pointer' }}
+      >
+        <svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M21 12a9 9 0 1 1-2.64-6.36" />
+          <path d="M21 3v6h-6" />
+        </svg>
+        {reset.isPending ? 'Resetting…' : linked ? 'Unlink and get a new code' : 'Get a new code'}
+      </button>
+      {reset.isError && (
+        <p role="alert" style={{ margin: 0, fontSize: 18, lineHeight: '26px', color: 'var(--color-red)' }}>Could not reset the Telegram link.</p>
+      )}
+    </div>
   );
 }

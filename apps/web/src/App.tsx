@@ -23,6 +23,7 @@ import ConfirmCall from './pages/ConfirmCall';
 import Privacy from './pages/Privacy';
 import TextSound from './pages/TextSound';
 import VisitPrep from './pages/VisitPrep';
+import AddVisit from './pages/AddVisit';
 import MyDetails, { EditContact, EditMedicines, EditNumbers } from './pages/MyDetails';
 
 function App() {
@@ -55,6 +56,7 @@ function App() {
           <Route path="/settings/contact" element={<EditContact />} />
           <Route path="/settings/text" element={<TextSound />} />
           <Route path="/visit" element={<VisitPrep />} />
+          <Route path="/visits/new" element={<AddVisit />} />
         </Route>
         {/* Full screen, no menu: set-up for a new patient, the simulated nurse call, the emergency flow. */}
         <Route path="/setup/:step" element={<Setup />} />

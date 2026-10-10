@@ -2,7 +2,7 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { BottomNav } from './index';
 import type { NavTab } from './BottomNav';
 
-const PARENT_TAB: Record<string, NavTab> = { alert: 'home', status: 'home', nurse: 'home', family: 'more', report: 'more', weigh: 'track', feel: 'track', cap: 'track', privacy: 'more', settings: 'more', visit: 'more' };
+const PARENT_TAB: Record<string, NavTab> = { alert: 'home', status: 'home', nurse: 'home', family: 'more', report: 'more', weigh: 'track', feel: 'track', cap: 'track', privacy: 'more', settings: 'more', visit: 'more', visits: 'more' };
 
 export function Layout() {
   const location = useLocation();
