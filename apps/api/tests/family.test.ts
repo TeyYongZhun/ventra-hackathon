@@ -322,12 +322,43 @@ describe('alerts, family sharing and Telegram', () => {
   });
 
   describe('demo tools', () => {
+    it('lets any patient (not just the demo) reset their Telegram code', async () => {
+      const { app, call } = await setup();
+      const signup = await app.inject({ method: 'POST', url: '/api/auth/signup', payload: { name: 'Real', phone: '80000302', pin: '1234' } });
+      const cookie = cookieFrom(signup);
+      await call('PUT', '/api/onboarding/contact', cookie, { name: 'Lee Wei', relation: 'son' });
+      const before = (await call('GET', '/api/family/settings', cookie)).json().linkCode;
+      expect(before).toMatch(/^[A-Z0-9]{6}$/);
+
+      expect((await call('POST', '/api/family/telegram/reset', cookie)).statusCode).toBe(200);
+      const after = (await call('GET', '/api/family/settings', cookie)).json().linkCode;
+      expect(after).toMatch(/^[A-Z0-9]{6}$/);
+      expect(after).not.toBe(before);
+    });
+
     it('are only for the demo patient', async () => {
       const { app, call } = await setup();
       const signup = await app.inject({ method: 'POST', url: '/api/auth/signup', payload: { name: 'Real', phone: '80000301', pin: '1234' } });
       const cookie = cookieFrom(signup);
       expect((await call('POST', '/api/demo/reset', cookie)).statusCode).toBe(403);
       expect((await call('POST', '/api/demo/yellow-day', cookie)).statusCode).toBe(403);
+    });
+
+    it('unlinks the family Telegram and gives a fresh code to link again', async () => {
+      const { login, call, linkFamily } = await setup();
+      const cookie = await login();
+      await linkFamily(cookie);
+      expect((await call('GET', '/api/family/settings', cookie)).json()).toMatchObject({ linked: true, linkCode: null });
+
+      expect((await call('POST', '/api/family/telegram/reset', cookie)).statusCode).toBe(200);
+      const first = (await call('GET', '/api/family/settings', cookie)).json();
+      expect(first.linked).toBe(false);
+      expect(first.linkCode).toMatch(/^[A-Z0-9]{6}$/);
+
+      await call('POST', '/api/family/telegram/reset', cookie);
+      const second = (await call('GET', '/api/family/settings', cookie)).json();
+      expect(second.linkCode).toMatch(/^[A-Z0-9]{6}$/);
+      expect(second.linkCode).not.toBe(first.linkCode);
     });
 
     it('resets the demo day without logging out and keeps the family link', async () => {

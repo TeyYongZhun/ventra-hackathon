@@ -38,6 +38,10 @@ import type {
   FamilySettingsResponse,
   FamilySettingsUpdateRequest,
   FamilySettingsUpdateResponse,
+  VisitCreateRequest,
+  VisitDeleteResponse,
+  VisitEntry,
+  VisitListResponse,
   FamilySummarySendResponse,
   ReportSendResponse,
   UiFlagsResponse,
@@ -69,9 +73,16 @@ let mockMeals: MealListEntry[] = [
   mockMeal(2, '12:40 PM', 'Lunch', 'fish-soup-noodles'),
   mockMeal(1, '7:30 AM', 'Breakfast', 'oat-porridge'),
 ];
+let mockVisits: VisitEntry[] = [
+  { id: 1, date: '2026-10-13', time: '10:30 AM', title: 'Heart clinic', doctor: 'Dr Lim', place: 'Level 3, Room 12', bring: 'Medicine list · this phone · IC card' },
+  { id: 2, date: '2026-10-27', time: '9:00 AM', title: 'Blood test', doctor: null, place: 'Polyclinic lab', bring: null },
+];
 const mockFamily = {
   share: { weight: false, drinks: false, symptoms: false },
   sentToday: false,
+  linked: true,
+  linkCode: null as string | null,
+  resets: 0,
 };
 
 function unauthorized(): Error {
@@ -225,8 +236,8 @@ function mockResponse(path: string, init?: RequestInit): unknown {
       dailySummary: true,
       ...mockFamily.share,
       family: mdmTanSeed.patient.family,
-      linked: true,
-      linkCode: null,
+      linked: mockFamily.linked,
+      linkCode: mockFamily.linkCode,
       linkUrl: null,
       sentToday: mockFamily.sentToday,
       preview: familySummaryLines(mdmTanSeed, mockFamily.share),
@@ -271,6 +282,29 @@ function mockResponse(path: string, init?: RequestInit): unknown {
   if (path === '/api/demo/yellow-day') {
     if (!mockSession) throw unauthorized();
     return { ok: true } satisfies DemoResetResponse;
+  }
+  if (path === '/api/visits') {
+    if (!mockSession) throw unauthorized();
+    if (init?.method === 'POST') {
+      const body = JSON.parse((init.body as string) || '{}') as VisitCreateRequest;
+      const visit: VisitEntry = { id: mockVisits.length + 10, date: body.date, time: body.time, title: body.title, doctor: body.doctor || null, place: body.place || null, bring: body.bring || null };
+      mockVisits = [...mockVisits, visit].sort((a, b) => a.date.localeCompare(b.date));
+      return visit;
+    }
+    return { today: '2026-10-07', visits: mockVisits } satisfies VisitListResponse;
+  }
+  if (path.startsWith('/api/visits/') && init?.method === 'DELETE') {
+    if (!mockSession) throw unauthorized();
+    const id = Number(path.split('/').pop());
+    mockVisits = mockVisits.filter((visit) => visit.id !== id);
+    return { ok: true, deletedId: id } satisfies VisitDeleteResponse;
+  }
+  if (path === '/api/family/telegram/reset') {
+    if (!mockSession) throw unauthorized();
+    mockFamily.resets += 1;
+    mockFamily.linked = false;
+    mockFamily.linkCode = `CODE${String(mockFamily.resets).padStart(2, '0')}`;
+    return { ok: true } satisfies FamilySettingsUpdateResponse;
   }
   if (path === '/api/demo/reset') {
     if (!mockSession) throw unauthorized();
@@ -382,6 +416,33 @@ export function useDeleteLastFluid() {
 /* ------------------------------------------------------------------ */
 /* Meals                                                              */
 /* ------------------------------------------------------------------ */
+
+/* ------------------------------------------------------------------ */
+/* Visits                                                             */
+/* ------------------------------------------------------------------ */
+
+export function useVisits() {
+  return useQuery<VisitListResponse>({
+    queryKey: ['visits'],
+    queryFn: () => apiFetch('/api/visits'),
+  });
+}
+
+export function useAddVisit() {
+  const qc = useQueryClient();
+  return useMutation<VisitEntry, Error, VisitCreateRequest>({
+    mutationFn: (body) => apiFetch('/api/visits', { method: 'POST', body: JSON.stringify(body) }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['visits'] }),
+  });
+}
+
+export function useDeleteVisit() {
+  const qc = useQueryClient();
+  return useMutation<VisitDeleteResponse, Error, number>({
+    mutationFn: (id) => apiFetch(`/api/visits/${id}`, { method: 'DELETE' }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['visits'] }),
+  });
+}
 
 export function useMeals() {
   return useQuery<MealListResponse>({
@@ -614,6 +675,15 @@ export function useDemoReset() {
   return useMutation<DemoResetResponse, Error, void>({
     mutationFn: () => apiFetch('/api/demo/reset', { method: 'POST' }),
     onSuccess: () => qc.invalidateQueries(),
+  });
+}
+
+// Unlink the family's Telegram (if linked) and get a fresh link code.
+export function useResetTelegramLink() {
+  const qc = useQueryClient();
+  return useMutation<FamilySettingsUpdateResponse, Error, void>({
+    mutationFn: () => apiFetch('/api/family/telegram/reset', { method: 'POST' }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['family'] }),
   });
 }
 

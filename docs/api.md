@@ -713,6 +713,37 @@ Upload a photo of a medicine box for identification.
 
 ---
 
+## Visits
+
+Clinic visits and tests the patient adds (Calendar). Every query is limited to the session's patient.
+
+### GET /api/visits
+Upcoming visits (today onwards), soonest first.
+
+**Success 200:**
+```json
+{
+  "today": "2026-10-07",
+  "visits": [
+    { "id": 1, "date": "2026-10-13", "time": "10:30 AM", "title": "Heart clinic", "doctor": "Dr Lim", "place": "Level 3, Room 12", "bring": "Medicine list · this phone · IC card" }
+  ]
+}
+```
+
+### POST /api/visits
+**Request body:** `{ "date": "2026-10-20", "time": "2:30 PM", "title": "Pharmacy", "doctor": "", "place": "Block 123", "bring": "" }` — `time` as "h:mm AM/PM"; `doctor`, `place`, `bring` optional (empty becomes `null`). Dates before today are rejected.
+
+**Success 200:** the saved visit (same shape as in the list).
+
+**Errors:** `VALIDATION_ERROR`, `UNAUTHORIZED`
+
+### DELETE /api/visits/:id
+**Success 200:** `{ "ok": true, "deletedId": 3 }`
+
+**Errors:** `NOT_FOUND` (no such visit for this patient), `VALIDATION_ERROR`, `UNAUTHORIZED`
+
+---
+
 ## Family
 
 Family members get messages on Telegram. Alerts, status and medicines are always shared (locked); weight, drinks and how I feel are the patient's choice. All family text comes from `packages/core/family.ts`, so the in-app preview matches what is sent.
@@ -761,6 +792,15 @@ Change the patient's own choices. Locked keys (`alerts`, `status`, `medicines`) 
 **Success 200:** `{ "ok": true }`
 
 **Errors:** `VALIDATION_ERROR`, `UNAUTHORIZED`
+
+---
+
+### POST /api/family/telegram/reset
+Unlink the family member's Telegram chat (if linked) and drop the old link code. The next `GET /api/family/settings` returns `linked: false` with a fresh 6-character `linkCode` (valid 24 hours) and `linkUrl`. Until the family member links again, alerts, SOS messages and summaries are not sent to them. Any patient, not just the demo.
+
+**Success 200:** `{ "ok": true }`
+
+**Errors:** `UNAUTHORIZED`
 
 ---
 

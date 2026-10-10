@@ -1,8 +1,10 @@
 import { Link } from 'react-router-dom';
+import { SCREEN, useScreenColour } from '../lib/screenColour';
 
 // S4 · Confirm call 995 (design/ConfirmCall.dc.html). Opened from "Call 995" on the red status
 // page; "Yes" goes to the same simulated call as SOS (family is messaged there).
 export default function ConfirmCall() {
+  useScreenColour(SCREEN.white);
   return (
     <div style={{ minHeight: '100vh', boxSizing: 'border-box', maxWidth: 480, margin: '0 auto', padding: '48px 20px 32px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 22, background: 'var(--color-surface)', color: 'var(--color-ink)', textAlign: 'center' }}>
       <svg role="img" aria-label="Warning" width={150} height={134} viewBox="0 0 24 21.5" style={{ flexShrink: 0, display: 'block' }}>

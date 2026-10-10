@@ -187,3 +187,18 @@ export const chatMessages = sqliteTable('chat_messages', {
 }, (table) => ({
   patientIdIdx: index('chat_messages_patient_id_idx').on(table.patientId),
 }));
+
+// Clinic visits and tests the patient adds (Calendar: "Add a visit"). Date YYYY-MM-DD,
+// time as shown ("10:30 AM"); doctor, place and what to bring are optional.
+export const visits = sqliteTable('visits', {
+  id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
+  patientId: integer('patient_id').notNull().references(() => patients.id),
+  date: text('date').notNull(),
+  time: text('time').notNull(),
+  title: text('title').notNull(),
+  doctor: text('doctor'),
+  place: text('place'),
+  bring: text('bring'),
+}, (table) => ({
+  patientIdIdx: index('visits_patient_id_idx').on(table.patientId),
+}));

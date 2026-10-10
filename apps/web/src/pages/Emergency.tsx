@@ -2,6 +2,7 @@ import { cloneElement, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import type { EmergencyWhat } from '@ventra/core';
 import { useEmergencyNotify, useMetrics } from '../lib/api';
+import { SCREEN, useScreenColour } from '../lib/screenColour';
 
 // H0 → H1 → H2 (design/EmergencyChoose, Emergency, EmergencyCall .dc.html).
 // Prototype: the 995 call is always simulated; tel:995 is never opened.
@@ -75,6 +76,8 @@ const demoNote = (
 
 // H0 · What's happening?
 export default function Emergency() {
+  // Red edge to edge, including behind the status bar.
+  useScreenColour(SCREEN.red);
   return (
     <div style={redPage}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
@@ -114,6 +117,7 @@ export default function Emergency() {
 
 // H1 · 10-second countdown with a big Cancel.
 export function EmergencyCountdown() {
+  useScreenColour(SCREEN.red);
   const what = useWhat();
   const navigate = useNavigate();
   const [seconds, setSeconds] = useState(COUNTDOWN_SECONDS);
@@ -224,6 +228,8 @@ export function EmergencyCountdown() {
 
 // H2 · Simulated 995 call. The family member is messaged for real (if linked).
 export function EmergencyCall() {
+  // Red header at the top, off-white page below.
+  useScreenColour(SCREEN.red, SCREEN.canvas);
   const what = useWhat();
   const metrics = useMetrics();
   const notify = useEmergencyNotify();
