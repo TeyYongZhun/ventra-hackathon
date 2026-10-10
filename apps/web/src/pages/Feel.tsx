@@ -4,6 +4,7 @@ import { dayShort, symptomLabel, type SymptomKey } from '@ventra/core';
 import { PageHeader } from '../components';
 import { useAddSymptom, useMetrics } from '../lib/api';
 import { micEnabled } from '../lib/prefs';
+import { recognitionClass, speechErrorMessage, type Recognition } from '../lib/speech';
 
 // C4 · How I feel (design/Symptoms.dc.html). Symptoms feed the alert rules on the server
 // (e.g. swollen ankles + missed water pill, or medium/bad breathlessness → yellow).
@@ -75,12 +76,6 @@ function hear(text: string): { keys: SymptomKey[]; fine: boolean; sev?: Sev } {
   return { keys, fine: keys.length === 0 && /fine|good|okay|ok|well/.test(said), sev };
 }
 
-type Recognition = { lang: string; interimResults: boolean; onresult: ((event: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null; onend: (() => void) | null; onerror: (() => void) | null; start: () => void; stop: () => void };
-function recognitionClass(): (new () => Recognition) | null {
-  if (typeof window === 'undefined') return null;
-  const w = window as unknown as { SpeechRecognition?: new () => Recognition; webkitSpeechRecognition?: new () => Recognition };
-  return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
-}
 
 export default function Feel() {
   const metrics = useMetrics();
@@ -127,11 +122,20 @@ export default function Feel() {
       }
     };
     rec.onend = () => setListening(false);
-    rec.onerror = () => { setListening(false); setHeard("Sorry, we didn't catch that. Please tap what you feel below."); };
+    rec.onerror = (event) => {
+      setListening(false);
+      const reason = speechErrorMessage(event.error);
+      if (reason) setHeard(`${reason} You can also tap what you feel below.`);
+    };
     recognition.current = rec;
     setHeard('');
     setListening(true);
-    rec.start();
+    try {
+      rec.start();
+    } catch {
+      setListening(false);
+      setHeard(`${speechErrorMessage(undefined)} You can also tap what you feel below.`);
+    }
   }
 
   async function save() {

@@ -6,6 +6,7 @@ import { PageHeader } from '../components';
 import { ScrollingPlaceholder } from '../components/ScrollingPlaceholder';
 import { useAsk, useMe } from '../lib/api';
 import { micEnabled } from '../lib/prefs';
+import { recognitionClass, speechErrorMessage, type Recognition } from '../lib/speech';
 
 // E1 · Ask AI (design/Talk.dc.html). Every question goes through POST /api/ask, where the
 // code guardrail answers emergencies and dose questions itself; the UI only shows the result.
@@ -16,12 +17,6 @@ type Message =
   | { id: number; from: 'me'; text: string }
   | { id: number; from: 'ai'; kind: AiKind; text: string };
 
-type Recognition = { lang: string; interimResults: boolean; onresult: ((event: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null; onend: (() => void) | null; onerror: (() => void) | null; start: () => void; stop: () => void };
-function recognitionClass(): (new () => Recognition) | null {
-  if (typeof window === 'undefined') return null;
-  const w = window as unknown as { SpeechRecognition?: new () => Recognition; webkitSpeechRecognition?: new () => Recognition };
-  return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
-}
 
 const IDEAS = ['What is my water pill for?', 'How much can I drink today?', 'Why are my ankles swollen?'];
 
@@ -40,6 +35,8 @@ export default function AskAI() {
   const nextId = useRef(1);
   const endRef = useRef<HTMLSpanElement>(null);
   const [listening, setListening] = useState(false);
+  // Why voice stopped, e.g. "The microphone is blocked…" (shown under the text box).
+  const [micNote, setMicNote] = useState('');
   const recognition = useRef<Recognition | null>(null);
   // Hidden when the browser cannot listen, or the patient turned the microphone off.
   const Speech = micEnabled() ? recognitionClass() : null;
@@ -59,10 +56,19 @@ export default function AskAI() {
       if (text.trim()) send(text);
     };
     rec.onend = () => setListening(false);
-    rec.onerror = () => setListening(false);
+    rec.onerror = (event) => {
+      setListening(false);
+      setMicNote(speechErrorMessage(event.error) ?? '');
+    };
     recognition.current = rec;
+    setMicNote('');
     setListening(true);
-    rec.start();
+    try {
+      rec.start();
+    } catch {
+      setListening(false);
+      setMicNote(speechErrorMessage(undefined) ?? '');
+    }
   }
 
   useEffect(() => {
@@ -215,7 +221,7 @@ export default function AskAI() {
           </button>
         </form>
         <p aria-live="polite" style={{ margin: 0, minHeight: 10, padding: '0 20px 4px', fontSize: 19, fontWeight: 700, color: '#4A4FC2' }}>
-          {listening ? 'Listening… speak now' : ''}
+          {listening ? 'Listening… speak now' : micNote}
         </p>
       </div>)}
     </div>
