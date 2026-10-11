@@ -52,8 +52,12 @@ import type {
   AskResponse,
   EmergencyNotifyRequest,
   EmergencyNotifyResponse,
+  MealScanRequest,
+  MealScanResponse,
+  MedicineScanResponse,
+  VisionStatusResponse,
 } from '@ventra/core';
-import { alertHeadline, buildReport, familySummaryLines, findFood, mdmTanSeed, nurseScript, reasons, screenInput } from '@ventra/core';
+import { alertHeadline, buildReport, catalogMedicine, familySummaryLines, findFood, mdmTanSeed, MEDICINE_LEAFLETS, medicineIdForBarcode, nurseScript, reasons, screenInput } from '@ventra/core';
 import { getMockMetrics } from './mock-data';
 
 const isMockApi =
@@ -67,8 +71,10 @@ let mockTextSize: MeResponse['text_size'] = null;
 function mockMeal(id: number, time: string, meal: string, foodId: string): MealListEntry {
   const food = findFood(foodId)!;
   const { what, sodiumMg, tip, kcal, potassiumMg, phosphorusMg, carbs, protein, fat, plate } = food;
-  return { id, time, meal, what, sodiumMg, tip, kcal, potassiumMg, phosphorusMg, carbs, protein, fat, plate };
+  return { id, time, meal, what, sodiumMg, tip, kcal, potassiumMg, phosphorusMg, carbs, protein, fat, plate, photoUrl: null };
 }
+// Mock photo check: always "chicken rice"; the photo comes back as the meal's photo.
+let mockScan: { id: number; photo: string } | null = null;
 let mockMeals: MealListEntry[] = [
   mockMeal(2, '12:40 PM', 'Lunch', 'fish-soup-noodles'),
   mockMeal(1, '7:30 AM', 'Breakfast', 'oat-porridge'),
@@ -135,6 +141,13 @@ function mockResponse(path: string, init?: RequestInit): unknown {
     if (!mockSession) throw unauthorized();
     if (init?.method === 'POST') {
       const body = JSON.parse((init.body as string) || '{}') as MealCreateRequest;
+      if ('scanId' in body) {
+        if (!mockScan || mockScan.id !== body.scanId) throw apiError('NOT_FOUND', 'That photo check has expired. Please scan your meal again.');
+        const entry = { ...mockMeal(mockMeals.length + 10, '12:30 PM', 'Lunch', 'chicken-rice'), photoUrl: mockScan.photo };
+        mockScan = null;
+        mockMeals = [entry, ...mockMeals];
+        return entry satisfies MealListEntry;
+      }
       const food = findFood(body.foodId);
       if (!food) throw apiError('NOT_FOUND', 'Unknown food');
       const entry = mockMeal(mockMeals.length + 10, '12:30 PM', 'Lunch', food.id);
@@ -310,6 +323,25 @@ function mockResponse(path: string, init?: RequestInit): unknown {
     if (!mockSession) throw unauthorized();
     return { ok: true } satisfies DemoResetResponse;
   }
+  if (path === '/api/vision/status') {
+    if (!mockSession) throw unauthorized();
+    return { meal: true } satisfies VisionStatusResponse;
+  }
+  if (path === '/api/vision/meal') {
+    if (!mockSession) throw unauthorized();
+    const body = JSON.parse((init?.body as string) || '{}') as MealScanRequest;
+    const { id: _id, ...estimate } = findFood('chicken-rice')!;
+    mockScan = { id: (mockScan?.id ?? 0) + 1, photo: body.photo };
+    return { found: true, scanId: mockScan.id, sure: true, estimate } satisfies MealScanResponse;
+  }
+  if (path.startsWith('/api/medicines/barcode/')) {
+    if (!mockSession) throw unauthorized();
+    const medId = medicineIdForBarcode(path.split('/').pop() ?? '');
+    const known = medId ? catalogMedicine(medId) : undefined;
+    if (!medId || !known) return { status: 'unknown' } satisfies MedicineScanResponse;
+    const own = mdmTanSeed.meds.find((med) => med.id === medId);
+    return { status: own ? 'yours' : 'not_yours', medicine: own ?? known, leaflet: MEDICINE_LEAFLETS[medId] } satisfies MedicineScanResponse;
+  }
   return { ok: true };
 }
 
@@ -459,6 +491,31 @@ export function useAddMeal() {
       qc.invalidateQueries({ queryKey: ['meals'] });
       qc.invalidateQueries({ queryKey: ['metrics'] });
     },
+  });
+}
+
+/* ------------------------------------------------------------------ */
+/* Scanning: meal photo, medicine box barcode                         */
+/* ------------------------------------------------------------------ */
+
+export function useVisionStatus() {
+  return useQuery<VisionStatusResponse>({
+    queryKey: ['vision-status'],
+    queryFn: () => apiFetch('/api/vision/status'),
+    staleTime: Infinity,
+  });
+}
+
+// Sends the photo for checking. Nothing is logged until useAddMeal({ scanId }).
+export function useScanMeal() {
+  return useMutation<MealScanResponse, Error, MealScanRequest>({
+    mutationFn: (body) => apiFetch('/api/vision/meal', { method: 'POST', body: JSON.stringify(body) }),
+  });
+}
+
+export function useLookupBarcode() {
+  return useMutation<MedicineScanResponse, Error, string>({
+    mutationFn: (code) => apiFetch(`/api/medicines/barcode/${encodeURIComponent(code)}`),
   });
 }
 

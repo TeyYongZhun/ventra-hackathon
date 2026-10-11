@@ -9,6 +9,7 @@ import { reseedDemoPatient } from './db/seed.js';
 import { createAdpClient, DEFAULT_ADP_CHAT_URL } from './services/adp.js';
 import { runDailySummaries, summaryMinutes } from './services/family.js';
 import { createTelegramClient } from './services/telegram.js';
+import { createTokenHubClient, DEFAULT_TOKENHUB_MODEL, DEFAULT_TOKENHUB_URL } from './services/vision.js';
 import { sgDate } from './time.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -30,14 +31,27 @@ const telegram = telegramToken
   : undefined;
 const webhookSecret = process.env.TELEGRAM_WEBHOOK_SECRET || undefined;
 
+// Meal photo scan: a vision model on Tencent Cloud TokenHub.
+const tokenhubKey = process.env.TOKENHUB_API_KEY?.trim();
+const vision = tokenhubKey
+  ? createTokenHubClient({
+    baseUrl: process.env.TOKENHUB_BASE_URL || DEFAULT_TOKENHUB_URL,
+    apiKey: tokenhubKey,
+    model: process.env.TOKENHUB_MODEL || DEFAULT_TOKENHUB_MODEL,
+  })
+  : undefined;
+
 const db = createDb();
-const app = createApiApp({ db, adp, telegram, telegramWebhookSecret: webhookSecret });
+const app = createApiApp({ db, adp, telegram, telegramWebhookSecret: webhookSecret, vision });
 
 if (!adp) {
   app.log.warn('ADP_KEY_GENERAL is not set: Ask AI will only give fixed safety replies');
 }
 if (!telegram) {
   app.log.warn('TELEGRAM_BOT_TOKEN is not set: family alerts and summaries are off');
+}
+if (!vision) {
+  app.log.warn('TOKENHUB_API_KEY is not set: Scan my meal is off');
 }
 
 // Run Drizzle migrations on every start

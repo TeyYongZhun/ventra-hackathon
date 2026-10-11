@@ -1,10 +1,13 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import App from '../App';
 import { loginAsDemo } from '../test-utils';
+
+// jsdom can't decode or draw photos: hand back a ready JPEG.
+vi.mock('../lib/photo', () => ({ photoToJpeg: vi.fn(async () => 'data:image/jpeg;base64,/9j/AAAA') }));
 
 async function openTrackTab(tab: RegExp) {
   const user = await loginAsDemo();
@@ -51,7 +54,7 @@ describe('Day 4 screens', () => {
       expect(within(log).queryByText('In this meal')).toBeNull();
     });
 
-    // Last: the mock API keeps meals between tests, and this removes one.
+    // The mock API keeps meals between tests: this removes one, and the scan below adds one.
     it('undoes the latest meal', async () => {
       const user = await openTrackTab(/Scan meal/);
       const log = await screen.findByRole('region', { name: "Today's food log" });
@@ -61,6 +64,29 @@ describe('Day 4 screens', () => {
       expect(await screen.findByText('Last meal removed.')).toBeTruthy();
       expect(within(log).queryByText('Fish soup with noodles')).toBeNull();
       expect(within(log).getByText('Oat porridge with banana')).toBeTruthy();
+    });
+
+    it('checks a meal photo with the patient before logging it, and keeps the photo', async () => {
+      const user = await openTrackTab(/Scan meal/);
+      const scan = await screen.findByRole('region', { name: 'Scan my meal' });
+      expect(within(scan).getByText("Take a photo before you eat. We'll tell you how salty it is.")).toBeTruthy();
+
+      await user.upload(within(scan).getByLabelText('Meal photo'), new File(['photo'], 'lunch.jpg', { type: 'image/jpeg' }));
+      const result = await screen.findByRole('region', { name: 'Your meal photo' });
+      expect(within(result).getByRole('heading', { name: 'Chicken rice' })).toBeTruthy();
+      expect(within(result).getByRole('img', { name: 'Your photo of Chicken rice' })).toBeTruthy();
+      expect(within(result).getByText('High in salt — about ½ teaspoon')).toBeTruthy();
+      expect(within(result).getByText(/That is 65% of your day./)).toBeTruthy();
+      // Not logged yet.
+      const log = screen.getByRole('region', { name: "Today's food log" });
+      expect(within(log).queryByText('Chicken rice')).toBeNull();
+
+      await user.click(within(result).getByRole('button', { name: 'Yes, log it' }));
+      expect(await screen.findByText('Chicken rice logged.')).toBeTruthy();
+      expect(screen.queryByRole('region', { name: 'Your meal photo' })).toBeNull();
+      // The new meal opens on its card, photo first.
+      expect(within(log).getByRole('img', { name: 'Your photo of Chicken rice' }).getAttribute('src')).toBe('data:image/jpeg;base64,/9j/AAAA');
+      expect(within(log).getByText('Estimated from your photo')).toBeTruthy();
     });
   });
 

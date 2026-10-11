@@ -1,19 +1,21 @@
 import { useState } from 'react';
 import { MealCard } from '../components/MealCard';
+import { MealScan } from '../components/MealScan';
 import { LimitChangedNote } from '../components/LimitChangedNote';
 import { LoadError, Loading } from '../components/QueryState';
 import { SaltBowl } from '../components/SaltBowl';
 import { useDeleteLastMeal, useMeals, useMetrics } from '../lib/api';
 import { ml as num } from '../lib/copy';
 
-// C3 · Meals (design/Meals.dc.html): today's salt and today's meals. Salt totals come from
-// GET /api/metrics. The "What did you eat?" food list was removed, so this tab only shows and
-// undoes meals already logged (POST /api/meals still exists for a future way to log them).
+// C3 · Meals (design/Meals.dc.html): "Scan my meal", today's salt and today's meals. Salt
+// totals come from GET /api/metrics. Meals are logged from a photo (components/MealScan);
+// the newly logged one opens so its photo and salt are in view.
 export function MealsTab() {
   const metrics = useMetrics();
   const meals = useMeals();
   const undoMeal = useDeleteLastMeal();
   const [message, setMessage] = useState('');
+  const [openId, setOpenId] = useState<number | null>(null);
 
   if (metrics.isLoading || meals.isLoading) return <Loading what="your meals" />;
   if (metrics.isError || meals.isError || !metrics.data || !meals.data) {
@@ -29,6 +31,13 @@ export function MealsTab() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
+      <MealScan
+        limitMg={limit}
+        onLogged={(meal) => {
+          setOpenId(meal.id);
+          setMessage(`${meal.what} logged.`);
+        }}
+      />
       <section aria-label="Today's salt" style={{ display: 'flex', alignItems: 'center', gap: 22, padding: 'var(--space-6)', borderRadius: 32, background: 'var(--color-yellow-soft)' }}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
           <SaltBowl usedMg={used} limitMg={limit} />
@@ -75,7 +84,7 @@ export function MealsTab() {
         {entries.length === 0 ? (
           <p style={{ margin: 0, padding: 18, borderRadius: 24, background: 'var(--color-surface)', fontSize: 'var(--text-body)', lineHeight: 'var(--lh-body)', color: 'var(--color-ink-muted)' }}>No meals logged yet today.</p>
         ) : (
-          entries.map((meal) => <MealCard key={meal.id} meal={meal} limitMg={limit} />)
+          entries.map((meal) => <MealCard key={meal.id} meal={meal} limitMg={limit} defaultOpen={meal.id === openId} />)
         )}
         <p role="status" aria-live="polite" style={{ margin: 0, minHeight: 'var(--lh-body)', fontSize: 'var(--text-caption)', lineHeight: 'var(--lh-caption)', fontWeight: 600 }}>{message}</p>
       </section>

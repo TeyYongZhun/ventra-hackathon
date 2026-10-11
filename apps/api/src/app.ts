@@ -13,14 +13,17 @@ import { registerDemoRoutes } from './routes/demo.js';
 import { registerFamilyRoutes } from './routes/family.js';
 import { registerLogRoutes } from './routes/logs.js';
 import { registerMealRoutes } from './routes/meals.js';
+import { registerMedicineRoutes } from './routes/medicines.js';
 import { registerMetricsRoutes } from './routes/metrics.js';
 import { registerOnboardingRoutes } from './routes/onboarding.js';
 import { registerTelegramRoutes } from './routes/telegram.js';
 import { registerVisitRoutes } from './routes/visits.js';
+import { registerVisionRoutes } from './routes/vision.js';
 import type { MeResponse } from '@ventra/core';
 import type { AdpClient } from './services/adp.js';
 import { notifyAlert } from './services/family.js';
 import type { TelegramClient } from './services/telegram.js';
+import type { VisionClient } from './services/vision.js';
 
 export type ApiDb = BetterSQLite3Database<typeof schema>;
 
@@ -38,6 +41,7 @@ export interface CreateApiAppOptions {
   pseudonymSecret?: string;
   telegram?: TelegramClient;
   telegramWebhookSecret?: string;
+  vision?: VisionClient;
 }
 
 const SESSION_COOKIE = 'ventra_session';
@@ -299,6 +303,8 @@ export function createApiApp(options: CreateApiAppOptions) {
   registerTelegramRoutes(app, { db, now, telegram, webhookSecret: options.telegramWebhookSecret });
   registerDemoRoutes(app, { db, now });
   registerMealRoutes(app, { db, now });
+  registerVisionRoutes(app, { db, now, vision: options.vision });
+  registerMedicineRoutes(app, { db });
   registerVisitRoutes(app, { db, now });
   registerOnboardingRoutes(app, { db, now });
   registerAskRoutes(app, {
