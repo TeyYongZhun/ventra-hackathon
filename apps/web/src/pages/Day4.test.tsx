@@ -91,11 +91,25 @@ describe('Day 4 screens', () => {
       expect(await screen.findByRole('link', { name: 'Type my weight' })).toBeTruthy();
     });
 
-    it('warns about a big jump before saving', async () => {
+    it('warns about a big jump and asks before saving it', async () => {
       const user = await openTrackTab(/Log weight/);
       await user.click(await screen.findByRole('link', { name: 'Type my weight' }));
       for (const key of ['6', '1']) await user.click(await screen.findByRole('button', { name: key }));
       expect(screen.getByRole('alert').textContent).toContain('2 kg or more away from yesterday');
+
+      // Save asks first; "Fix the number" clears the box.
+      await user.click(screen.getByRole('button', { name: 'Save my weight' }));
+      const ask = screen.getByRole('group', { name: 'Is 61.0 kg right?' });
+      expect(ask.textContent).toContain("That's 2.8 kg more than yesterday (58.2 kg).");
+      await user.click(within(ask).getByRole('button', { name: 'Fix the number' }));
+      expect(screen.queryByRole('group', { name: /kg right\?/ })).toBeNull();
+      expect(screen.getByRole('button', { name: 'Type your weight first' })).toBeTruthy();
+
+      // Typing it again and saying yes saves it.
+      for (const key of ['6', '1']) await user.click(screen.getByRole('button', { name: key }));
+      await user.click(screen.getByRole('button', { name: 'Save my weight' }));
+      await user.click(within(screen.getByRole('group', { name: 'Is 61.0 kg right?' })).getByRole('button', { name: 'Yes, save it' }));
+      expect(await screen.findByRole('heading', { level: 1, name: 'Track' })).toBeTruthy();
     });
   });
 

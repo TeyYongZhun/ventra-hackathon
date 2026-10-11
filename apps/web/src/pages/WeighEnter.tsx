@@ -5,6 +5,7 @@ import { useAddWeight, useMetrics } from '../lib/api';
 
 // C2b · Type my weight (design/WeighEnter.dc.html). Big keypad, then POST /api/weight.
 // The alert rules run on the server; if today turns yellow we go to the alert screen.
+// A weight 2 kg or more away from the last weigh-in asks "Is 70.0 kg right?" before saving.
 const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', 'del'];
 
 export default function WeighEnter() {
@@ -13,6 +14,8 @@ export default function WeighEnter() {
   const navigate = useNavigate();
   const [buffer, setBuffer] = useState('');
   const [error, setError] = useState('');
+  // A big jump from the last weigh-in is checked before saving (a typo would otherwise raise an alert).
+  const [confirming, setConfirming] = useState(false);
 
   const history = metrics.data?.weightHistory ?? [];
   const today = metrics.data?.today;
@@ -26,6 +29,7 @@ export default function WeighEnter() {
 
   function press(key: string) {
     setError('');
+    setConfirming(false);
     setBuffer((current) => {
       if (key === 'del') return current.slice(0, -1);
       if (key === '.') return current.includes('.') || !current ? current : `${current}.`;
@@ -36,7 +40,18 @@ export default function WeighEnter() {
     });
   }
 
+  function onSave() {
+    if (bigJump) setConfirming(true);
+    else submit();
+  }
+
+  function fixNumber() {
+    setConfirming(false);
+    setBuffer('');
+  }
+
   function submit() {
+    setConfirming(false);
     save.mutate({ weightKg: value }, {
       onSuccess: async () => {
         const fresh = await metrics.refetch();
@@ -86,14 +101,38 @@ export default function WeighEnter() {
         ))}
       </div>
 
+      {confirming && previous ? (
+        <div role="group" aria-label={`Is ${value.toFixed(1)} kg right?`} style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: 18, borderRadius: 20, background: 'var(--color-yellow-soft)', border: '3px solid var(--color-yellow-ink)' }}>
+          <p style={{ margin: 0, fontSize: 24, lineHeight: '30px', fontWeight: 700 }}>Is {value.toFixed(1)} kg right?</p>
+          <p style={{ margin: 0, fontSize: 20, lineHeight: '28px' }}>
+            That's {Math.abs(value - previous.kg).toFixed(1)} kg {value >= previous.kg ? 'more' : 'less'} than {wasYesterday ? 'yesterday' : 'last time'} ({previous.kg.toFixed(1)} kg).
+          </p>
+          <button
+            type="button"
+            onClick={submit}
+            disabled={save.isPending}
+            style={{ minHeight: 76, borderRadius: 'var(--radius-pill)', border: 0, background: 'var(--color-blue)', color: 'var(--color-ink)', fontFamily: 'inherit', fontSize: 24, fontWeight: 700, cursor: 'pointer' }}
+          >
+            {save.isPending ? 'Saving…' : 'Yes, save it'}
+          </button>
+          <button
+            type="button"
+            onClick={fixNumber}
+            style={{ minHeight: 76, borderRadius: 'var(--radius-pill)', border: '2.5px solid var(--color-ink)', background: 'var(--color-surface)', color: 'var(--color-ink)', fontFamily: 'inherit', fontSize: 24, fontWeight: 700, cursor: 'pointer' }}
+          >
+            Fix the number
+          </button>
+        </div>
+      ) : (
       <button
         type="button"
-        onClick={submit}
+        onClick={onSave}
         disabled={!valid || save.isPending}
         style={{ minHeight: 80, borderRadius: 'var(--radius-pill)', border: 0, background: valid ? 'var(--color-blue)' : 'var(--color-sunken)', color: valid ? 'var(--color-ink)' : 'var(--color-ink-muted)', fontFamily: 'inherit', fontSize: valid ? 26 : 24, fontWeight: 700, cursor: valid ? 'pointer' : 'default' }}
       >
         {save.isPending ? 'Saving…' : valid ? 'Save my weight' : 'Type your weight first'}
       </button>
+      )}
       {error && <p role="alert" style={{ margin: 0, fontSize: 'var(--text-caption)', fontWeight: 600, color: 'var(--color-red)' }}>{error}</p>}
     </div>
   );

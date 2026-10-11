@@ -59,6 +59,14 @@ export function buildMetrics(record: PatientRecord): MetricsResponse {
     symptomsRecent: record.symptoms
       .filter((symptom) => symptom.date > addDays(date, -7) && symptom.date <= date)
       .sort((a, b) => b.date.localeCompare(a.date)),
+    limitChangedToday: {
+      fluid: record.targets.fluidChangedOn === date && record.targets.fluidBeforeMl != null
+        ? { fromMl: record.targets.fluidBeforeMl, toMl: record.targets.fluidMl }
+        : null,
+      sodium: record.targets.sodiumChangedOn === date && record.targets.sodiumBeforeMg != null
+        ? { fromMg: record.targets.sodiumBeforeMg, toMg: record.targets.sodiumMg }
+        : null,
+    },
     dayZones: [...new Set([...weightHistory(record).map((point) => point.date), date])]
       .sort()
       .map((day) => ({ date: day, zone: evaluate(record, day).zone })),

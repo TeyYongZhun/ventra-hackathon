@@ -1,5 +1,5 @@
 import type { PatientRecord, IsoDate } from './record.js';
-import { weightChange, dosesOn, fluidOn, symptomsOn } from './record.js';
+import { weightChange, dosesOn, fluidLimitOn, fluidOn, symptomsOn } from './record.js';
 
 export type AlertZone = 'green' | 'yellow' | 'red';
 
@@ -22,7 +22,8 @@ export function evaluate(
 
   const fluidOverLimit = (() => {
     const fluid = fluidOn(record, date);
-    return fluid != null && fluid > record.targets.fluidMl;
+    // The limit in force that day: a limit lowered today still uses the old one until tomorrow.
+    return fluid != null && fluid > fluidLimitOn(record, date);
   })();
 
   const ankleSwelling = symptomsOn(record, date).some((s) => s.key === 'ankles');

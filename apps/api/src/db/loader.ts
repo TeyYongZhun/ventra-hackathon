@@ -89,8 +89,12 @@ export function loadPatientRecord(
     .where(eq(schema.weights.patientId, patientId))
     .all();
 
+  // After a weight-history restart (big dry-weight change), older weigh-ins are kept in the
+  // database but left out here, so alerts, charts, the report and the keypad start fresh.
+  const weightSince = patientRow.weightSince;
   const weights: Partial<Record<IsoDate, number>> = {};
   for (const w of weightRows) {
+    if (weightSince && w.date < weightSince) continue;
     weights[w.date as IsoDate] = w.weightKg;
   }
 
@@ -197,6 +201,10 @@ export function loadPatientRecord(
       fluidMl: targetsRow?.fluidMl ?? 0,
       sodiumMg: targetsRow?.sodiumMg ?? 0,
       capMl: targetsRow?.capMl ?? 0,
+      fluidBeforeMl: targetsRow?.fluidBeforeMl ?? null,
+      fluidChangedOn: (targetsRow?.fluidChangedOn as IsoDate | null | undefined) ?? null,
+      sodiumBeforeMg: targetsRow?.sodiumBeforeMg ?? null,
+      sodiumChangedOn: (targetsRow?.sodiumChangedOn as IsoDate | null | undefined) ?? null,
     },
     meds,
     missed,

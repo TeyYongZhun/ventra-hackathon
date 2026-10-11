@@ -19,6 +19,23 @@ export interface Targets {
   fluidMl: number;
   sodiumMg: number;
   capMl: number;
+  // Latest limit change: the old limit applies up to and including the change day.
+  fluidBeforeMl?: number | null;
+  fluidChangedOn?: IsoDate | null;
+  sodiumBeforeMg?: number | null;
+  sodiumChangedOn?: IsoDate | null;
+}
+
+// Drink limit in force on a date: the old limit on the day it was changed and before.
+export function fluidLimitOn(record: PatientRecord, date: IsoDate): number {
+  const { fluidMl, fluidBeforeMl, fluidChangedOn } = record.targets;
+  return fluidBeforeMl != null && fluidChangedOn && date <= fluidChangedOn ? fluidBeforeMl : fluidMl;
+}
+
+// Salt limit in force on a date (same idea as the drink limit).
+export function sodiumLimitOn(record: PatientRecord, date: IsoDate): number {
+  const { sodiumMg, sodiumBeforeMg, sodiumChangedOn } = record.targets;
+  return sodiumBeforeMg != null && sodiumChangedOn && date <= sodiumChangedOn ? sodiumBeforeMg : sodiumMg;
 }
 
 export interface Medicine {
@@ -363,7 +380,7 @@ export function fluidOn(record: PatientRecord, date: IsoDate): number | null {
 
 export function fluidOk(record: PatientRecord, date: IsoDate): boolean {
   const fluid = fluidOn(record, date);
-  return fluid != null && fluid <= record.targets.fluidMl;
+  return fluid != null && fluid <= fluidLimitOn(record, date);
 }
 
 export function sodiumToday(record: PatientRecord): number {
@@ -384,8 +401,8 @@ export function reasons(record: PatientRecord, date: IsoDate): Reason[] {
   }
 
   const fluid = fluidOn(record, date);
-  if (fluid != null && fluid > targets.fluidMl) {
-    out.push({ key: 'fluid', chip: `Drank ${num(fluid)} ml · limit ${num(targets.fluidMl)}` });
+  if (fluid != null && fluid > fluidLimitOn(record, date)) {
+    out.push({ key: 'fluid', chip: `Drank ${num(fluid)} ml · limit ${num(fluidLimitOn(record, date))}` });
   }
 
   for (const symptom of symptomsOn(record, date)) {
@@ -448,8 +465,8 @@ export function nurseScript(record: PatientRecord, date: IsoDate): ScriptLine[] 
   }
 
   const fluid = fluidOn(record, date);
-  if (fluid != null && fluid > targets.fluidMl) {
-    lines.push([S('I drank '), B(`${num(fluid)} ml`), S(` today. My limit is ${num(targets.fluidMl)} ml.`)]);
+  if (fluid != null && fluid > fluidLimitOn(record, date)) {
+    lines.push([S('I drank '), B(`${num(fluid)} ml`), S(` today. My limit is ${num(fluidLimitOn(record, date))} ml.`)]);
   }
 
   const missed = dosesOn(record, date).filter((dose) => dose.missed);

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { MealCard } from '../components/MealCard';
+import { LimitChangedNote } from '../components/LimitChangedNote';
 import { LoadError, Loading } from '../components/QueryState';
 import { SaltBowl } from '../components/SaltBowl';
 import { useDeleteLastMeal, useMeals, useMetrics } from '../lib/api';
@@ -23,6 +24,8 @@ export function MealsTab() {
   const used = metrics.data.sodiumToday;
   const entries = meals.data.entries;
   const busy = undoMeal.isPending;
+  // Salt limit lowered today below what's already eaten: today keeps the old limit.
+  const changed = metrics.data.limitChangedToday.sodium;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
@@ -47,6 +50,7 @@ export function MealsTab() {
           )}
         </div>
       </section>
+      {changed && used > changed.toMg && <LimitChangedNote what="salt" from={changed.fromMg} to={changed.toMg} unit="mg" />}
 
       {/* Today: one expandable card per meal, newest first (design: "Meals you scanned today"). */}
       <section aria-label="Today's food log" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>

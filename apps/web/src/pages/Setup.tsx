@@ -97,10 +97,13 @@ interface StepProps<T> {
 }
 
 // A3 · Clinic baselines (filled in by the care team)
-export function NumbersStep({ onDone, initial = EMPTY_NUMBERS, submitLabel = 'Save and next', showTitle = true }: StepProps<NumbersValues>) {
+// My details passes the saved dry weight and alert amount: a dry-weight change bigger than the
+// alert amount asks whether to start the weight history again (set-up has no history, so it never asks).
+export function NumbersStep({ onDone, initial = EMPTY_NUMBERS, submitLabel = 'Save and next', showTitle = true, saved }: StepProps<NumbersValues> & { saved?: { dryKg: number; alertGainKg: number } }) {
   const profile = useSaveProfile();
   const targets = useSaveTargets();
   const [values, setValues] = useState(initial);
+  const [askRestart, setAskRestart] = useState(false);
   const set = (key: keyof typeof values) => (event: React.ChangeEvent<HTMLInputElement>) => setValues({ ...values, [key]: event.target.value });
   const numbers = {
     age: Number(values.age), dryKg: Number(values.dryKg), fluidMl: Number(values.fluidMl),
@@ -108,13 +111,22 @@ export function NumbersStep({ onDone, initial = EMPTY_NUMBERS, submitLabel = 'Sa
   };
   const ready = numbers.age >= 18 && numbers.dryKg >= 25 && numbers.fluidMl >= 500 && numbers.sodiumMg >= 500 && numbers.alertGainKg > 0 && numbers.alertDays >= 1;
 
-  function save() {
+  const dryChange = saved && saved.dryKg > 0 ? numbers.dryKg - saved.dryKg : 0;
+  const bigDryChange = saved != null && Math.abs(dryChange) > saved.alertGainKg;
+
+  function save(restartWeights = false) {
     profile.mutate({ age: Math.round(numbers.age) }, {
       onSuccess: () => targets.mutate({
         dryKg: numbers.dryKg, fluidMl: Math.round(numbers.fluidMl), sodiumMg: Math.round(numbers.sodiumMg),
         alertGainKg: numbers.alertGainKg, alertDays: Math.round(numbers.alertDays),
+        ...(restartWeights ? { restartWeights: true } : {}),
       }, { onSuccess: onDone }),
     });
+  }
+
+  function onSave() {
+    if (bigDryChange) setAskRestart(true);
+    else save();
   }
 
   const input = (id: keyof typeof values, label: string, unit: string, mode: 'decimal' | 'numeric' = 'numeric') => (
@@ -147,7 +159,20 @@ export function NumbersStep({ onDone, initial = EMPTY_NUMBERS, submitLabel = 'Sa
         </p>
       )}
       <SaveError show={profile.isError || targets.isError} />
-      <button type="button" disabled={!ready || profile.isPending || targets.isPending} onClick={save} style={primaryButton(ready)}>{submitLabel}</button>
+      {askRestart ? (
+        <div role="group" aria-label="Start your weight chart again?" style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: 18, borderRadius: 20, background: 'var(--color-yellow-soft)', border: '3px solid var(--color-yellow-ink)' }}>
+          <p style={{ margin: 0, fontSize: 21, lineHeight: '29px', fontWeight: 700 }}>
+            Your dry weight changed by {Math.abs(dryChange).toFixed(1)} kg. Start your weight chart again from today?
+          </p>
+          <p style={{ margin: 0, fontSize: 19, lineHeight: '27px' }}>
+            Earlier weights won't be compared with new ones, so a new weight won't set off an alert.
+          </p>
+          <button type="button" disabled={profile.isPending || targets.isPending} onClick={() => save(true)} style={primaryButton(true)}>Yes, start again</button>
+          <button type="button" disabled={profile.isPending || targets.isPending} onClick={() => save(false)} style={{ ...secondaryButton, cursor: 'pointer' }}>No, keep my history</button>
+        </div>
+      ) : (
+        <button type="button" disabled={!ready || profile.isPending || targets.isPending} onClick={onSave} style={primaryButton(ready)}>{submitLabel}</button>
+      )}
     </>
   );
 }

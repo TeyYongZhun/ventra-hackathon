@@ -35,6 +35,31 @@ describe('My details', () => {
     expect(await screen.findByRole('heading', { level: 1, name: 'My details' })).toBeTruthy();
   });
 
+  it('asks to start the weight chart again after a big dry-weight change', async () => {
+    const user = await openDetails();
+    await user.click(screen.getByRole('link', { name: /My numbers/ }));
+    const dry = (await screen.findByLabelText('Dry weight')) as HTMLInputElement;
+    await user.clear(dry);
+    await user.type(dry, '70');
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+
+    const ask = screen.getByRole('group', { name: 'Start your weight chart again?' });
+    expect(ask.textContent).toContain('Your dry weight changed by 12.0 kg.');
+    await user.click(within(ask).getByRole('button', { name: 'Yes, start again' }));
+    expect(await screen.findByText('Your numbers saved.')).toBeTruthy();
+  });
+
+  it('saves a small dry-weight change without asking', async () => {
+    const user = await openDetails();
+    await user.click(screen.getByRole('link', { name: /My numbers/ }));
+    const dry = (await screen.findByLabelText('Dry weight')) as HTMLInputElement;
+    await user.clear(dry);
+    await user.type(dry, '59');
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+    expect(screen.queryByRole('group', { name: 'Start your weight chart again?' })).toBeNull();
+    expect(await screen.findByText('Your numbers saved.')).toBeTruthy();
+  });
+
   it('saves my medicines and comes back with a note', async () => {
     const user = await openDetails();
     await user.click(screen.getByRole('link', { name: /My medicines/ }));

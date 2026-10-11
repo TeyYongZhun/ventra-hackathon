@@ -1,6 +1,7 @@
 // Doctor report (F2a) built from the same functions as every other screen, so its numbers
 // always match Home, Medicine and Track.
 import {
+  fluidLimitOn,
   addDays,
   adherence,
   clock,
@@ -101,7 +102,7 @@ export function buildReport(record: PatientRecord): Report {
     const taken = doses.filter((dose) => dose.taken).length;
     const missed = doses.filter((dose) => dose.missed);
     const fluid = fluidOn(record, date);
-    const over = fluid != null && fluid > targets.fluidMl;
+    const over = fluid != null && fluid > fluidLimitOn(record, date);
     return {
       date,
       zone: evaluate(record, date).zone,

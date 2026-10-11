@@ -68,7 +68,7 @@ describe('metrics and logging endpoints', () => {
       return cookieFrom(response);
     }
 
-    function call(method: 'GET' | 'POST' | 'DELETE', url: string, cookie: string, payload?: object) {
+    function call(method: 'GET' | 'POST' | 'PUT' | 'DELETE', url: string, cookie: string, payload?: object) {
       return app.inject({ method, url, headers: { cookie }, ...(payload ? { payload } : {}) });
     }
 
@@ -88,6 +88,93 @@ describe('metrics and logging endpoints', () => {
       setNow: (ms: number) => { nowMs = ms; },
     };
   }
+
+  describe('drink and salt limits changed mid-day', () => {
+    // Yellow-day demo: today's water pill is missed, so going over the drink limit turns the day yellow.
+    const lowered = { dryKg: 58, alertGainKg: 2, alertDays: 3, fluidMl: 1300, sodiumMg: 1200 };
+
+    async function yellowDayAt1450() {
+      const ctx = await setup();
+      const cookie = await ctx.login();
+      await ctx.call('POST', '/api/demo/yellow-day', cookie);
+      await ctx.call('POST', '/api/fluid', cookie, { what: 'Water', ml: 600 });
+      return { ...ctx, cookie };
+    }
+
+    it('lowering the limit below what was drunk keeps today green and says so', async () => {
+      const { call, metrics, cookie } = await yellowDayAt1450();
+      const before = await metrics(cookie);
+      expect(before.fluidToday).toBe(1450);
+      expect(before.zone).toBe('green');
+      const daysBefore = before.dayZones;
+
+      await call('PUT', '/api/onboarding/targets', cookie, lowered);
+      const after = await metrics(cookie);
+      expect(after.targets.fluidMl).toBe(1300);
+      expect(after.zone).toBe('green');
+      expect(after.reasons.map((reason: { key: string }) => reason.key)).not.toContain('fluid');
+      expect(after.limitChangedToday).toEqual({ fluid: { fromMl: 1500, toMl: 1300 }, sodium: { fromMg: 2000, toMg: 1200 } });
+      // Past days keep the colours they had.
+      expect(after.dayZones).toEqual(daysBefore);
+    });
+
+    it('without a change, going over the limit on that day still turns it yellow', async () => {
+      const { call, metrics, cookie } = await yellowDayAt1450();
+      await call('POST', '/api/fluid', cookie, { what: 'Water', ml: 100 });
+      expect((await metrics(cookie)).zone).toBe('yellow');
+    });
+
+    it('the new limit counts from the next day', async () => {
+      const { call, metrics, cookie, setNow } = await yellowDayAt1450();
+      await call('PUT', '/api/onboarding/targets', cookie, lowered);
+      setNow(DEMO_NOW + 24 * HOUR);
+      const next = await metrics(cookie);
+      expect(next.limitChangedToday).toEqual({ fluid: null, sodium: null });
+      await call('POST', '/api/fluid', cookie, { what: 'Water', ml: 1350 });
+      expect((await metrics(cookie)).reasons.map((reason: { key: string }) => reason.key)).toContain('fluid');
+    });
+  });
+
+  describe('weight history restart after a big dry-weight change', () => {
+    const targets = { dryKg: 70, alertGainKg: 2, alertDays: 3, fluidMl: 1500, sodiumMg: 2000 };
+
+    it('without a restart, a 70 kg weigh-in is compared with the old ~58 kg and alerts', async () => {
+      const { login, call, metrics } = await setup();
+      const cookie = await login();
+      await call('PUT', '/api/onboarding/targets', cookie, targets);
+      await call('POST', '/api/weight', cookie, { weightKg: 70 });
+
+      const body = await metrics(cookie);
+      expect(body.zone).toBe('yellow');
+      expect(body.reasons.map((reason: { key: string }) => reason.key)).toContain('weight');
+    });
+
+    it('with a restart, older weigh-ins are left out: no comparison, no alert', async () => {
+      const { db, demoId, login, call, metrics } = await setup();
+      const cookie = await login();
+      expect((await call('PUT', '/api/onboarding/targets', cookie, { ...targets, restartWeights: true })).statusCode).toBe(200);
+      expect(db.select().from(schema.patients).where(eq(schema.patients.id, demoId)).get()?.weightSince).toBe('2026-10-07');
+
+      await call('POST', '/api/weight', cookie, { weightKg: 70 });
+      const body = await metrics(cookie);
+      expect(body.weightHistory).toEqual([{ date: '2026-10-07', kg: 70 }]);
+      expect(body.weightChange).toBeNull();
+      expect(body.reasons.map((reason: { key: string }) => reason.key)).not.toContain('weight');
+      expect(body.targets.dryKg).toBe(70);
+
+      // The old weigh-ins are still stored.
+      const stored = db.select().from(schema.weights).where(eq(schema.weights.patientId, demoId)).all();
+      expect(stored.length).toBeGreaterThan(1);
+    });
+
+    it('resetting the demo brings the full history back', async () => {
+      const { db, demoId, login, call } = await setup();
+      const cookie = await login();
+      await call('PUT', '/api/onboarding/targets', cookie, { ...targets, restartWeights: true });
+      await call('POST', '/api/demo/reset', cookie);
+      expect(db.select().from(schema.patients).where(eq(schema.patients.id, demoId)).get()?.weightSince).toBeNull();
+    });
+  });
 
   describe('GET /api/metrics', () => {
     it('requires a session', async () => {

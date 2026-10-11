@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
 import type { FluidEntryResponse, MetricsResponse } from '@ventra/core';
+import { LimitChangedNote } from '../components/LimitChangedNote';
 import { LoadError, Loading } from '../components/QueryState';
 import { WaterBottle } from '../components/WaterBottle';
 import { useAddFluid, useDeleteLastFluid, useFluid, useMetrics } from '../lib/api';
@@ -40,6 +41,9 @@ function DrinksView({ metrics, todayEntries }: { metrics: MetricsResponse; today
   const { fluidMl, capMl } = metrics.targets;
   const used = metrics.fluidToday;
   const state = drinkState(used, fluidMl);
+  // Limit lowered today below what's already drunk: explain instead of the "reached today's limit" banner.
+  const changed = metrics.limitChangedToday.fluid;
+  const justChanged = changed != null && used > changed.toMl;
   const caps = capOptions(capMl);
   const busy = addFluid.isPending || undoFluid.isPending;
 
@@ -93,10 +97,11 @@ function DrinksView({ metrics, todayEntries }: { metrics: MetricsResponse; today
         </div>
       </section>
 
-      {state.near && (
+      {justChanged && <LimitChangedNote what="drink" from={changed.fromMl} to={changed.toMl} unit="ml" />}
+      {!justChanged && state.near && (
         <Banner tone="near">Almost at your limit. Small sips for the rest of today.</Banner>
       )}
-      {state.over && (
+      {!justChanged && state.over && (
         <Banner tone="over">You've reached today's limit. That's okay — let's slow down on drinks until tomorrow.</Banner>
       )}
 

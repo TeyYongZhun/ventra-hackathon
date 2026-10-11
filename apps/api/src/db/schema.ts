@@ -11,6 +11,9 @@ export const patients = sqliteTable('patients', {
   dischargeWeightKg: real('discharge_weight_kg'),
   textSize: text('text_size'),
   weighTime: text('weigh_time'),
+  // Weigh-ins before this date (YYYY-MM-DD) are ignored: set when the patient restarts their
+  // weight history after a big dry-weight change (My details → My numbers). Null = use all.
+  weightSince: text('weight_since'),
   isDemo: integer('is_demo', { mode: 'boolean' }).notNull().default(false),
 });
 
@@ -33,6 +36,12 @@ export const careTargets = sqliteTable('care_targets', {
   fluidMl: integer('fluid_ml').notNull(),
   sodiumMg: integer('sodium_mg').notNull(),
   capMl: integer('cap_ml').notNull(),
+  // When the drink or salt limit changes, the old limit still applies on the day of the change
+  // and before it (so a mid-day change doesn't turn today, or past days, yellow).
+  fluidBeforeMl: integer('fluid_before_ml'),
+  fluidChangedOn: text('fluid_changed_on'),
+  sodiumBeforeMg: integer('sodium_before_mg'),
+  sodiumChangedOn: text('sodium_changed_on'),
 }, (table) => ({
   patientIdIdx: index('care_targets_patient_id_idx').on(table.patientId),
 }));

@@ -80,6 +80,9 @@ export interface OnboardingTargetsRequest {
   sodiumMg: number;
   // Optional here; usually set in its own step (PUT /api/onboarding/cap)
   capMl?: number;
+  // After a big dry-weight change: count weigh-ins from today only, so new weights are not
+  // compared with the old ones (My details → My numbers asks first).
+  restartWeights?: boolean;
 }
 
 // Medicines picked from MEDICINE_CATALOG, each with its times (minutes after midnight).
@@ -132,6 +135,11 @@ export interface MetricsResponse {
   symptomsRecent: SymptomLog[];
   // Zone of every day the patient logged a weight, plus today, oldest first (Calendar)
   dayZones: Array<{ date: IsoDate; zone: 'green' | 'yellow' }>;
+  // A drink or salt limit changed today: the old one still counts today, the new one from tomorrow.
+  limitChangedToday: {
+    fluid: { fromMl: number; toMl: number } | null;
+    sodium: { fromMg: number; toMg: number } | null;
+  };
   alertsToday: AlertLog[];
   questions: string[];
 }

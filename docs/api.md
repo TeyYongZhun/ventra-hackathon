@@ -147,6 +147,10 @@ Filled in by clinic staff. Creates or replaces the care targets.
 ```
 Sanity ranges: dry weight 25–250 kg, fluid 500–5,000 ml, sodium 500–6,000 mg, gain 0.5–10 kg, days 1–14. `capMl` is optional here.
 
+Optional `"restartWeights": true` (sent by My details after a dry-weight change bigger than the alert gain, when the patient says yes): weigh-ins before today are kept but no longer used, so alerts, charts, the report and the keypad compare only from today. Resetting the demo clears it.
+
+Changing `fluidMl` or `sodiumMg` records the old value and today's date: the old limit still applies today and on earlier days (so a lowered limit can't turn today or past days yellow), and the new one from tomorrow. `GET /api/metrics` returns `limitChangedToday` (`{ fluid: { fromMl, toMl } | null, sodium: { fromMg, toMg } | null }`) so the app can explain it.
+
 **Success 200:** `{ "ok": true }` · **Errors:** `VALIDATION_ERROR`, `UNAUTHORIZED`
 
 ---
