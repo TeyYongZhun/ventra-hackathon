@@ -29,6 +29,20 @@
       "when": 1791622040812,
       "tag": "0003_visits",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1791730237323,
+      "tag": "0004_weight_since",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1791731044661,
+      "tag": "0005_limit_changes",
+      "breakpoints": true
     }
   ]
 }

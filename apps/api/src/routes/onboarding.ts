@@ -7,6 +7,7 @@ import * as schema from '../db/schema.js';
 import { patientScope } from '../db/scope.js';
 import { sendError } from '../errors.js';
 import { loadRecordNow } from '../services/alerts.js';
+import { sgDate } from '../time.js';
 import { isoDateSchema } from './metrics.js';
 
 const profileSchema = z.object({
@@ -25,6 +26,7 @@ const targetsSchema = z.object({
   fluidMl: z.number().int().min(500).max(5000),
   sodiumMg: z.number().int().min(500).max(6000),
   capMl: z.number().int().min(20).max(1000).optional(),
+  restartWeights: z.boolean().optional(),
 });
 
 const capSchema = z.object({
@@ -71,9 +73,28 @@ export function registerOnboardingRoutes(app: FastifyInstance, options: Onboardi
     if (!parsed.success) return sendError(reply, 400, 'VALIDATION_ERROR', 'Invalid request body');
 
     const scope = patientScope(request);
-    const existing = db.select({ id: schema.careTargets.id, capMl: schema.careTargets.capMl })
-      .from(schema.careTargets).where(scope.where(schema.careTargets.patientId)).get();
-    const values = { ...parsed.data, capMl: parsed.data.capMl ?? existing?.capMl ?? 0 };
+    const { restartWeights, ...targets } = parsed.data;
+    const existing = db.select().from(schema.careTargets).where(scope.where(schema.careTargets.patientId)).get();
+    const today = sgDate(now());
+    // A changed drink or salt limit counts from tomorrow: keep the limit today started with
+    // (a second change on the same day keeps the first "before"), so today isn't judged by it.
+    const limitChange = (changed: boolean, before: number | undefined, beforeToday: number | null | undefined, changedOn: string | null | undefined) => {
+      if (!changed || before == null) return {};
+      return { before: changedOn === today && beforeToday != null ? beforeToday : before, on: today };
+    };
+    const fluid = limitChange(existing != null && existing.fluidMl !== targets.fluidMl, existing?.fluidMl, existing?.fluidBeforeMl, existing?.fluidChangedOn);
+    const sodium = limitChange(existing != null && existing.sodiumMg !== targets.sodiumMg, existing?.sodiumMg, existing?.sodiumBeforeMg, existing?.sodiumChangedOn);
+    const values = {
+      ...targets,
+      capMl: targets.capMl ?? existing?.capMl ?? 0,
+      ...(fluid.on ? { fluidBeforeMl: fluid.before, fluidChangedOn: fluid.on } : {}),
+      ...(sodium.on ? { sodiumBeforeMg: sodium.before, sodiumChangedOn: sodium.on } : {}),
+    };
+
+    // Weight history restarts today: earlier weigh-ins stay stored but are no longer used.
+    if (restartWeights) {
+      db.update(schema.patients).set({ weightSince: today }).where(eq(schema.patients.id, scope.patientId)).run();
+    }
 
     if (existing) {
       db.update(schema.careTargets).set(values).where(eq(schema.careTargets.id, existing.id)).run();

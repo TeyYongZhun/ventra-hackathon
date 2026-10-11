@@ -98,7 +98,7 @@ export function EditNumbers() {
   };
   return (
     <EditPage title="My numbers" what="Your numbers">
-      {(done) => <NumbersStep onDone={done} initial={initial} submitLabel="Save" showTitle={false} />}
+      {(done) => <NumbersStep onDone={done} initial={initial} submitLabel="Save" showTitle={false} saved={{ dryKg: targets.dryKg, alertGainKg: targets.alertGainKg || 2 }} />}
     </EditPage>
   );
 }
