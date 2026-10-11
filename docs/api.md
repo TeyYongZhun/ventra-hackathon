@@ -383,29 +383,48 @@ Undo the most recent fluid entry for the same day only. Soft delete (`deleted_at
 
 ## Meals
 
-Manual food log (photo scanning is optional and not built). Foods come from `FOODS` in `packages/core/foods.ts`: common Singapore meals with **approximate** sodium per serving. Today's total feeds `sodiumToday` in `GET /api/metrics`.
+Food log. A meal is logged from a photo checked by `POST /api/vision/meal` ("Scan my meal"), or from `FOODS` in `packages/core/foods.ts` (common Singapore meals with **approximate** sodium per serving). Today's total feeds `sodiumToday` in `GET /api/metrics`.
 
 ### GET /api/meals
-Today's meals, newest first.
+Today's meals, newest first. `photoUrl` is set for meals logged from a photo, otherwise `null`.
 
 ```json
-{ "entries": [{ "id": 3, "time": "12:30 PM", "meal": "Lunch", "what": "Chicken rice", "sodiumMg": 1300, "tip": "Ask for less dark sauce and chilli, and skip the soup." }] }
+{ "entries": [{
+  "id": 3, "time": "12:30 PM", "meal": "Lunch", "what": "Chicken rice",
+  "sodiumMg": 1300, "kcal": 600, "potassiumMg": 350, "phosphorusMg": 250,
+  "carbs": { "g": 75, "what": "Rice" }, "protein": { "g": 28, "what": "Chicken" }, "fat": { "g": 20, "what": "Oil and chicken skin" },
+  "plate": [0.625, 0.25, 0.125],
+  "tip": "Ask for less dark sauce and chilli, and skip the soup.",
+  "photoUrl": "/api/meals/3/photo"
+}] }
 ```
 
 ---
 
 ### POST /api/meals
+Either a scanned photo the patient confirmed:
+```json
+{ "scanId": 12 }
+```
+or a food from the list:
 ```json
 { "foodId": "chicken-rice" }
 ```
-The server fills in the nutrition values and names the meal from the Singapore time (Breakfast before 11 AM, Lunch before 4 PM, Dinner from 6 PM, otherwise Snack).
+For a scan, the server logs the estimate **it stored** at scan time (the phone never sends nutrition numbers) and moves the photo to the meal. The meal is named from the Singapore time (Breakfast before 11 AM, Lunch before 4 PM, Dinner from 6 PM, otherwise Snack).
 
-**Success 200:** the new entry (same shape as above) · **Errors:** `VALIDATION_ERROR`, `NOT_FOUND` (unknown food), `UNAUTHORIZED`
+**Success 200:** the new entry (same shape as above) · **Errors:** `VALIDATION_ERROR`, `NOT_FOUND` (unknown food, or a scan that was already logged, replaced by a newer scan, or belongs to someone else), `UNAUTHORIZED`
+
+---
+
+### GET /api/meals/:id/photo
+The JPEG of a meal logged from a photo. Only the patient who logged it can load it (same-origin `<img>`, so the session cookie is sent).
+
+**Success 200:** `image/jpeg` bytes, `Cache-Control: private, max-age=86400` · **Errors:** `NOT_FOUND` (no photo, or not yours), `UNAUTHORIZED`
 
 ---
 
 ### DELETE /api/meals/last
-Undo the latest meal logged today.
+Undo the latest meal logged today, and its photo.
 
 **Success 200:** `{ "ok": true, "deletedId": 3 }` · **Errors:** `NOT_FOUND` (nothing logged today), `UNAUTHORIZED`
 
@@ -669,51 +688,81 @@ Ask the AI a question. Every question and answer passes the code guardrail in `p
 
 ## Vision
 
-### POST /api/vision/meal
-Upload a meal photo for nutrition analysis.
+"Scan my meal" uses a vision model on **Tencent Cloud TokenHub** (OpenAI-compatible chat API, `glm-5.3-flash` by default; set `TOKENHUB_API_KEY`, optionally `TOKENHUB_MODEL` and `TOKENHUB_BASE_URL`). Only the photo is sent: no name, phone or patient id. The app shrinks the photo to 1024 px and re-encodes it, which also drops its metadata (including GPS). A check takes about 7–12 seconds.
 
-**Session required:** Yes
+### GET /api/vision/status
+Whether photo checking is switched on, so the app can say so before the patient takes a photo.
 
-**Request body:** `multipart/form-data` with an `image` field.
-
-**Success 200:**
-```json
-{
-  "meal": "Dinner",
-  "what": "Steamed fish with rice and vegetables",
-  "sodiumMg": 450,
-  "kcal": 480,
-  "potassiumMg": 720,
-  "phosphorusMg": 320,
-  "carbs": { "g": 60, "what": "Rice" },
-  "protein": { "g": 28, "what": "Fish" },
-  "fat": { "g": 10, "what": "Oil" },
-  "plate": [0.5, 0.25, 0.25],
-  "tip": "Great pick \u2014 steaming keeps the salt low. Skip extra soy sauce."
-}
-```
-
-**Errors:** `VALIDATION_ERROR`, `UNAUTHORIZED`
+**Success 200:** `{ "meal": true }`
 
 ---
 
-### POST /api/vision/medbox
-Upload a photo of a medicine box for identification.
+### POST /api/vision/meal
+Check a meal photo. **Nothing is logged** until the patient confirms with `POST /api/meals { "scanId" }`.
 
-**Session required:** Yes
+**Request body** (JSON, up to about 2.8 MB):
+```json
+{ "photo": "data:image/jpeg;base64,/9j/4AAQ..." }
+```
+`photo` is a JPEG (under 2 MB once decoded) as base64; the `data:image/jpeg;base64,` prefix is optional.
 
-**Request body:** `multipart/form-data` with an `image` field.
-
-**Success 200:**
+**Success 200**, a meal was found. `sure: false` means the model's confidence was under 0.6, and the app says it isn't very sure:
 ```json
 {
-  "medId": "furo",
-  "name": "Water pill",
-  "confidence": 0.94
+  "found": true,
+  "scanId": 12,
+  "sure": true,
+  "estimate": {
+    "what": "Hainanese chicken rice",
+    "sodiumMg": 1450,
+    "kcal": 650,
+    "potassiumMg": 420,
+    "phosphorusMg": 310,
+    "carbs": { "g": 80, "what": "Rice cooked in chicken stock" },
+    "protein": { "g": 30, "what": "Steamed chicken" },
+    "fat": { "g": 22, "what": "Chicken skin and rice oil" },
+    "plate": [0.625, 0.25, 0.125],
+    "tip": "Ask for no chilli sauce and leave the soup."
+  }
 }
 ```
+**Success 200**, no food in the photo (nothing is stored): `{ "found": false }`
 
-**Errors:** `VALIDATION_ERROR`, `UNAUTHORIZED`
+The server reads the model's JSON (it arrives inside a json code fence), keeps every number in range (sodium 0–6000 mg, kcal 0–3000, …), rounds the plate to eighths that add up to 1, and runs the tip through the same guardrail as Ask AI (`screenOutput`); a blocked tip is replaced with a fixed one. The photo and estimate are kept until logged; a newer scan replaces an older unlogged one.
+
+**Limits:** 20 checks an hour per patient, 120 an hour for the whole app (each check costs TokenHub credit).
+
+**Errors:** `VALIDATION_ERROR` (not a JPEG, too big), `NOT_CONFIGURED` 503 (no `TOKENHUB_API_KEY`), `RATE_LIMITED` 429 with `Retry-After`, `VISION_FAILED` 502 (TokenHub error, timeout after 30 s, or an unreadable reply), `UNAUTHORIZED`
+
+---
+
+## Medicines
+
+### GET /api/medicines/barcode/:code
+What a scanned medicine box is ("Scan a medicine box"). The app reads the barcode on the phone (ZXing: EAN-13, EAN-8, UPC-A, UPC-E) and sends only the digits. Explanation only: it never gives a dose, and never changes the patient's list.
+
+Barcodes are matched against `MEDICINE_BARCODES` in `packages/core/medicines.ts`. For the demo these are EAN-13 codes with the GS1 `200` prefix (in-house use, never on real products); print them from [demo-barcodes.html](demo-barcodes.html).
+
+| Code | Medicine |
+|---|---|
+| `2000000000015` | Water pill (Furosemide 40 mg) |
+| `2000000000022` | Heart rate pill (Bisoprolol 2.5 mg) |
+| `2000000000039` | Heart helper (Sacubitril/Valsartan 49/51 mg) |
+| `2000000000046` | Heart protector (Spironolactone 25 mg) |
+| `2000000000053` | Heart and kidney pill (Dapagliflozin 10 mg), not on Mdm Tan's list |
+| `2009990000012` | Not on any list ("I don't know this product") |
+
+**Success 200**, on the patient's own list (`medicine` has their strength and times):
+```json
+{
+  "status": "yours",
+  "medicine": { "id": "biso", "name": "Heart rate pill", "generic": "Bisoprolol", "strength": "2.5 mg", "times": [480], "purpose": "Keeps your heartbeat slow and steady, so your heart works less hard.", "looks": "Small pale-yellow round tablet", "tile": "#E3E6EC", "round": { "size": 30, "bg": "#F6E7A8", "border": "#D8C277", "line": "#C9B266" } },
+  "leaflet": { "mayFeel": "Tired, dizzy when you stand up, or cold hands and feet. Tell your nurse if this bothers you.", "callNurse": "If you feel very dizzy or faint, or your heartbeat feels very slow." }
+}
+```
+A known medicine that is **not** on their list: `"status": "not_yours"` with the catalog `medicine` and `leaflet` (the app tells them to ask their pharmacist or nurse first). No match: `{ "status": "unknown" }`.
+
+**Errors:** `VALIDATION_ERROR` (not 8–14 digits), `UNAUTHORIZED`
 
 ---
 

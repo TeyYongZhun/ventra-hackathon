@@ -10,6 +10,22 @@ export interface LoadContext {
   period?: { from: IsoDate; to: IsoDate };
 }
 
+// One medications row as the shared Medicine shape.
+export function toMedicine(m: typeof schema.medications.$inferSelect): Medicine {
+  return {
+    id: m.medId,
+    name: m.name,
+    generic: m.generic,
+    strength: m.strength,
+    times: JSON.parse(m.times) as number[],
+    purpose: m.purpose,
+    looks: m.looks,
+    tile: m.tile ?? undefined,
+    round: m.round ? (JSON.parse(m.round) as Medicine['round']) : undefined,
+    oval: m.oval ? (JSON.parse(m.oval) as Medicine['oval']) : undefined,
+  };
+}
+
 export function loadPatientRecord(
   db: BetterSQLite3Database<typeof schema>,
   patientId: number,
@@ -46,18 +62,7 @@ export function loadPatientRecord(
     .where(eq(schema.medications.patientId, patientId))
     .all();
 
-  const meds: Medicine[] = medRows.map((m) => ({
-    id: m.medId,
-    name: m.name,
-    generic: m.generic,
-    strength: m.strength,
-    times: JSON.parse(m.times) as number[],
-    purpose: m.purpose,
-    looks: m.looks,
-    tile: m.tile ?? undefined,
-    round: m.round ? (JSON.parse(m.round) as Medicine['round']) : undefined,
-    oval: m.oval ? (JSON.parse(m.oval) as Medicine['oval']) : undefined,
-  }));
+  const meds = medRows.map(toMedicine);
 
   // Load dose events
   const doseRows = db.select()

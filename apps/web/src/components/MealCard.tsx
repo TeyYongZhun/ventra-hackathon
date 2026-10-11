@@ -3,27 +3,27 @@ import type { MealListEntry } from '@ventra/core';
 import { ml as num } from '../lib/copy';
 
 // One logged meal on Track → Meals → Today (design/Meals.dc.html, "Meals you scanned today").
-// Collapsed: name, meal and time, salt level. Expanded: salt box, then "In this meal" as a
-// plate (Visual) or numbers (Detailed). All values are estimates from the food list.
-// The design's meal photo is left out: meals are picked from the list, so there is no photo.
-type Level = 'high' | 'medium' | 'low';
+// Collapsed: name, meal and time, salt level. Expanded: the meal photo (meals logged from
+// "Scan my meal"), salt box, then "In this meal" as a plate (Visual) or numbers (Detailed).
+// All values are estimates, from the photo or from the food list.
+export type Level = 'high' | 'medium' | 'low';
 
-const TONE: Record<Level, { word: string; short: string; head: string; ink: string; box: string; edge: string; row: string }> = {
+export const TONE: Record<Level, { word: string; short: string; head: string; ink: string; box: string; edge: string; row: string }> = {
   high: { word: 'High salt', short: 'High', head: 'High in salt', ink: 'var(--color-red)', box: 'var(--color-yellow-soft)', edge: 'var(--color-yellow-ink)', row: 'var(--color-red-soft)' },
   medium: { word: 'Some salt', short: 'OK', head: 'Some salt', ink: 'var(--color-yellow-ink)', box: 'var(--color-yellow-soft)', edge: 'var(--color-yellow-ink)', row: 'var(--color-yellow-soft)' },
   low: { word: 'Low salt', short: 'Low', head: 'Low in salt', ink: 'var(--color-green)', box: 'var(--color-green-soft)', edge: 'var(--color-green)', row: 'var(--color-green-soft)' },
 };
 
 // Same thresholds as the "What did you eat?" chips.
-const level = (mg: number): Level => (mg >= 800 ? 'high' : mg >= 600 ? 'medium' : 'low');
-const fraction = (f: number) => ({ 0.125: '⅛', 0.25: '¼', 0.5: '½', 0.75: '¾' } as Record<number, string>)[f] ?? `${Math.round(f * 100)}%`;
+export const level = (mg: number): Level => (mg >= 800 ? 'high' : mg >= 600 ? 'medium' : 'low');
+const fraction = (f: number) => ({ 0.125: '⅛', 0.25: '¼', 0.375: '⅜', 0.5: '½', 0.625: '⅝', 0.75: '¾', 0.875: '⅞' } as Record<number, string>)[f] ?? `${Math.round(f * 100)}%`;
 // About 2,667 mg of sodium in a teaspoon of salt.
-const teaspoons = (mg: number) => { const t = mg / 2667; return t < 0.3 ? '¼' : t < 0.6 ? '½' : t < 0.85 ? '¾' : '1'; };
+export const teaspoons = (mg: number) => { const t = mg / 2667; return t < 0.3 ? '¼' : t < 0.6 ? '½' : t < 0.85 ? '¾' : '1'; };
 
 const SLICE = ['#D2EE63', '#F2785C', '#1F6FB2'];
 const SLICE_TEXT = ['#16201E', '#16201E', '#FFFFFF'];
 
-const forkIcon = (size: number) => (
+export const forkIcon = (size: number) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.25} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
     <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2" />
     <path d="M7 2v20" />
@@ -48,7 +48,11 @@ export function MealCard({ meal, limitMg, defaultOpen = false }: { meal: MealLis
         aria-controls={detailsId}
         style={{ display: 'flex', alignItems: 'center', gap: 14, minHeight: 88, padding: '14px 16px', borderRadius: 24, border: '2.5px solid var(--color-ink)', background: 'var(--color-surface)', color: 'var(--color-ink)', fontFamily: 'inherit', textAlign: 'left', cursor: 'pointer' }}
       >
-        <span aria-hidden="true" style={{ width: 56, height: 56, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 16, background: '#E2F59B' }}>{forkIcon(30)}</span>
+        {meal.photoUrl ? (
+          <img src={meal.photoUrl} alt="" style={{ width: 56, height: 56, flexShrink: 0, borderRadius: 16, objectFit: 'cover', background: '#F2F9D6' }} />
+        ) : (
+          <span aria-hidden="true" style={{ width: 56, height: 56, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 16, background: '#E2F59B' }}>{forkIcon(30)}</span>
+        )}
         <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
           <span style={{ fontSize: 17, lineHeight: '22px', fontWeight: 700, color: 'var(--color-ink-muted)' }}>{meal.meal} · {meal.time}</span>
           <span style={{ fontSize: 21, lineHeight: '27px', fontWeight: 700 }}>{meal.what}</span>
@@ -64,6 +68,7 @@ export function MealCard({ meal, limitMg, defaultOpen = false }: { meal: MealLis
 
       {open && (
         <div id={detailsId} style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
+          {meal.photoUrl && <MealPhoto src={meal.photoUrl} what={meal.what} chip={`${meal.meal} · ${meal.time}`} />}
           <div style={{ display: 'flex', gap: 14, padding: 20, borderRadius: 24, background: tone.box, border: `3px solid ${tone.edge}`, color: tone.edge }}>
             <svg style={{ flexShrink: 0 }} width={40} height={40} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" />
@@ -87,11 +92,21 @@ export function MealCard({ meal, limitMg, defaultOpen = false }: { meal: MealLis
             {view === 'visual' ? <Visual meal={meal} lv={lv} mg={mg} /> : <Detailed meal={meal} lv={lv} mg={mg} />}
             <p style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8, fontSize: 18, lineHeight: '24px', color: 'var(--color-ink-muted)' }}>
               <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.25} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx={12} cy={12} r={10} /><path d="M12 16v-4" /><path d="M12 8h.01" /></svg>
-              Estimates only
+              {meal.photoUrl ? 'Estimated from your photo' : 'Estimates only'}
             </p>
           </section>
         </div>
       )}
+    </div>
+  );
+}
+
+// The design's 180 px meal photo, with the meal and time on a chip.
+export function MealPhoto({ src, what, chip }: { src: string; what: string; chip: string }) {
+  return (
+    <div style={{ position: 'relative', height: 180, flexShrink: 0, borderRadius: 24, background: '#F2F9D6', overflow: 'hidden' }}>
+      <img src={src} alt={`Your photo of ${what}`} style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover' }} />
+      <span style={{ position: 'absolute', left: 14, bottom: 14, padding: '6px 14px', borderRadius: 'var(--radius-pill)', background: 'var(--color-surface)', color: 'var(--color-ink)', fontSize: 17, fontWeight: 700 }}>{chip}</span>
     </div>
   );
 }

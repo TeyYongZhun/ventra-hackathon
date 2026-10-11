@@ -10,6 +10,7 @@ import type {
   Reason,
   ScriptLine,
   MacroLog,
+  Medicine,
 } from './record.js';
 import type { AlertZone } from './rules.js';
 import type { SummaryLine } from './family.js';
@@ -168,20 +169,15 @@ export interface FluidDeleteResponse {
 // ------------------------------------------------------------------
 // Meals
 // ------------------------------------------------------------------
-// Manual food log: pick a food from FOODS (packages/core/foods.ts). The server fills in the
-// nutrition values and the meal name (Breakfast/Lunch/Dinner/Snack) from the time.
-export interface MealCreateRequest {
-  foodId: string;
-}
+// Log a meal: a food from FOODS (packages/core/foods.ts), or a photo the patient just scanned
+// (POST /api/vision/meal → scanId). The server fills in the nutrition values from the food or
+// from its own stored scan, and the meal name (Breakfast/Lunch/Dinner/Snack) from the time.
+export type MealCreateRequest = { foodId: string } | { scanId: number };
 
-export interface MealListEntry {
-  id: number;
-  time: string;
-  meal: string;
+// Nutrition estimate for one meal: plate is carbs, protein, fat shares (adds up to 1).
+export interface MealEstimate {
   what: string;
   sodiumMg: number;
-  tip: string;
-  // Estimates for the meal card (Track → Meals → Today): plate is carbs, protein, fat shares.
   kcal: number;
   potassiumMg: number;
   phosphorusMg: number;
@@ -189,6 +185,33 @@ export interface MealListEntry {
   protein: MacroLog;
   fat: MacroLog;
   plate: [number, number, number];
+  tip: string;
+}
+
+export interface MealListEntry extends MealEstimate {
+  id: number;
+  time: string;
+  meal: string;
+  // Photo from "Scan my meal" (same-origin, needs the session cookie), or null for a food
+  // picked from the list.
+  photoUrl: string | null;
+}
+
+// ------------------------------------------------------------------
+// Meal photo scan (POST /api/vision/meal)
+// ------------------------------------------------------------------
+// photo: the JPEG as base64 (a data: URL prefix is allowed). The app resizes it first.
+export interface MealScanRequest {
+  photo: string;
+}
+
+// found=false: the AI saw no meal in the photo. sure=false: it found one but is not confident.
+export type MealScanResponse =
+  | { found: true; scanId: number; sure: boolean; estimate: MealEstimate }
+  | { found: false };
+
+export interface VisionStatusResponse {
+  meal: boolean;
 }
 
 export interface MealListResponse {
@@ -477,3 +500,19 @@ export interface VisitDeleteResponse {
   ok: true;
   deletedId: number;
 }
+
+// ------------------------------------------------------------------
+// Medicine box barcode (GET /api/medicines/barcode/:code)
+// ------------------------------------------------------------------
+// yours: on the patient's own list (their strength and times). not_yours: a medicine we know,
+// but not on their list. unknown: no medicine has this barcode. Explanation only, never doses.
+export interface MedicineLeaflet {
+  // Common side effects in plain words
+  mayFeel: string;
+  // When to call the nurse
+  callNurse: string;
+}
+
+export type MedicineScanResponse =
+  | { status: 'yours' | 'not_yours'; medicine: Medicine; leaflet: MedicineLeaflet }
+  | { status: 'unknown' };

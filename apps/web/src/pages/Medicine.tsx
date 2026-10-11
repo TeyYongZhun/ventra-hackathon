@@ -1,10 +1,12 @@
 import { useState } from 'react';
-import { clock, type DoseStatus, type IsoDate, type MetricsResponse } from '@ventra/core';
+import { clock, type DoseStatus, type IsoDate, type Medicine as MedicineInfo, type MetricsResponse } from '@ventra/core';
 import { PageHeader } from '../components';
 import { LoadError, Loading } from '../components/QueryState';
+import { ScanBoxCard } from '../components/ScanBoxCard';
 import { useConfirmDose, useMetrics } from '../lib/api';
 
-// D1 · Today's medicines (design/Medicines.dc.html). Doses come from GET /api/metrics;
+// D1 · Today's medicines (design/Medicines.dc.html). "Scan a medicine box" opens the barcode
+// scanner (pages/MedicineScan.tsx). Doses come from GET /api/metrics;
 // "I took it" → check → POST /api/doses/confirm → locked. There is no undo.
 export default function Medicine() {
   const metrics = useMetrics();
@@ -32,6 +34,7 @@ function MedicineView({ metrics }: { metrics: MetricsResponse }) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
         <Heading />
+        <ScanBoxCard />
         <p style={{ margin: 0, fontSize: 'var(--text-body)', lineHeight: 'var(--lh-body)' }}>
           No medicines are set up yet. Your care team can add them.
         </p>
@@ -42,6 +45,7 @@ function MedicineView({ metrics }: { metrics: MetricsResponse }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
       <Heading />
+      <ScanBoxCard />
       {[
         { label: 'Morning', doses: morning, icon: <SunIcon /> },
         { label: 'Evening', doses: evening, icon: <MoonIcon /> },
@@ -351,7 +355,7 @@ function Detail({ title, text }: { title: string; text: string }) {
 
 // Pill drawn from the medicine's own colours (round tablet with score line, or oval).
 function PillPicture({ dose, taken }: { dose: DoseStatus; taken: boolean }) {
-  const { round, oval, tile, looks } = dose.med;
+  const { tile, looks } = dose.med;
   return (
     <span
       role="img"
@@ -368,15 +372,7 @@ function PillPicture({ dose, taken }: { dose: DoseStatus; taken: boolean }) {
         background: taken ? tile ?? 'var(--color-sunken)' : 'var(--color-surface)',
       }}
     >
-      {round ? (
-        <span style={{ position: 'relative', width: round.size, height: round.size, borderRadius: '50%', background: round.bg, border: `2px solid ${round.border}` }}>
-          <span style={{ position: 'absolute', left: round.size / 2 - 3, top: 3, bottom: 3, width: 2, background: round.line }} />
-        </span>
-      ) : oval ? (
-        <span style={{ width: 46, height: 22, borderRadius: 11, background: oval.bg, border: `2px solid ${oval.border}` }} />
-      ) : (
-        <span style={{ width: 30, height: 30, borderRadius: '50%', background: 'var(--color-surface)', border: '2px solid var(--color-line)' }} />
-      )}
+      <PillShape med={dose.med} />
       <span
         aria-hidden="true"
         style={{
@@ -407,6 +403,20 @@ function PillPicture({ dose, taken }: { dose: DoseStatus; taken: boolean }) {
       </span>
     </span>
   );
+}
+
+// Just the tablet, in its own colours: round with a score line, or oval.
+export function PillShape({ med }: { med: MedicineInfo }) {
+  const { round, oval } = med;
+  if (round) {
+    return (
+      <span style={{ position: 'relative', width: round.size, height: round.size, borderRadius: '50%', background: round.bg, border: `2px solid ${round.border}` }}>
+        <span style={{ position: 'absolute', left: round.size / 2 - 3, top: 3, bottom: 3, width: 2, background: round.line }} />
+      </span>
+    );
+  }
+  if (oval) return <span style={{ width: 46, height: 22, borderRadius: 11, background: oval.bg, border: `2px solid ${oval.border}` }} />;
+  return <span style={{ width: 30, height: 30, borderRadius: '50%', background: 'var(--color-surface)', border: '2px solid var(--color-line)' }} />;
 }
 
 function SunIcon() {

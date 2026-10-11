@@ -5,6 +5,7 @@ import { Layout } from './components/Layout';
 import Home from './pages/Home';
 import Track from './pages/Track';
 import Medicine from './pages/Medicine';
+import MedicineScan from './pages/MedicineScan';
 import AskAI from './pages/AskAI';
 import More from './pages/More';
 import Alert from './pages/Alert';
@@ -37,6 +38,7 @@ function App() {
           <Route path="/home" element={<Home />} />
           <Route path="/track" element={<Track />} />
           <Route path="/medicine" element={<Medicine />} />
+          <Route path="/medicine/scan" element={<MedicineScan />} />
           <Route path="/ask" element={<AskAI />} />
           <Route path="/more" element={<More />} />
           <Route path="/alert" element={<Alert />} />

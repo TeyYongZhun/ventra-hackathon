@@ -145,3 +145,39 @@ body {
     display: none;
   }
 }
+
+/* Scanning: meal photo and medicine box (design/Meals.dc.html, Medicines.dc.html,
+   ScanFound.dc.html). The scan line travels --scan-travel down its frame. */
+@keyframes scan-line {
+  from { transform: translateY(0); }
+  to { transform: translateY(var(--scan-travel, 91px)); }
+}
+@keyframes scan-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+}
+@keyframes scan-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+@keyframes scan-hold {
+  0%, 100% { transform: rotate(-5deg) translateY(0); }
+  50% { transform: rotate(-3deg) translateY(-3px); }
+}
+@keyframes scan-pop {
+  0% { transform: scale(0.3); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes scan-ping {
+  0% { transform: scale(1); opacity: 0.6; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+@keyframes scan-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.2; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .scan-anim {
+    animation: none !important;
+  }
+}

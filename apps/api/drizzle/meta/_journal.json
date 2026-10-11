@@ -43,6 +43,13 @@
       "when": 1791731044661,
       "tag": "0005_limit_changes",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1791738041222,
+      "tag": "0006_meal_photos",
+      "breakpoints": true
     }
   ]
 }

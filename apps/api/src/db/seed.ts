@@ -175,6 +175,8 @@ function clearPatientData(db: Db, patientId: number) {
   db.delete(schema.doseEvents).where(eq(schema.doseEvents.patientId, patientId)).run();
   db.delete(schema.weights).where(eq(schema.weights.patientId, patientId)).run();
   db.delete(schema.fluidEntries).where(eq(schema.fluidEntries.patientId, patientId)).run();
+  db.delete(schema.mealPhotos).where(eq(schema.mealPhotos.patientId, patientId)).run();
+  db.delete(schema.mealScans).where(eq(schema.mealScans.patientId, patientId)).run();
   db.delete(schema.meals).where(eq(schema.meals.patientId, patientId)).run();
   db.delete(schema.symptoms).where(eq(schema.symptoms.patientId, patientId)).run();
   db.delete(schema.alerts).where(eq(schema.alerts.patientId, patientId)).run();

@@ -8,7 +8,7 @@ import { loginAsDemo } from './test-utils';
 // Every screen after login shows the red SOS button (CODEBUDDY.md rule). Pages put it in their
 // own header now (PageHeader / Home date row), so check the real pages, not the Layout.
 const ROUTES = [
-  '/home', '/track?tab=drinks', '/track?tab=meal', '/track?tab=weight', '/medicine', '/ask', '/more',
+  '/home', '/track?tab=drinks', '/track?tab=meal', '/track?tab=weight', '/medicine', '/medicine/scan', '/ask', '/more',
   '/alert', '/status/green', '/status/yellow', '/status/red', '/nurse', '/family', '/report', '/report/full',
   '/weigh', '/weigh/how', '/feel', '/cap', '/privacy', '/settings/text', '/visit',
   '/settings', '/settings/numbers', '/settings/medicines', '/settings/contact', '/visits/new',

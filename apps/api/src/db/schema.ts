@@ -1,4 +1,4 @@
-import { sqliteTable, integer, text, real, index } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, integer, text, real, index, blob } from 'drizzle-orm/sqlite-core';
 
 export const patients = sqliteTable('patients', {
   id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
@@ -117,6 +117,27 @@ export const meals = sqliteTable('meals', {
   isDemoScan: integer('is_demo_scan', { mode: 'boolean' }).notNull().default(false),
 }, (table) => ({
   patientIdIdx: index('meals_patient_id_idx').on(table.patientId),
+}));
+
+// Photo of a meal logged from "Scan my meal" (JPEG, resized by the app). Shown on its card.
+export const mealPhotos = sqliteTable('meal_photos', {
+  mealId: integer('meal_id').primaryKey().references(() => meals.id),
+  patientId: integer('patient_id').notNull().references(() => patients.id),
+  photo: blob('photo', { mode: 'buffer' }).notNull(),
+}, (table) => ({
+  patientIdIdx: index('meal_photos_patient_id_idx').on(table.patientId),
+}));
+
+// A meal photo just checked by the AI, waiting for "Yes, log it". Logging it moves the photo
+// to meal_photos; a new scan replaces the patient's older ones, so unlogged photos don't pile up.
+export const mealScans = sqliteTable('meal_scans', {
+  id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
+  patientId: integer('patient_id').notNull().references(() => patients.id),
+  createdAt: text('created_at').notNull(),
+  photo: blob('photo', { mode: 'buffer' }).notNull(),
+  estimateJson: text('estimate_json').notNull(),
+}, (table) => ({
+  patientIdIdx: index('meal_scans_patient_id_idx').on(table.patientId),
 }));
 
 export const symptoms = sqliteTable('symptoms', {
