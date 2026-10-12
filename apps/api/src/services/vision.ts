@@ -7,11 +7,15 @@ import { screenOutput, type MealEstimate } from '@ventra/core';
 
 export const DEFAULT_TOKENHUB_URL = 'https://tokenhub-intl.tencentcloudmaas.com/v1';
 export const DEFAULT_TOKENHUB_MODEL = 'glm-5.3-flash';
-const DEFAULT_TIMEOUT_MS = 30_000;
+// glm-5.3-flash always thinks (reasoning_content) before it answers, and can't be told not to
+// here: a busy photo can take 30+ seconds. MAX_TOKENS leaves room for the answer after the thinking.
+export const VISION_TIMEOUT_MS = 60_000;
+export const MAX_TOKENS = 4096;
 
 export interface VisionClient {
   // The model's reply to MEAL_PROMPT for this JPEG, as raw text (parse with parseMealReply).
-  describeMeal(jpeg: Buffer): Promise<string>;
+  // timeoutMs overrides the client's own limit for this one call.
+  describeMeal(jpeg: Buffer, options?: { timeoutMs?: number }): Promise<string>;
 }
 
 export interface TokenHubClientOptions {
@@ -47,6 +51,7 @@ export const MEAL_PROMPT = [
   ' "tip": "one short, kind sentence (under 20 words) on eating this with less salt. Food only, never medicine.",',
   ' "confidence": number from 0 to 1, how sure you are what the dish is}',
   'If there is no food in the photo, reply {"isFood": false}.',
+  'Think briefly, then answer straight away with the JSON.',
 ].join('\n');
 
 function isAbort(error: unknown): boolean {
@@ -54,12 +59,13 @@ function isAbort(error: unknown): boolean {
 }
 
 export function createTokenHubClient(options: TokenHubClientOptions): VisionClient {
-  const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+  const defaultTimeoutMs = options.timeoutMs ?? VISION_TIMEOUT_MS;
   const fetchImpl = options.fetchImpl ?? fetch;
   const url = `${options.baseUrl.replace(/\/$/, '')}/chat/completions`;
 
   return {
-    async describeMeal(jpeg) {
+    async describeMeal(jpeg, call = {}) {
+      const timeoutMs = call.timeoutMs ?? defaultTimeoutMs;
       let body: { choices?: Array<{ message?: { content?: unknown } }> };
       try {
         const response = await fetchImpl(url, {
@@ -68,6 +74,7 @@ export function createTokenHubClient(options: TokenHubClientOptions): VisionClie
           body: JSON.stringify({
             model: options.model,
             temperature: 0.2,
+            max_tokens: MAX_TOKENS,
             messages: [{
               role: 'user',
               content: [

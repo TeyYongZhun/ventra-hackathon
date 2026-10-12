@@ -1,4 +1,4 @@
-import { useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import type { MealListEntry, MealScanResponse } from '@ventra/core';
 import { useAddMeal, useScanMeal, useVisionStatus } from '../lib/api';
 import { ml as num } from '../lib/copy';
@@ -6,6 +6,10 @@ import { photoToJpeg } from '../lib/photo';
 import { level, MealPhoto, teaspoons, TONE } from './MealCard';
 
 type ScanResult = Extract<MealScanResponse, { found: true }>;
+
+// A check usually takes 10–40 s (the AI thinks first, and the server may try twice).
+// After this long, the card tells the patient to keep waiting.
+export const SLOW_CHECK_MS = 20_000;
 
 // "Scan my meal" (design/Meals.dc.html): take a photo, the AI estimates the salt
 // (POST /api/vision/meal), and the patient checks the result before it is logged
@@ -22,6 +26,14 @@ export function MealScan({ limitMg, onLogged }: { limitMg: number; onLogged: (me
 
   const off = status.data?.meal === false;
   const checking = reading || scan.isPending;
+  const [slow, setSlow] = useState(false);
+
+  useEffect(() => {
+    setSlow(false);
+    if (!checking) return;
+    const timer = setTimeout(() => setSlow(true), SLOW_CHECK_MS);
+    return () => clearTimeout(timer);
+  }, [checking]);
 
   async function onPhoto(file: File | undefined) {
     if (!file) return;
@@ -105,8 +117,10 @@ export function MealScan({ limitMg, onLogged }: { limitMg: number; onLogged: (me
       <ScanPicture photo={checking ? photo : null} />
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         <h2 style={{ margin: 0, fontSize: 28, lineHeight: '34px', fontWeight: 700, letterSpacing: '-0.015em' }}>Scan my meal</h2>
-        <p style={{ margin: 0, fontSize: 20, lineHeight: '28px', color: '#D6DAD4' }}>
-          {off ? "Photo checking isn't switched on yet." : "Take a photo before you eat. We'll tell you how salty it is."}
+        <p aria-live="polite" style={{ margin: 0, fontSize: 20, lineHeight: '28px', color: checking && slow ? '#FFFFFF' : '#D6DAD4', fontWeight: checking && slow ? 600 : 400 }}>
+          {off ? "Photo checking isn't switched on yet."
+            : checking && slow ? 'Still checking — please wait. This can take a minute or so.'
+              : "Take a photo before you eat. We'll tell you how salty it is."}
         </p>
       </div>
       <button
