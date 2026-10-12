@@ -13,6 +13,7 @@ import {
   FALLBACK_TIP,
   parseMealReply,
   plateShares,
+  VISION_TIMEOUT_MS,
   VisionError,
   type VisionClient,
 } from '../src/services/vision.js';
@@ -110,7 +111,7 @@ describe('meal photo scan and medicine barcodes', () => {
 
     const scan = await call('POST', '/api/vision/meal', cookie, { photo: `data:image/jpeg;base64,${PHOTO}` });
     expect(scan.statusCode).toBe(200);
-    expect(vision.describeMeal).toHaveBeenCalledWith(JPEG);
+    expect(vision.describeMeal).toHaveBeenCalledWith(JPEG, {});
     const body = scan.json();
     expect(body).toMatchObject({
       found: true,
@@ -195,6 +196,41 @@ describe('meal photo scan and medicine barcodes', () => {
     expect((await call('POST', '/api/vision/meal', cookie, { photo: 'not base64!' })).statusCode).toBe(400);
     expect((await call('POST', '/api/vision/meal', cookie, {})).statusCode).toBe(400);
     expect(vision.describeMeal).not.toHaveBeenCalled();
+  });
+
+  it.each(['timeout', 'empty'] as const)('tries once more when TokenHub fails with %s', async (code) => {
+    const vision = {
+      describeMeal: vi.fn()
+        .mockRejectedValueOnce(new VisionError(code, 'first try failed'))
+        .mockResolvedValueOnce(CHICKEN_RICE),
+    };
+    const { call, login } = await setup(vision);
+    const scan = await call('POST', '/api/vision/meal', await login(), { photo: PHOTO });
+    expect(scan.statusCode).toBe(200);
+    expect(scan.json()).toMatchObject({ found: true, estimate: { what: 'Hainanese chicken rice' } });
+    expect(vision.describeMeal).toHaveBeenCalledTimes(2);
+    // The retry gets its own limit, within the 90 s for the whole check.
+    expect(vision.describeMeal.mock.calls[1]).toEqual([JPEG, { timeoutMs: VISION_TIMEOUT_MS }]);
+  });
+
+  it('tries once more when the reply is unreadable', async () => {
+    const vision = {
+      describeMeal: vi.fn()
+        .mockResolvedValueOnce('Let me look at this photo')
+        .mockResolvedValueOnce(CHICKEN_RICE),
+    };
+    const { call, login } = await setup(vision);
+    const scan = await call('POST', '/api/vision/meal', await login(), { photo: PHOTO });
+    expect(scan.statusCode).toBe(200);
+    expect(vision.describeMeal).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not retry an HTTP error from TokenHub', async () => {
+    const vision = { describeMeal: vi.fn().mockRejectedValue(new VisionError('http', 'TokenHub returned HTTP 402')) };
+    const { call, login } = await setup(vision);
+    const scan = await call('POST', '/api/vision/meal', await login(), { photo: PHOTO });
+    expect(scan.statusCode).toBe(502);
+    expect(vision.describeMeal).toHaveBeenCalledTimes(1);
   });
 
   it('answers 502 when TokenHub fails or replies with nonsense', async () => {
@@ -293,8 +329,18 @@ describe('TokenHub client', () => {
     const sent = JSON.parse(init?.body as string);
     expect(sent.model).toBe('glm-5.3-flash');
     expect(sent.response_format).toBeUndefined();
+    // Room for the answer after the model's thinking.
+    expect(sent.max_tokens).toBe(4096);
     expect(sent.messages[0].content[1].image_url.url).toBe(`data:image/jpeg;base64,${PHOTO}`);
     expect(init?.body as string).not.toContain('sk-secret');
+  });
+
+  it('gives up after the time limit, which one call can shorten', async () => {
+    const fetchImpl = vi.fn((_url: string | URL | Request, init?: RequestInit) => new Promise<Response>((_resolve, reject) => {
+      init?.signal?.addEventListener('abort', () => reject(init.signal?.reason));
+    }));
+    const client = createTokenHubClient({ baseUrl: 'https://hub.test/v1', apiKey: 'k', model: 'm', fetchImpl });
+    await expect(client.describeMeal(JPEG, { timeoutMs: 20 })).rejects.toMatchObject({ code: 'timeout', message: 'TokenHub did not answer within 20 ms' });
   });
 
   it('turns failures into VisionError without the key in the message', async () => {

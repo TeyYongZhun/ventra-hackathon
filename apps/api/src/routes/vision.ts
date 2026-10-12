@@ -6,7 +6,7 @@ import type { ApiDb } from '../app.js';
 import * as schema from '../db/schema.js';
 import { patientScope } from '../db/scope.js';
 import { sendError } from '../errors.js';
-import { parseMealReply, VisionError, type VisionClient } from '../services/vision.js';
+import { parseMealReply, VISION_TIMEOUT_MS, VisionError, type ParsedMealReply, type VisionClient } from '../services/vision.js';
 
 // The app sends a JPEG resized to about 1024 px (~150 KB). Allow some room, nothing silly.
 export const MAX_PHOTO_BYTES = 2 * 1024 * 1024;
@@ -16,6 +16,10 @@ const BODY_LIMIT = Math.ceil((MAX_PHOTO_BYTES * 4) / 3) + 64 * 1024;
 export const SCANS_PER_HOUR = 20;
 export const SCANS_PER_HOUR_ALL = 120;
 const HOUR_MS = 60 * 60 * 1000;
+
+// A check (with its one retry) gives up after 90 s; a retry needs at least 15 s to be worth it.
+export const CHECK_BUDGET_MS = 90_000;
+const MIN_RETRY_MS = 15_000;
 
 const scanSchema = z.object({
   photo: z.string().min(1).max(BODY_LIMIT),
@@ -90,22 +94,27 @@ export function registerVisionRoutes(app: FastifyInstance, options: VisionRouteO
       return sendError(reply, 429, 'RATE_LIMITED', 'That is a lot of photos for now. Please try again later.');
     }
 
+    // One retry (same rate-limit slot) when the model was too slow, answered nothing or answered
+    // something unreadable: thinking time varies, so a second try often works. HTTP errors (bad
+    // key, no credit) won't fix themselves, so they fail straight away.
     const started = performance.now();
-    let text: string;
-    try {
-      text = await vision.describeMeal(jpeg);
-    } catch (error) {
-      request.log.warn({
-        visionError: error instanceof VisionError ? error.code : 'unknown',
-        detail: error instanceof VisionError ? error.message : undefined,
-      }, 'Meal photo check failed');
-      return sendError(reply, 502, 'VISION_FAILED', "We couldn't check this photo right now. Please try again.");
+    let result: ParsedMealReply | null = null;
+    for (let attempt = 1; attempt <= 2 && !result; attempt++) {
+      const leftMs = CHECK_BUDGET_MS - (performance.now() - started);
+      if (attempt === 2 && leftMs < MIN_RETRY_MS) break;
+      try {
+        const text = await vision.describeMeal(jpeg, attempt === 1 ? {} : { timeoutMs: Math.round(Math.min(leftMs, VISION_TIMEOUT_MS)) });
+        result = parseMealReply(text);
+        if (!result) request.log.warn({ attempt }, 'Meal photo reply was not readable');
+      } catch (error) {
+        const code = error instanceof VisionError ? error.code : 'unknown';
+        request.log.warn({ attempt, visionError: code, detail: error instanceof VisionError ? error.message : undefined }, 'Meal photo check failed');
+        if (code !== 'timeout' && code !== 'empty') break;
+      }
     }
 
-    const result = parseMealReply(text);
     const latencyMs = Math.round(performance.now() - started);
     if (!result) {
-      request.log.warn({ latencyMs }, 'Meal photo reply was not readable');
       return sendError(reply, 502, 'VISION_FAILED', "We couldn't check this photo right now. Please try again.");
     }
     request.log.info({ latencyMs, found: result.found }, 'meal photo checked');

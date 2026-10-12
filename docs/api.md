@@ -688,7 +688,7 @@ Ask the AI a question. Every question and answer passes the code guardrail in `p
 
 ## Vision
 
-"Scan my meal" uses a vision model on **Tencent Cloud TokenHub** (OpenAI-compatible chat API, `glm-5.3-flash` by default; set `TOKENHUB_API_KEY`, optionally `TOKENHUB_MODEL` and `TOKENHUB_BASE_URL`). Only the photo is sent: no name, phone or patient id. The app shrinks the photo to 1024 px and re-encodes it, which also drops its metadata (including GPS). A check takes about 7–12 seconds.
+"Scan my meal" uses a vision model on **Tencent Cloud TokenHub** (OpenAI-compatible chat API, `glm-5.3-flash` by default; set `TOKENHUB_API_KEY`, optionally `TOKENHUB_MODEL` and `TOKENHUB_BASE_URL`). Only the photo is sent: no name, phone or patient id. The app shrinks the photo to 1024 px and re-encodes it, which also drops its metadata (including GPS). A check usually takes 10–40 seconds: the model always thinks before it answers (this can't be switched off on TokenHub), and the request allows 4,096 tokens so the answer still fits after the thinking. After 20 seconds the app tells the patient to keep waiting.
 
 ### GET /api/vision/status
 Whether photo checking is switched on, so the app can say so before the patient takes a photo.
@@ -730,9 +730,11 @@ Check a meal photo. **Nothing is logged** until the patient confirms with `POST 
 
 The server reads the model's JSON (it arrives inside a json code fence), keeps every number in range (sodium 0–6000 mg, kcal 0–3000, …), rounds the plate to eighths that add up to 1, and runs the tip through the same guardrail as Ask AI (`screenOutput`); a blocked tip is replaced with a fixed one. The photo and estimate are kept until logged; a newer scan replaces an older unlogged one.
 
-**Limits:** 20 checks an hour per patient, 120 an hour for the whole app (each check costs TokenHub credit).
+**Time limits and retry:** each try waits up to 60 s. If the model is too slow, sends back nothing, or sends something unreadable, the server tries **once** more, within 90 s for the whole check. HTTP errors from TokenHub (bad key, no credit) are not retried.
 
-**Errors:** `VALIDATION_ERROR` (not a JPEG, too big), `NOT_CONFIGURED` 503 (no `TOKENHUB_API_KEY`), `RATE_LIMITED` 429 with `Retry-After`, `VISION_FAILED` 502 (TokenHub error, timeout after 30 s, or an unreadable reply), `UNAUTHORIZED`
+**Limits:** 20 checks an hour per patient, 120 an hour for the whole app (each check costs TokenHub credit; a retry doesn't count as another check).
+
+**Errors:** `VALIDATION_ERROR` (not a JPEG, too big), `NOT_CONFIGURED` 503 (no `TOKENHUB_API_KEY`), `RATE_LIMITED` 429 with `Retry-After`, `VISION_FAILED` 502 (TokenHub HTTP error, or still no readable answer after the retry), `UNAUTHORIZED`
 
 ---
 
