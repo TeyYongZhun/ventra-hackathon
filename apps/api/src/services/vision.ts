@@ -28,10 +28,38 @@ export interface TokenHubClientOptions {
 
 export type VisionErrorCode = 'timeout' | 'network' | 'http' | 'empty';
 
+// message: for the server log (may quote TokenHub's own error text, never the key).
+// reason: short and safe to send back with a 502, e.g. "TokenHub HTTP 401 (401006)", so a
+// failing deployment can be diagnosed without its logs.
 export class VisionError extends Error {
-  constructor(public readonly code: VisionErrorCode, message: string) {
+  constructor(public readonly code: VisionErrorCode, message: string, public readonly reason: string = code) {
     super(message);
     this.name = 'VisionError';
+  }
+}
+
+// TokenHub settings from the environment. Forgives the usual slips when pasting into a host's
+// dashboard: quotes or spaces around a value, and the full .../chat/completions address given
+// as the base URL. No key → undefined (Scan my meal is off).
+export function readTokenHubEnv(env: Record<string, string | undefined>): Omit<TokenHubClientOptions, 'timeoutMs' | 'fetchImpl'> | undefined {
+  const clean = (value: string | undefined) => (value ?? '').trim().replace(/^["']+|["']+$/g, '').trim();
+  const apiKey = clean(env.TOKENHUB_API_KEY);
+  if (!apiKey) return undefined;
+  const baseUrl = (clean(env.TOKENHUB_BASE_URL) || DEFAULT_TOKENHUB_URL).replace(/\/+$/, '').replace(/\/chat\/completions$/, '');
+  return { apiKey, baseUrl, model: clean(env.TOKENHUB_MODEL) || DEFAULT_TOKENHUB_MODEL };
+}
+
+// TokenHub's own error code and message from a failed response, with the key scrubbed out.
+async function upstreamError(response: Response, apiKey: string): Promise<{ code: string; message: string }> {
+  const text = (await response.text().catch(() => '')).split(apiKey).join('[key]');
+  try {
+    const body = JSON.parse(text) as { error?: { code?: unknown; message?: unknown }; code?: unknown; message?: unknown };
+    return {
+      code: String(body.error?.code ?? body.code ?? '').replace(/[^\w.-]/g, '').slice(0, 24),
+      message: String(body.error?.message ?? body.message ?? '').slice(0, 200),
+    };
+  } catch {
+    return { code: '', message: text.slice(0, 200) };
   }
 }
 
@@ -86,13 +114,21 @@ export function createTokenHubClient(options: TokenHubClientOptions): VisionClie
           signal: AbortSignal.timeout(timeoutMs),
         });
         if (!response.ok) {
-          throw new VisionError('http', `TokenHub returned HTTP ${response.status}`);
+          const upstream = await upstreamError(response, options.apiKey);
+          throw new VisionError(
+            'http',
+            `TokenHub returned HTTP ${response.status}${upstream.message ? `: ${upstream.message}` : ''}`,
+            `TokenHub HTTP ${response.status}${upstream.code ? ` (${upstream.code})` : ''}`,
+          );
         }
         body = await response.json();
       } catch (error) {
         if (error instanceof VisionError) throw error;
         if (isAbort(error)) throw new VisionError('timeout', `TokenHub did not answer within ${timeoutMs} ms`);
-        throw new VisionError('network', 'TokenHub request failed');
+        // Node's fetch puts the real cause (ENOTFOUND, ECONNRESET, a TLS error…) in error.cause.
+        const cause = (error as { cause?: { code?: unknown } })?.cause?.code;
+        const why = typeof cause === 'string' ? cause.replace(/[^\w.-]/g, '').slice(0, 40) : '';
+        throw new VisionError('network', `TokenHub request failed${why ? ` (${why})` : ''}`, `network${why ? ` ${why}` : ''}`);
       }
 
       const content = body.choices?.[0]?.message?.content;

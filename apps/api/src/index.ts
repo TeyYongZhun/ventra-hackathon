@@ -9,7 +9,7 @@ import { reseedDemoPatient } from './db/seed.js';
 import { createAdpClient, DEFAULT_ADP_CHAT_URL } from './services/adp.js';
 import { runDailySummaries, summaryMinutes } from './services/family.js';
 import { createTelegramClient } from './services/telegram.js';
-import { createTokenHubClient, DEFAULT_TOKENHUB_MODEL, DEFAULT_TOKENHUB_URL } from './services/vision.js';
+import { createTokenHubClient, readTokenHubEnv } from './services/vision.js';
 import { sgDate } from './time.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -32,14 +32,8 @@ const telegram = telegramToken
 const webhookSecret = process.env.TELEGRAM_WEBHOOK_SECRET || undefined;
 
 // Meal photo scan: a vision model on Tencent Cloud TokenHub.
-const tokenhubKey = process.env.TOKENHUB_API_KEY?.trim();
-const vision = tokenhubKey
-  ? createTokenHubClient({
-    baseUrl: process.env.TOKENHUB_BASE_URL || DEFAULT_TOKENHUB_URL,
-    apiKey: tokenhubKey,
-    model: process.env.TOKENHUB_MODEL || DEFAULT_TOKENHUB_MODEL,
-  })
-  : undefined;
+const tokenhub = readTokenHubEnv(process.env);
+const vision = tokenhub ? createTokenHubClient(tokenhub) : undefined;
 
 const db = createDb();
 const app = createApiApp({ db, adp, telegram, telegramWebhookSecret: webhookSecret, vision });
@@ -50,7 +44,9 @@ if (!adp) {
 if (!telegram) {
   app.log.warn('TELEGRAM_BOT_TOKEN is not set: family alerts and summaries are off');
 }
-if (!vision) {
+if (tokenhub) {
+  app.log.info(`Scan my meal: ${tokenhub.model} at ${tokenhub.baseUrl}`);
+} else {
   app.log.warn('TOKENHUB_API_KEY is not set: Scan my meal is off');
 }
 
