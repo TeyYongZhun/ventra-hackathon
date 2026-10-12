@@ -99,15 +99,20 @@ export function registerVisionRoutes(app: FastifyInstance, options: VisionRouteO
     // key, no credit) won't fix themselves, so they fail straight away.
     const started = performance.now();
     let result: ParsedMealReply | null = null;
+    let reason = '';
     for (let attempt = 1; attempt <= 2 && !result; attempt++) {
       const leftMs = CHECK_BUDGET_MS - (performance.now() - started);
       if (attempt === 2 && leftMs < MIN_RETRY_MS) break;
       try {
         const text = await vision.describeMeal(jpeg, attempt === 1 ? {} : { timeoutMs: Math.round(Math.min(leftMs, VISION_TIMEOUT_MS)) });
         result = parseMealReply(text);
-        if (!result) request.log.warn({ attempt }, 'Meal photo reply was not readable');
+        if (!result) {
+          reason = 'unreadable reply';
+          request.log.warn({ attempt }, 'Meal photo reply was not readable');
+        }
       } catch (error) {
         const code = error instanceof VisionError ? error.code : 'unknown';
+        reason = error instanceof VisionError ? error.reason : 'unknown';
         request.log.warn({ attempt, visionError: code, detail: error instanceof VisionError ? error.message : undefined }, 'Meal photo check failed');
         if (code !== 'timeout' && code !== 'empty') break;
       }
@@ -115,7 +120,8 @@ export function registerVisionRoutes(app: FastifyInstance, options: VisionRouteO
 
     const latencyMs = Math.round(performance.now() - started);
     if (!result) {
-      return sendError(reply, 502, 'VISION_FAILED', "We couldn't check this photo right now. Please try again.");
+      // reason (e.g. "TokenHub HTTP 401") is for whoever runs the app; the patient sees message.
+      return reply.status(502).send({ error: { code: 'VISION_FAILED', message: "We couldn't check this photo right now. Please try again.", reason } });
     }
     request.log.info({ latencyMs, found: result.found }, 'meal photo checked');
     if (!result.found) return { found: false } satisfies MealScanResponse;

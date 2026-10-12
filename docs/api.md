@@ -736,6 +736,8 @@ The server reads the model's JSON (it arrives inside a json code fence), keeps e
 
 **Errors:** `VALIDATION_ERROR` (not a JPEG, too big), `NOT_CONFIGURED` 503 (no `TOKENHUB_API_KEY`), `RATE_LIMITED` 429 with `Retry-After`, `VISION_FAILED` 502 (TokenHub HTTP error, or still no readable answer after the retry), `UNAUTHORIZED`
 
+A `VISION_FAILED` error also has a short `reason` for whoever runs the app (the app only shows `message`), so a deployment can be diagnosed without its logs: `"TokenHub HTTP 401 (401002)"` = key not accepted, `"TokenHub HTTP 404"` = wrong `TOKENHUB_BASE_URL`, `"TokenHub HTTP 402 (401006)"` = no credit or model not switched on, `"network ENOTFOUND"` = TokenHub unreachable, `"timeout"`, `"empty"`, `"unreadable reply"`. The settings forgive quotes or spaces around values and a base URL ending in `/chat/completions`.
+
 ---
 
 ## Medicines

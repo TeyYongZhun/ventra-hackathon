@@ -10,9 +10,12 @@ import { seedDemoPatient } from '../src/db/seed.js';
 import { SCANS_PER_HOUR } from '../src/routes/vision.js';
 import {
   createTokenHubClient,
+  DEFAULT_TOKENHUB_MODEL,
+  DEFAULT_TOKENHUB_URL,
   FALLBACK_TIP,
   parseMealReply,
   plateShares,
+  readTokenHubEnv,
   VISION_TIMEOUT_MS,
   VisionError,
   type VisionClient,
@@ -226,11 +229,13 @@ describe('meal photo scan and medicine barcodes', () => {
   });
 
   it('does not retry an HTTP error from TokenHub', async () => {
-    const vision = { describeMeal: vi.fn().mockRejectedValue(new VisionError('http', 'TokenHub returned HTTP 402')) };
+    const vision = { describeMeal: vi.fn().mockRejectedValue(new VisionError('http', 'TokenHub returned HTTP 402: arrears', 'TokenHub HTTP 402 (401006)')) };
     const { call, login } = await setup(vision);
     const scan = await call('POST', '/api/vision/meal', await login(), { photo: PHOTO });
     expect(scan.statusCode).toBe(502);
     expect(vision.describeMeal).toHaveBeenCalledTimes(1);
+    // The patient sees the message; the short reason says what went wrong without the server logs.
+    expect(scan.json()).toEqual({ error: { code: 'VISION_FAILED', message: "We couldn't check this photo right now. Please try again.", reason: 'TokenHub HTTP 402 (401006)' } });
   });
 
   it('answers 502 when TokenHub fails or replies with nonsense', async () => {
@@ -348,9 +353,17 @@ describe('TokenHub client', () => {
       baseUrl: 'https://hub.test/v1',
       apiKey: 'sk-secret',
       model: 'm',
-      fetchImpl: vi.fn(async () => new Response('{"error":{"message":"bad key sk-secret"}}', { status: 401 })),
+      fetchImpl: vi.fn(async () => new Response('{"error":{"code":"401001","message":"bad key sk-secret"}}', { status: 401 })),
     });
-    await expect(client.describeMeal(JPEG)).rejects.toMatchObject({ code: 'http', message: 'TokenHub returned HTTP 401' });
+    await expect(client.describeMeal(JPEG)).rejects.toMatchObject({ code: 'http', message: 'TokenHub returned HTTP 401: bad key [key]', reason: 'TokenHub HTTP 401 (401001)' });
+
+    const offline = createTokenHubClient({
+      baseUrl: 'https://hub.test/v1',
+      apiKey: 'k',
+      model: 'm',
+      fetchImpl: vi.fn(async () => { throw new TypeError('fetch failed', { cause: Object.assign(new Error('getaddrinfo'), { code: 'ENOTFOUND' }) }); }),
+    });
+    await expect(offline.describeMeal(JPEG)).rejects.toMatchObject({ code: 'network', reason: 'network ENOTFOUND' });
 
     const empty = createTokenHubClient({
       baseUrl: 'https://hub.test/v1',
@@ -359,5 +372,18 @@ describe('TokenHub client', () => {
       fetchImpl: vi.fn(async () => new Response('{"choices":[]}', { status: 200 })),
     });
     await expect(empty.describeMeal(JPEG)).rejects.toMatchObject({ code: 'empty' });
+  });
+});
+
+describe('TokenHub settings', () => {
+  it('needs only the key, and forgives quotes, spaces and the full chat address', () => {
+    expect(readTokenHubEnv({})).toBeUndefined();
+    expect(readTokenHubEnv({ TOKENHUB_API_KEY: '  ' })).toBeUndefined();
+    expect(readTokenHubEnv({ TOKENHUB_API_KEY: 'sk-abc' })).toEqual({ apiKey: 'sk-abc', baseUrl: DEFAULT_TOKENHUB_URL, model: DEFAULT_TOKENHUB_MODEL });
+    expect(readTokenHubEnv({
+      TOKENHUB_API_KEY: ' "sk-abc" ',
+      TOKENHUB_BASE_URL: 'https://tokenhub-intl.tencentcloudmaas.com/v1/chat/completions/',
+      TOKENHUB_MODEL: "'glm-5.3-flash'",
+    })).toEqual({ apiKey: 'sk-abc', baseUrl: 'https://tokenhub-intl.tencentcloudmaas.com/v1', model: 'glm-5.3-flash' });
   });
 });
