@@ -41,5 +41,8 @@ export default defineConfig({
     environment: 'jsdom',
     include: ['src/**/*.test.{ts,tsx}'],
     setupFiles: ['./src/test-setup.ts'],
+    // Most tests log in through the real login page and walk whole screens; on a busy machine
+    // (dev servers running) some take a little over vitest's default 5 s.
+    testTimeout: 15_000,
   },
 });

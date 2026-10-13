@@ -12,10 +12,16 @@ export const DEFAULT_TOKENHUB_MODEL = 'glm-5.3-flash';
 export const VISION_TIMEOUT_MS = 60_000;
 export const MAX_TOKENS = 4096;
 
+export interface VisionCallOptions {
+  // Overrides the client's own time limit for this one call.
+  timeoutMs?: number;
+}
+
 export interface VisionClient {
-  // The model's reply to MEAL_PROMPT for this JPEG, as raw text (parse with parseMealReply).
-  // timeoutMs overrides the client's own limit for this one call.
-  describeMeal(jpeg: Buffer, options?: { timeoutMs?: number }): Promise<string>;
+  // The model's reply to mealPrompt(note) for this JPEG, as raw text (parse with parseMealReply).
+  describeMeal(jpeg: Buffer, options?: VisionCallOptions & { note?: string }): Promise<string>;
+  // A text-only prompt (no photo), e.g. reviewing an Ask AI question. Raw reply text.
+  completeText(prompt: string, options?: VisionCallOptions): Promise<string>;
 }
 
 export interface TokenHubClientOptions {
@@ -65,22 +71,33 @@ async function upstreamError(response: Response, apiKey: string): Promise<{ code
 
 // Plain request on purpose: TokenHub rejects this model when asked for response_format or for
 // thinking to be switched off, so the JSON shape is asked for in the prompt instead.
-export const MEAL_PROMPT = [
-  'This photo was taken by an older adult in Singapore who has heart failure and must eat less salt.',
-  'Estimate the food in the photo, for the portion shown. Sauce, gravy, soup and pickles count toward sodium.',
-  'Reply with JSON only, no other text:',
-  '{"isFood": true,',
-  ' "what": "the dish in 2 to 5 words, as a Singapore hawker stall would call it, no brackets",',
-  ' "sodiumMg": number, "kcal": number, "potassiumMg": number, "phosphorusMg": number,',
-  ' "carbs": {"g": number, "what": "main carb foods, 2 to 4 words"},',
-  ' "protein": {"g": number, "what": "main protein foods, 2 to 4 words"},',
-  ' "fat": {"g": number, "what": "main sources of fat, 2 to 4 words"},',
-  ' "plate": [carbs share, protein share, fat share] adding up to 1,',
-  ' "tip": "one short, kind sentence (under 20 words) on eating this with less salt. Food only, never medicine.",',
-  ' "confidence": number from 0 to 1, how sure you are what the dish is}',
-  'If there is no food in the photo, reply {"isFood": false}.',
-  'Think briefly, then answer straight away with the JSON.',
-].join('\n');
+// note: what the patient typed about the meal ("fish soup, half portion"). It only helps name
+// the food and portion: the reply is still checked field by field, and the tip still goes through
+// the guardrail, so a note can't change what the patient is shown beyond the estimate.
+export const MAX_NOTE_CHARS = 200;
+export function mealPrompt(note?: string): string {
+  const said = note ? words(note, MAX_NOTE_CHARS).replace(/"/g, "'") : '';
+  return [
+    'This photo was taken by an older adult in Singapore who has heart failure and must eat less salt and drink less.',
+    'Estimate the food in the photo, for the portion shown. Sauce, gravy, soup and pickles count toward sodium.',
+    ...(said ? [`The person who took the photo says: "${said}". They know what they are eating: trust what they say about what the food is and how much there is, even if the photo looks different, and estimate for that.`] : []),
+    'Reply with JSON only, no other text:',
+    '{"isFood": true,',
+    ' "what": "the dish in 2 to 5 words, as a Singapore hawker stall would call it, no brackets",',
+    ' "sodiumMg": number, "kcal": number, "potassiumMg": number, "phosphorusMg": number,',
+    ' "carbs": {"g": number, "what": "main carb foods, 2 to 4 words"},',
+    ' "protein": {"g": number, "what": "main protein foods, 2 to 4 words"},',
+    ' "fat": {"g": number, "what": "main sources of fat, 2 to 4 words"},',
+    ' "plate": [carbs share, protein share, fat share] adding up to 1,',
+    ' "fluidMl": ml of liquid in the photo that will be drunk (soup, broth, or a drink), 0 if none,',
+    ' "fluidWhat": "what that liquid is, 1 to 3 words, e.g. soup, kopi, barley water",',
+    ' "tip": "one short, kind sentence (under 20 words) on eating this with less salt. Food only, never medicine.",',
+    ' "confidence": number from 0 to 1, how sure you are what the dish is}',
+    'If there is no food in the photo, reply {"isFood": false}.',
+    'Think briefly, then answer straight away with the JSON.',
+  ].join('\n');
+}
+export const MEAL_PROMPT = mealPrompt();
 
 function isAbort(error: unknown): boolean {
   return error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError');
@@ -91,49 +108,53 @@ export function createTokenHubClient(options: TokenHubClientOptions): VisionClie
   const fetchImpl = options.fetchImpl ?? fetch;
   const url = `${options.baseUrl.replace(/\/$/, '')}/chat/completions`;
 
-  return {
-    async describeMeal(jpeg, call = {}) {
-      const timeoutMs = call.timeoutMs ?? defaultTimeoutMs;
-      let body: { choices?: Array<{ message?: { content?: unknown } }> };
-      try {
-        const response = await fetchImpl(url, {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${options.apiKey}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            model: options.model,
-            temperature: 0.2,
-            max_tokens: MAX_TOKENS,
-            messages: [{
-              role: 'user',
-              content: [
-                { type: 'text', text: MEAL_PROMPT },
-                { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${jpeg.toString('base64')}` } },
-              ],
-            }],
-          }),
-          signal: AbortSignal.timeout(timeoutMs),
-        });
-        if (!response.ok) {
-          const upstream = await upstreamError(response, options.apiKey);
-          throw new VisionError(
-            'http',
-            `TokenHub returned HTTP ${response.status}${upstream.message ? `: ${upstream.message}` : ''}`,
-            `TokenHub HTTP ${response.status}${upstream.code ? ` (${upstream.code})` : ''}`,
-          );
-        }
-        body = await response.json();
-      } catch (error) {
-        if (error instanceof VisionError) throw error;
-        if (isAbort(error)) throw new VisionError('timeout', `TokenHub did not answer within ${timeoutMs} ms`);
-        // Node's fetch puts the real cause (ENOTFOUND, ECONNRESET, a TLS error…) in error.cause.
-        const cause = (error as { cause?: { code?: unknown } })?.cause?.code;
-        const why = typeof cause === 'string' ? cause.replace(/[^\w.-]/g, '').slice(0, 40) : '';
-        throw new VisionError('network', `TokenHub request failed${why ? ` (${why})` : ''}`, `network${why ? ` ${why}` : ''}`);
+  // One chat request; returns the reply text or throws a VisionError.
+  async function chat(content: unknown, timeoutMs: number): Promise<string> {
+    let body: { choices?: Array<{ message?: { content?: unknown } }> };
+    try {
+      const response = await fetchImpl(url, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${options.apiKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: options.model,
+          temperature: 0.2,
+          max_tokens: MAX_TOKENS,
+          messages: [{ role: 'user', content }],
+        }),
+        signal: AbortSignal.timeout(timeoutMs),
+      });
+      if (!response.ok) {
+        const upstream = await upstreamError(response, options.apiKey);
+        throw new VisionError(
+          'http',
+          `TokenHub returned HTTP ${response.status}${upstream.message ? `: ${upstream.message}` : ''}`,
+          `TokenHub HTTP ${response.status}${upstream.code ? ` (${upstream.code})` : ''}`,
+        );
       }
+      body = await response.json();
+    } catch (error) {
+      if (error instanceof VisionError) throw error;
+      if (isAbort(error)) throw new VisionError('timeout', `TokenHub did not answer within ${timeoutMs} ms`);
+      // Node's fetch puts the real cause (ENOTFOUND, ECONNRESET, a TLS error…) in error.cause.
+      const cause = (error as { cause?: { code?: unknown } })?.cause?.code;
+      const why = typeof cause === 'string' ? cause.replace(/[^\w.-]/g, '').slice(0, 40) : '';
+      throw new VisionError('network', `TokenHub request failed${why ? ` (${why})` : ''}`, `network${why ? ` ${why}` : ''}`);
+    }
 
-      const content = body.choices?.[0]?.message?.content;
-      if (typeof content !== 'string' || !content.trim()) throw new VisionError('empty', 'TokenHub returned no answer');
-      return content;
+    const reply = body.choices?.[0]?.message?.content;
+    if (typeof reply !== 'string' || !reply.trim()) throw new VisionError('empty', 'TokenHub returned no answer');
+    return reply;
+  }
+
+  return {
+    describeMeal(jpeg, call = {}) {
+      return chat([
+        { type: 'text', text: mealPrompt(call.note) },
+        { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${jpeg.toString('base64')}` } },
+      ], call.timeoutMs ?? defaultTimeoutMs);
+    },
+    completeText(prompt, call = {}) {
+      return chat(prompt, call.timeoutMs ?? defaultTimeoutMs);
     },
   };
 }
@@ -155,6 +176,8 @@ const replySchema = z.object({
   protein: macro.optional(),
   fat: macro.optional(),
   plate: z.array(num).length(3).optional(),
+  fluidMl: num.optional(),
+  fluidWhat: z.string().optional(),
   tip: z.string().optional(),
   confidence: num.optional(),
 });
@@ -223,6 +246,10 @@ export function parseMealReply(text: string): ParsedMealReply | null {
   const tip = words(reply.tip ?? '', 160);
   const screened = tip ? screenOutput(tip) : null;
 
+  // Soup or a drink with the meal, to the nearest 10 ml (up to 1 litre).
+  const fluidMl = Math.round(Math.min(Math.max(reply.fluidMl ?? 0, 0), 1000) / 10) * 10;
+  const fluidName = words(reply.fluidWhat ?? '', 24).toLowerCase();
+
   return {
     found: true,
     sure: (reply.confidence ?? 0) >= SURE_FROM,
@@ -236,6 +263,8 @@ export function parseMealReply(text: string): ParsedMealReply | null {
       protein,
       fat,
       plate: plateShares(reply.plate, [carbs.g, protein.g, fat.g]),
+      fluidMl,
+      fluidWhat: fluidMl > 0 ? fluidName || 'soup' : '',
       tip: screened?.allowed ? screened.text : FALLBACK_TIP,
     },
   };

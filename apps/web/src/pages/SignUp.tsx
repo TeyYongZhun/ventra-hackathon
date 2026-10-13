@@ -1,14 +1,16 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSignup } from '../lib/api';
-import { field, fieldLabel, primaryButton } from '../lib/formStyles';
+import { clearDrafts, useDraft } from '../lib/draft';
+import { field, fieldLabel, primaryButton, secondaryButton } from '../lib/formStyles';
 
 // A1b · Create your account (design/SignUp.dc.html). Phone + 4-digit PIN; set-up follows.
 export default function SignUp() {
   const signup = useSignup();
   const navigate = useNavigate();
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
+  // Name and phone survive "Back to log in" and coming back; the PIN is never kept.
+  const [name, setName] = useDraft('signup.name', '');
+  const [phone, setPhone] = useDraft('signup.phone', '');
   const [pin, setPin] = useState('');
   const [pinAgain, setPinAgain] = useState('');
   const [agree, setAgree] = useState(false);
@@ -24,7 +26,12 @@ export default function SignUp() {
 
   return (
     <div style={{ minHeight: '100vh', maxWidth: 480, margin: '0 auto', padding: '28px 20px 32px', display: 'flex', flexDirection: 'column', gap: 16, background: 'var(--color-canvas)' }}>
-      <span style={{ fontSize: 'var(--text-tag)', fontWeight: 700, color: 'var(--color-ink-muted)' }}>Step 1 of 6</span>
+      <header style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <Link to="/login" aria-label="Back to log in" style={{ width: 64, height: 64, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 'var(--radius-pill)', background: 'var(--color-surface)', color: 'var(--color-ink)', border: '2.5px solid var(--color-ink)' }}>
+          <svg width={30} height={30} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.75} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
+        </Link>
+        <span style={{ fontSize: 'var(--text-tag)', fontWeight: 700, color: 'var(--color-ink-muted)' }}>Step 1 of 6</span>
+      </header>
       <h1 style={{ margin: 0, fontSize: 'var(--text-h1)', lineHeight: 'var(--lh-h1)', fontWeight: 700 }}>Create your account</h1>
       <p style={{ margin: 0, fontSize: 20, lineHeight: '28px' }}>It takes about 2 minutes. A nurse or family member can help you.</p>
 
@@ -32,7 +39,7 @@ export default function SignUp() {
         aria-label="Create your account"
         onSubmit={(event) => {
           event.preventDefault();
-          if (ready) signup.mutate({ name: name.trim(), phone: digits, pin }, { onSuccess: () => navigate('/setup/1') });
+          if (ready) signup.mutate({ name: name.trim(), phone: digits, pin }, { onSuccess: () => { clearDrafts('signup.'); navigate('/setup/1'); } });
         }}
         style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
       >
@@ -63,9 +70,8 @@ export default function SignUp() {
         </button>
       </form>
 
-      <p style={{ margin: 0, fontSize: 20, lineHeight: '28px', textAlign: 'center' }}>
-        Already have an account? <Link to="/login" style={{ color: 'var(--color-blue-ink)', fontWeight: 700 }}>Log in</Link>
-      </p>
+      <p style={{ margin: 0, fontSize: 20, lineHeight: '28px', textAlign: 'center' }}>Already have an account?</p>
+      <Link to="/login" style={{ ...secondaryButton, marginTop: -8, textDecoration: 'none', color: 'var(--color-ink)' }}>Back to log in</Link>
     </div>
   );
 }

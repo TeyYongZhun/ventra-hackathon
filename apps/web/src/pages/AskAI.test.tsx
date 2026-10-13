@@ -41,6 +41,14 @@ describe('Ask AI', () => {
     const card = await screen.findByRole('region', { name: 'Please ask your nurse' });
     expect(within(card).getByText("I can't advise on that. Please ask your pharmacist or doctor.")).toBeTruthy();
     expect(within(card).getByRole('link', { name: 'Call my nurse' }).getAttribute('href')).toBe('/nurse');
+    // The question goes on the list for the next visit, and the chat says so.
+    expect(within(card).getByRole('status').textContent).toContain('Added to “Questions to ask” for your next visit.');
+    expect(within(card).getByRole('link', { name: 'See my questions' }).getAttribute('href')).toBe('/visit');
+
+    // Asked again: already there.
+    await user.type(screen.getByRole('textbox', { name: 'Ask a question' }), 'Can I skip my water pill?');
+    await user.click(screen.getByRole('button', { name: 'Send' }));
+    expect(await screen.findByText('This is already on “Questions to ask” for your next visit.')).toBeTruthy();
   });
 
   it('shows my question and the answer as chat bubbles', async () => {

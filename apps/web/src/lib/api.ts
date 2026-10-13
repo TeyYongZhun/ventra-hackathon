@@ -56,6 +56,9 @@ import type {
   MealScanResponse,
   MedicineScanResponse,
   VisionStatusResponse,
+  VisitQuestion,
+  VisitQuestionDeleteResponse,
+  VisitQuestionListResponse,
 } from '@ventra/core';
 import { alertHeadline, buildReport, catalogMedicine, familySummaryLines, findFood, mdmTanSeed, MEDICINE_LEAFLETS, medicineIdForBarcode, nurseScript, reasons, screenInput } from '@ventra/core';
 import { getMockMetrics } from './mock-data';
@@ -65,16 +68,22 @@ const isMockApi =
   (typeof process !== 'undefined' && process.env.VITEST === 'true');
 
 let mockSession = false;
+// Start-of-day demo (POST /api/demo/morning) until the demo is reset.
+let mockFreshMorning = false;
+// Drinks logged in this session, added to the seed's total (undo takes the last one off).
+let mockFluidAdded: number[] = [];
 let mockSetUp = true;
 let mockTextSize: MeResponse['text_size'] = null;
 // A logged meal built from the food list, like the API does.
 function mockMeal(id: number, time: string, meal: string, foodId: string): MealListEntry {
   const food = findFood(foodId)!;
   const { what, sodiumMg, tip, kcal, potassiumMg, phosphorusMg, carbs, protein, fat, plate } = food;
-  return { id, time, meal, what, sodiumMg, tip, kcal, potassiumMg, phosphorusMg, carbs, protein, fat, plate, photoUrl: null };
+  return { id, time, meal, what, sodiumMg, tip, kcal, potassiumMg, phosphorusMg, carbs, protein, fat, plate, photoUrl: null, fluidAddedMl: null };
 }
-// Mock photo check: always "chicken rice"; the photo comes back as the meal's photo.
-let mockScan: { id: number; photo: string } | null = null;
+// Mock photo check: "chicken rice" with 150 ml of soup, or "fish soup with noodles" when checked
+// again with a note. The photo comes back as the meal's photo.
+let mockScan: { id: number; photo: string; foodId: string } | null = null;
+const MOCK_SOUP_ML = 150;
 let mockMeals: MealListEntry[] = [
   mockMeal(2, '12:40 PM', 'Lunch', 'fish-soup-noodles'),
   mockMeal(1, '7:30 AM', 'Breakfast', 'oat-porridge'),
@@ -82,6 +91,10 @@ let mockMeals: MealListEntry[] = [
 let mockVisits: VisitEntry[] = [
   { id: 1, date: '2026-10-13', time: '10:30 AM', title: 'Heart clinic', doctor: 'Dr Lim', place: 'Level 3, Room 12', bring: 'Medicine list · this phone · IC card' },
   { id: 2, date: '2026-10-27', time: '9:00 AM', title: 'Blood test', doctor: null, place: 'Polyclinic lab', bring: null },
+];
+// Questions the AI added from Ask AI (one already there for the demo).
+let mockVisitQuestions: VisitQuestion[] = [
+  { id: 1, question: 'Can I take my water pill later on days I go out?', asked: 'can i take my water pill later when i go out', createdAt: '2026-10-06T02:00:00.000Z' },
 ];
 const mockFamily = {
   share: { weight: false, drinks: false, symptoms: false },
@@ -119,12 +132,19 @@ function mockResponse(path: string, init?: RequestInit): unknown {
   }
   if (path.startsWith('/api/metrics')) {
     if (!mockSession) throw unauthorized();
-    return getMockMetrics();
+    const metrics = getMockMetrics(mockFreshMorning);
+    return {
+      ...metrics,
+      fluidToday: metrics.fluidToday + mockFluidAdded.reduce((sum, ml) => sum + ml, 0),
+      // The seed's meals are the starting mock meals, so this starts at the seed's total.
+      sodiumToday: mockMeals.reduce((sum, meal) => sum + meal.sodiumMg, 0),
+    };
   }
   if (path === '/api/fluid') {
     if (!mockSession) throw unauthorized();
     if (init?.method === 'POST') {
       const body = JSON.parse((init.body as string) || '{}') as FluidCreateRequest;
+      mockFluidAdded.push(body.ml);
       return { id: 1, date: '2026-10-07', time: '3:00 PM', what: body.what, ml: body.ml } satisfies FluidEntryResponse;
     }
     return {
@@ -135,6 +155,7 @@ function mockResponse(path: string, init?: RequestInit): unknown {
   }
   if (path === '/api/fluid/last') {
     if (!mockSession) throw unauthorized();
+    mockFluidAdded = mockFluidAdded.slice(0, -1);
     return { ok: true, deletedId: 1 } satisfies FluidDeleteResponse;
   }
   if (path === '/api/meals') {
@@ -143,7 +164,9 @@ function mockResponse(path: string, init?: RequestInit): unknown {
       const body = JSON.parse((init.body as string) || '{}') as MealCreateRequest;
       if ('scanId' in body) {
         if (!mockScan || mockScan.id !== body.scanId) throw apiError('NOT_FOUND', 'That photo check has expired. Please scan your meal again.');
-        const entry = { ...mockMeal(mockMeals.length + 10, '12:30 PM', 'Lunch', 'chicken-rice'), photoUrl: mockScan.photo };
+        const fluidAddedMl = body.addFluid === false ? null : MOCK_SOUP_ML;
+        if (fluidAddedMl) mockFluidAdded.push(fluidAddedMl);
+        const entry = { ...mockMeal(mockMeals.length + 10, '12:30 PM', 'Lunch', mockScan.foodId), photoUrl: mockScan.photo, fluidAddedMl };
         mockScan = null;
         mockMeals = [entry, ...mockMeals];
         return entry satisfies MealListEntry;
@@ -161,6 +184,10 @@ function mockResponse(path: string, init?: RequestInit): unknown {
     const [last, ...rest] = mockMeals;
     if (!last) throw apiError('NOT_FOUND', 'No meal to undo today');
     mockMeals = rest;
+    if (last.fluidAddedMl) {
+      const at = mockFluidAdded.lastIndexOf(last.fluidAddedMl);
+      if (at >= 0) mockFluidAdded.splice(at, 1);
+    }
     return { ok: true, deletedId: last.id } satisfies MealDeleteResponse;
   }
   if (path === '/api/report') {
@@ -251,7 +278,7 @@ function mockResponse(path: string, init?: RequestInit): unknown {
       family: mdmTanSeed.patient.family,
       linked: mockFamily.linked,
       linkCode: mockFamily.linkCode,
-      linkUrl: null,
+      linkUrl: mockFamily.linkCode ? `https://t.me/VentraCareBot?start=${mockFamily.linkCode}` : null,
       sentToday: mockFamily.sentToday,
       preview: familySummaryLines(mdmTanSeed, mockFamily.share),
     } satisfies FamilySettingsResponse;
@@ -280,12 +307,22 @@ function mockResponse(path: string, init?: RequestInit): unknown {
     const screened = screenInput(body.question ?? '');
     if (!screened.allowed) {
       const kind = screened.reason === 'invalid' ? 'unsure' : screened.reason;
-      return { reply: screened.reply, kind, request_id: 'mock' } satisfies AskResponse;
+      // Dose questions go on the visit list, like the server does.
+      let visitQuestion: AskResponse['visitQuestion'] = null;
+      if (kind === 'dose') {
+        const asked = body.question.trim().replace(/[.!?]*$/, '?');
+        const question = asked.charAt(0).toUpperCase() + asked.slice(1);
+        const already = mockVisitQuestions.some((q) => q.question.toLowerCase() === question.toLowerCase());
+        if (!already) mockVisitQuestions = [{ id: mockVisitQuestions.length + 10, question, asked: body.question, createdAt: '2026-10-07T01:41:00.000Z' }, ...mockVisitQuestions];
+        visitQuestion = { status: already ? 'already' : 'added', question };
+      }
+      return { reply: screened.reply, kind, request_id: 'mock', visitQuestion } satisfies AskResponse;
     }
     return {
       reply: 'Your water pill helps your body pass extra salt and water, so you have less swelling and breathlessness.',
       kind: 'answer',
       request_id: 'mock',
+      visitQuestion: null,
     } satisfies AskResponse;
   }
   if (path === '/api/emergency/notify') {
@@ -319,9 +356,25 @@ function mockResponse(path: string, init?: RequestInit): unknown {
     mockFamily.linkCode = `CODE${String(mockFamily.resets).padStart(2, '0')}`;
     return { ok: true } satisfies FamilySettingsUpdateResponse;
   }
+  if (path === '/api/demo/morning') {
+    if (!mockSession) throw unauthorized();
+    mockFreshMorning = true;
+    return { ok: true } satisfies DemoResetResponse;
+  }
   if (path === '/api/demo/reset') {
     if (!mockSession) throw unauthorized();
+    mockFreshMorning = false;
     return { ok: true } satisfies DemoResetResponse;
+  }
+  if (path === '/api/visit-questions') {
+    if (!mockSession) throw unauthorized();
+    return { questions: mockVisitQuestions } satisfies VisitQuestionListResponse;
+  }
+  if (path.startsWith('/api/visit-questions/') && init?.method === 'DELETE') {
+    if (!mockSession) throw unauthorized();
+    const id = Number(path.split('/').pop());
+    mockVisitQuestions = mockVisitQuestions.filter((question) => question.id !== id);
+    return { ok: true, deletedId: id } satisfies VisitQuestionDeleteResponse;
   }
   if (path === '/api/vision/status') {
     if (!mockSession) throw unauthorized();
@@ -330,9 +383,12 @@ function mockResponse(path: string, init?: RequestInit): unknown {
   if (path === '/api/vision/meal') {
     if (!mockSession) throw unauthorized();
     const body = JSON.parse((init?.body as string) || '{}') as MealScanRequest;
-    const { id: _id, ...estimate } = findFood('chicken-rice')!;
-    mockScan = { id: (mockScan?.id ?? 0) + 1, photo: body.photo };
-    return { found: true, scanId: mockScan.id, sure: true, estimate } satisfies MealScanResponse;
+    const again = 'scanId' in body;
+    if (again && mockScan?.id !== body.scanId) throw apiError('NOT_FOUND', 'That photo check has expired. Please take the photo again.');
+    const foodId = again ? 'fish-soup-noodles' : 'chicken-rice';
+    const { id: _id, ...food } = findFood(foodId)!;
+    mockScan = { id: (mockScan?.id ?? 0) + 1, photo: 'photo' in body ? body.photo : mockScan!.photo, foodId };
+    return { found: true, scanId: mockScan.id, sure: true, estimate: { ...food, fluidMl: MOCK_SOUP_ML, fluidWhat: 'soup' } } satisfies MealScanResponse;
   }
   if (path.startsWith('/api/medicines/barcode/')) {
     if (!mockSession) throw unauthorized();
@@ -473,6 +529,22 @@ export function useDeleteVisit() {
   return useMutation<VisitDeleteResponse, Error, number>({
     mutationFn: (id) => apiFetch(`/api/visits/${id}`, { method: 'DELETE' }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['visits'] }),
+  });
+}
+
+// Questions for the next visit that the AI added from Ask AI.
+export function useVisitQuestions() {
+  return useQuery<VisitQuestionListResponse>({
+    queryKey: ['visit-questions'],
+    queryFn: () => apiFetch('/api/visit-questions'),
+  });
+}
+
+export function useDeleteVisitQuestion() {
+  const qc = useQueryClient();
+  return useMutation<VisitQuestionDeleteResponse, Error, number>({
+    mutationFn: (id) => apiFetch(`/api/visit-questions/${id}`, { method: 'DELETE' }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['visit-questions'] }),
   });
 }
 
@@ -741,6 +813,15 @@ export function useResetTelegramLink() {
   return useMutation<FamilySettingsUpdateResponse, Error, void>({
     mutationFn: () => apiFetch('/api/family/telegram/reset', { method: 'POST' }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['family'] }),
+  });
+}
+
+// Start-of-day demo: today's weight, morning pills and "how I feel" not done yet.
+export function useDemoMorning() {
+  const qc = useQueryClient();
+  return useMutation<DemoResetResponse, Error, void>({
+    mutationFn: () => apiFetch('/api/demo/morning', { method: 'POST' }),
+    onSuccess: () => qc.invalidateQueries(),
   });
 }
 

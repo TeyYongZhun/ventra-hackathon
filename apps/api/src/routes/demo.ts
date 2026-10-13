@@ -41,4 +41,12 @@ export function registerDemoRoutes(app: FastifyInstance, options: DemoRouteOptio
     await reseedDemoPatient(db, sgDate(now()), { yellowDay: true });
     return { ok: true } satisfies DemoResetResponse;
   });
+
+  // Start-of-day demo: same history, but today's weight, morning pills and "how I feel" are not
+  // done yet, so Home shows the whole morning to-do. "Reset demo day" brings them back.
+  app.post('/api/demo/morning', async (request, reply) => {
+    if (!isDemoPatient(request, reply)) return reply;
+    await reseedDemoPatient(db, sgDate(now()), { freshMorning: true });
+    return { ok: true } satisfies DemoResetResponse;
+  });
 }

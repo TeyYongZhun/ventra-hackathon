@@ -49,4 +49,24 @@ describe('Visits', () => {
     await screen.findByRole('region', { name: /^Visit: Blood test/ });
     expect(screen.queryByRole('region', { name: /^Visit: Pharmacy/ })).toBeNull();
   });
+
+  it('lists questions the AI added from Ask AI with the visit questions, and removes them', async () => {
+    const user = await openCalendar();
+    const next = await screen.findByRole('region', { name: /^Next visit: Heart clinic/ });
+    await user.click(within(next).getByRole('link', { name: 'Get ready for this visit' }));
+    await screen.findByRole('heading', { level: 2, name: 'Questions to ask' });
+
+    const fromAsk = await screen.findByRole('checkbox', { name: /Can I take my water pill later on days I go out?/ });
+    expect(fromAsk.getAttribute('aria-checked')).toBe('true');
+    expect(within(fromAsk).getByText('From Ask AI')).toBeTruthy();
+    // The usual questions are still there.
+    expect(screen.getByRole('checkbox', { name: 'Are my drink and salt limits still right for me?' })).toBeTruthy();
+
+    await user.click(fromAsk);
+    expect(fromAsk.getAttribute('aria-checked')).toBe('false');
+
+    await user.click(screen.getByRole('button', { name: 'Remove question: Can I take my water pill later on days I go out?' }));
+    expect(await screen.findByText("When you ask something in Ask AI that your doctor should answer, we'll add it here.")).toBeTruthy();
+    expect(screen.queryByText('From Ask AI')).toBeNull();
+  });
 });

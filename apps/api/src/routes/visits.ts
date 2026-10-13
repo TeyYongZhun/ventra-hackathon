@@ -1,7 +1,14 @@
 import type { FastifyInstance } from 'fastify';
-import { and, asc, eq, gte } from 'drizzle-orm';
+import { and, asc, desc, eq, gte } from 'drizzle-orm';
 import { z } from 'zod';
-import type { IsoDate, VisitDeleteResponse, VisitEntry, VisitListResponse } from '@ventra/core';
+import type {
+  IsoDate,
+  VisitDeleteResponse,
+  VisitEntry,
+  VisitListResponse,
+  VisitQuestionDeleteResponse,
+  VisitQuestionListResponse,
+} from '@ventra/core';
 import type { ApiDb } from '../app.js';
 import * as schema from '../db/schema.js';
 import { patientScope } from '../db/scope.js';
@@ -79,5 +86,34 @@ export function registerVisitRoutes(app: FastifyInstance, options: VisitRouteOpt
       .get();
     if (!deleted) return sendError(reply, 404, 'NOT_FOUND', 'No such visit');
     return { ok: true, deletedId: deleted.id } satisfies VisitDeleteResponse;
+  });
+
+  // Questions the AI added from Ask AI (services/visitQuestions.ts), newest first.
+  app.get('/api/visit-questions', async (request) => {
+    const scope = patientScope(request);
+    const questions = db.select({
+      id: schema.visitQuestions.id,
+      question: schema.visitQuestions.question,
+      asked: schema.visitQuestions.asked,
+      createdAt: schema.visitQuestions.createdAt,
+    })
+      .from(schema.visitQuestions)
+      .where(scope.where(schema.visitQuestions.patientId))
+      .orderBy(desc(schema.visitQuestions.id))
+      .all();
+    return { questions } satisfies VisitQuestionListResponse;
+  });
+
+  app.delete('/api/visit-questions/:id', async (request, reply) => {
+    const parsed = idSchema.safeParse(request.params);
+    if (!parsed.success) return sendError(reply, 400, 'VALIDATION_ERROR', 'Invalid question id');
+
+    const scope = patientScope(request);
+    const deleted = db.delete(schema.visitQuestions)
+      .where(and(eq(schema.visitQuestions.id, parsed.data.id), scope.where(schema.visitQuestions.patientId)))
+      .returning({ id: schema.visitQuestions.id })
+      .get();
+    if (!deleted) return sendError(reply, 404, 'NOT_FOUND', 'No such question');
+    return { ok: true, deletedId: deleted.id } satisfies VisitQuestionDeleteResponse;
   });
 }

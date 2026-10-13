@@ -1,12 +1,12 @@
 import type { FastifyInstance } from 'fastify';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
 import type { MealScanResponse, VisionStatusResponse } from '@ventra/core';
 import type { ApiDb } from '../app.js';
 import * as schema from '../db/schema.js';
 import { patientScope } from '../db/scope.js';
 import { sendError } from '../errors.js';
-import { parseMealReply, VISION_TIMEOUT_MS, VisionError, type ParsedMealReply, type VisionClient } from '../services/vision.js';
+import { MAX_NOTE_CHARS, parseMealReply, VISION_TIMEOUT_MS, VisionError, type ParsedMealReply, type VisionClient } from '../services/vision.js';
 
 // The app sends a JPEG resized to about 1024 px (~150 KB). Allow some room, nothing silly.
 export const MAX_PHOTO_BYTES = 2 * 1024 * 1024;
@@ -21,9 +21,12 @@ const HOUR_MS = 60 * 60 * 1000;
 export const CHECK_BUDGET_MS = 90_000;
 const MIN_RETRY_MS = 15_000;
 
-const scanSchema = z.object({
-  photo: z.string().min(1).max(BODY_LIMIT),
-});
+// A new photo (with an optional note), or the patient's last scan checked again with a note.
+const noteSchema = z.string().trim().max(MAX_NOTE_CHARS);
+const scanSchema = z.union([
+  z.object({ photo: z.string().min(1).max(BODY_LIMIT), note: noteSchema.optional() }),
+  z.object({ scanId: z.number().int().positive(), note: noteSchema.min(1) }),
+]);
 
 export interface VisionRouteOptions {
   db: ApiDb;
@@ -78,16 +81,30 @@ export function registerVisionRoutes(app: FastifyInstance, options: VisionRouteO
     if (!parsed.success) {
       return sendError(reply, 400, 'VALIDATION_ERROR', 'Invalid request body');
     }
-    const jpeg = decodeJpeg(parsed.data.photo);
-    if (!jpeg) {
-      return sendError(reply, 400, 'VALIDATION_ERROR', 'Please send the photo as a JPEG under 2 MB');
+    const scope = patientScope(request);
+    const note = parsed.data.note || undefined;
+    let jpeg: Buffer | null;
+    if ('photo' in parsed.data) {
+      jpeg = decodeJpeg(parsed.data.photo);
+      if (!jpeg) {
+        return sendError(reply, 400, 'VALIDATION_ERROR', 'Please send the photo as a JPEG under 2 MB');
+      }
+    } else {
+      // "Not right? Tell us what it is": the same photo again, with the patient's note.
+      const earlier = db.select({ photo: schema.mealScans.photo })
+        .from(schema.mealScans)
+        .where(and(eq(schema.mealScans.id, parsed.data.scanId), eq(schema.mealScans.patientId, scope.patientId)))
+        .get();
+      if (!earlier) {
+        return sendError(reply, 404, 'NOT_FOUND', 'That photo check has expired. Please take the photo again.');
+      }
+      jpeg = earlier.photo;
     }
     if (!vision) {
       request.log.warn('Meal photo scan is not configured (TOKENHUB_API_KEY missing)');
       return sendError(reply, 503, 'NOT_CONFIGURED', 'Photo checking is not set up yet.');
     }
 
-    const scope = patientScope(request);
     const waitMs = perPatient.take(String(scope.patientId)) || overall.take('all');
     if (waitMs > 0) {
       reply.header('Retry-After', String(Math.ceil(waitMs / 1000)));
@@ -104,7 +121,7 @@ export function registerVisionRoutes(app: FastifyInstance, options: VisionRouteO
       const leftMs = CHECK_BUDGET_MS - (performance.now() - started);
       if (attempt === 2 && leftMs < MIN_RETRY_MS) break;
       try {
-        const text = await vision.describeMeal(jpeg, attempt === 1 ? {} : { timeoutMs: Math.round(Math.min(leftMs, VISION_TIMEOUT_MS)) });
+        const text = await vision.describeMeal(jpeg, attempt === 1 ? { note } : { note, timeoutMs: Math.round(Math.min(leftMs, VISION_TIMEOUT_MS)) });
         result = parseMealReply(text);
         if (!result) {
           reason = 'unreadable reply';
@@ -123,15 +140,16 @@ export function registerVisionRoutes(app: FastifyInstance, options: VisionRouteO
       // reason (e.g. "TokenHub HTTP 401") is for whoever runs the app; the patient sees message.
       return reply.status(502).send({ error: { code: 'VISION_FAILED', message: "We couldn't check this photo right now. Please try again.", reason } });
     }
-    request.log.info({ latencyMs, found: result.found }, 'meal photo checked');
+    request.log.info({ latencyMs, found: result.found, withNote: Boolean(note) }, 'meal photo checked');
     if (!result.found) return { found: false } satisfies MealScanResponse;
 
     // Keep only this scan: an older one the patient didn't log is dropped with its photo.
+    const photo = jpeg;
     const scan = db.transaction((tx) => {
       tx.delete(schema.mealScans).where(eq(schema.mealScans.patientId, scope.patientId)).run();
       return tx.insert(schema.mealScans).values(scope.values({
         createdAt: new Date(now()).toISOString(),
-        photo: jpeg,
+        photo,
         estimateJson: JSON.stringify(result.estimate),
       })).returning({ id: schema.mealScans.id }).get();
     });

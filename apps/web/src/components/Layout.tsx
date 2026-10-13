@@ -1,4 +1,5 @@
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { DoseReminderBanner } from './DoseReminder';
 import { BottomNav } from './index';
 import type { NavTab } from './BottomNav';
 
@@ -23,6 +24,8 @@ export function Layout() {
     >
       {/* Page padding from the design screens: 28px top, 20px sides. */}
       <main style={{ flex: 1, padding: '28px 20px', paddingBottom: 140 }}>
+        {/* Medicine due in 15 minutes or less (not on the Medicine screen itself). */}
+        <DoseReminderBanner />
         {/* Every page puts SOS in its own header row (PageHeader, or next to the date on Home). */}
         <Outlet />
       </main>

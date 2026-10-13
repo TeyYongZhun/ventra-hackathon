@@ -180,7 +180,9 @@ One family contact; editing keeps an existing Telegram link.
 ```json
 { "name": "Lee Wei", "relation": "son", "phone": "91234567" }
 ```
-**Success 200:** `{ "ok": true }` · **Errors:** `VALIDATION_ERROR`, `UNAUTHORIZED`
+`phone` is **required for a new contact**: 8 to 15 digits once spaces, dashes, brackets and a leading `+` are ignored. When editing an existing contact it can be left out to keep the number on file.
+
+**Success 200:** `{ "ok": true }` · **Errors:** `VALIDATION_ERROR` (no phone for a new contact, or a phone that isn't 8–15 digits), `UNAUTHORIZED`
 
 ---
 
@@ -383,10 +385,10 @@ Undo the most recent fluid entry for the same day only. Soft delete (`deleted_at
 
 ## Meals
 
-Food log. A meal is logged from a photo checked by `POST /api/vision/meal` ("Scan my meal"), or from `FOODS` in `packages/core/foods.ts` (common Singapore meals with **approximate** sodium per serving). Today's total feeds `sodiumToday` in `GET /api/metrics`.
+Food log. A meal is logged from a photo checked by `POST /api/vision/meal` ("Scan my meal"), or from `FOODS` in `packages/core/foods.ts` (common Singapore meals with **approximate** sodium per serving). Today's total feeds `sodiumToday` in `GET /api/metrics`. Soup or a drink found in a scanned meal can be logged as a drink with it, so it counts toward today's drink limit (and the traffic light).
 
 ### GET /api/meals
-Today's meals, newest first. `photoUrl` is set for meals logged from a photo, otherwise `null`.
+Today's meals, newest first. `photoUrl` is set for meals logged from a photo, otherwise `null`. `fluidAddedMl` is the soup or drink logged with the meal (not undone), otherwise `null`.
 
 ```json
 { "entries": [{
@@ -395,7 +397,8 @@ Today's meals, newest first. `photoUrl` is set for meals logged from a photo, ot
   "carbs": { "g": 75, "what": "Rice" }, "protein": { "g": 28, "what": "Chicken" }, "fat": { "g": 20, "what": "Oil and chicken skin" },
   "plate": [0.625, 0.25, 0.125],
   "tip": "Ask for less dark sauce and chilli, and skip the soup.",
-  "photoUrl": "/api/meals/3/photo"
+  "photoUrl": "/api/meals/3/photo",
+  "fluidAddedMl": 150
 }] }
 ```
 
@@ -404,8 +407,9 @@ Today's meals, newest first. `photoUrl` is set for meals logged from a photo, ot
 ### POST /api/meals
 Either a scanned photo the patient confirmed:
 ```json
-{ "scanId": 12 }
+{ "scanId": 12, "addFluid": true }
 ```
+`addFluid` (default `true`): also log the scan's `fluidMl` as a drink ("Soup with chicken rice"), linked to the meal. Send `false` when the patient unticks "Add 150 ml of soup to my drinks". Logging a drink re-runs the alert rules, like `POST /api/fluid`.
 or a food from the list:
 ```json
 { "foodId": "chicken-rice" }
@@ -424,7 +428,7 @@ The JPEG of a meal logged from a photo. Only the patient who logged it can load 
 ---
 
 ### DELETE /api/meals/last
-Undo the latest meal logged today, and its photo.
+Undo the latest meal logged today, with its photo and any soup or drink logged with it.
 
 **Success 200:** `{ "ok": true, "deletedId": 3 }` · **Errors:** `NOT_FOUND` (nothing logged today), `UNAUTHORIZED`
 
@@ -663,9 +667,12 @@ Ask the AI a question. Every question and answer passes the code guardrail in `p
 {
   "reply": "Bisoprolol helps your heart beat slower and more steadily. It eases the heart's workload over time.",
   "kind": "answer",
-  "request_id": "6f1c2a4e-0b7d-4f43-9a51-2d8e3c7b9f10"
+  "request_id": "6f1c2a4e-0b7d-4f43-9a51-2d8e3c7b9f10",
+  "visitQuestion": null
 }
 ```
+
+`visitQuestion` is set when the question went on the patient's "Questions to ask" for their next visit (see `GET /api/visit-questions`), and the chat says so under the reply: `{ "status": "added", "question": "Can I skip my water pill on days I go out?" }`, or `"status": "already"` when it was already on the list.
 
 | `kind` | When | `reply` | UI |
 |---|---|---|---|
@@ -680,7 +687,8 @@ Ask the AI a question. Every question and answer passes the code guardrail in `p
 3. Rate limit: 8 AI calls per minute for the whole app (ADP free plan allows 10).
 4. ADP is called with the question plus the patient's own numbers for today (`questionWithContext` in `packages/core/context.ts`): drink limit and intake, salt limit and intake, weight and dry weight, cap size. So "How much can I drink today?" gets their real number. Never sent: name, phone, patient id, medicines or dose times. `visitor_biz_id` and `session_id` are HMAC pseudonyms. Only the question itself is saved in `chat_messages`.
 5. `screenOutput` checks the answer; blocked answers become the `unsure` line.
-6. Question and reply are saved to `chat_messages` with `request_id` and `latency_ms`.
+6. Visit question: `dose` questions are added to the visit list at once (patient's own words, tidied by TokenHub afterwards). For other questions (not `emergency`), TokenHub decides alongside the answer whether the doctor should answer it; the reply waits at most 4 more seconds for that, and a slower check still adds the question, just without saying so in the reply.
+7. Question and reply are saved to `chat_messages` with `request_id` and `latency_ms`.
 
 **Errors:** `VALIDATION_ERROR`, `UNAUTHORIZED`, `RATE_LIMITED` (429)
 
@@ -702,9 +710,15 @@ Check a meal photo. **Nothing is logged** until the patient confirms with `POST 
 
 **Request body** (JSON, up to about 2.8 MB):
 ```json
-{ "photo": "data:image/jpeg;base64,/9j/4AAQ..." }
+{ "photo": "data:image/jpeg;base64,/9j/4AAQ...", "note": "fish soup, half portion" }
 ```
-`photo` is a JPEG (under 2 MB once decoded) as base64; the `data:image/jpeg;base64,` prefix is optional.
+`photo` is a JPEG (under 2 MB once decoded) as base64; the `data:image/jpeg;base64,` prefix is optional. `note` (optional, up to 200 characters) is what the patient says about the meal; it goes into the prompt to help name the food and portion. The reply is still checked field by field and the tip still goes through the guardrail.
+
+**Check the same photo again** ("Not right? Tell us what it is"): send the patient's last `scanId` with a note instead of the photo:
+```json
+{ "scanId": 12, "note": "it is fish soup with noodles" }
+```
+The stored photo is checked again; the reply has a new `scanId` and the old one can no longer be logged. A `scanId` that isn't the patient's latest scan gives `NOT_FOUND`.
 
 **Success 200**, a meal was found. `sure: false` means the model's confidence was under 0.6, and the app says it isn't very sure:
 ```json
@@ -722,6 +736,8 @@ Check a meal photo. **Nothing is logged** until the patient confirms with `POST 
     "protein": { "g": 30, "what": "Steamed chicken" },
     "fat": { "g": 22, "what": "Chicken skin and rice oil" },
     "plate": [0.625, 0.25, 0.125],
+    "fluidMl": 150,
+    "fluidWhat": "soup",
     "tip": "Ask for no chilli sauce and leave the soup."
   }
 }
@@ -798,6 +814,28 @@ Upcoming visits (today onwards), soonest first.
 **Success 200:** `{ "ok": true, "deletedId": 3 }`
 
 **Errors:** `NOT_FOUND` (no such visit for this patient), `VALIDATION_ERROR`, `UNAUTHORIZED`
+
+---
+
+### GET /api/visit-questions
+Questions for the next doctor visit that the AI added from Ask AI, newest first (Visit prep shows them under "Questions to ask", marked "From Ask AI").
+
+From `POST /api/ask` (never `emergency` questions):
+- **Dose questions** (Ask AI never answers them) are added at once in the patient's own words, tidied ("Can i skip my water pill tomorrow?"); TokenHub then rewrites them more clearly in the background.
+- **Other questions:** TokenHub decides, with **only the question text**, whether answering it properly needs the patient's own doctor (their symptoms, medicines, doses, results, limits or treatment). If so, it writes the question the way the patient would ask it, and it is added here.
+
+The Ask AI reply's `visitQuestion` tells the chat it was added (or already there). Each question must be one plain question ending in "?" with no links; duplicates aren't added again, and the newest 20 are kept. At most 30 TokenHub reviews an hour per patient.
+
+```json
+{ "questions": [{ "id": 4, "question": "Can I take my water pill later on days I go out?", "asked": "can i take my water pill later when i go out", "createdAt": "2026-10-06T02:00:00.000Z" }] }
+```
+
+---
+
+### DELETE /api/visit-questions/:id
+The patient removes a question from the list.
+
+**Success 200:** `{ "ok": true, "deletedId": 4 }` · **Errors:** `NOT_FOUND` (no such question for this patient), `VALIDATION_ERROR`, `UNAUTHORIZED`
 
 ---
 
@@ -1005,6 +1043,15 @@ Same history, but today's water pill is recorded as missed. Logging drinks past 
 **Success 200:** `{ "ok": true }`
 
 **Errors:** `UNAUTHORIZED`, `FORBIDDEN`
+
+---
+
+### POST /api/demo/morning
+"Demo: start of the day": same history, but today's weight, morning pills and "how I feel" are not done yet, so Home shows the whole morning to-do. The app also clears today's "seen the streak note" and "I feel fine" marks on the phone. `POST /api/demo/reset` brings the normal demo day back.
+
+**Success 200:** `{ "ok": true }` · **Errors:** `UNAUTHORIZED`, `FORBIDDEN`
+
+"Demo: medicine reminder" needs no server call: the app shows the reminder for the next pills (banner for 5 minutes, and a phone notification if allowed).
 
 ---
 

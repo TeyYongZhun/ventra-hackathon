@@ -102,7 +102,10 @@ describe('Day 4: meals, onboarding, report, Ask AI numbers', () => {
       expect((await call('PUT', '/api/onboarding/medications', cookie, {
         meds: [{ id: 'furo', times: [480] }, { id: 'dapa', times: [480] }],
       })).statusCode).toBe(200);
-      expect((await call('PUT', '/api/onboarding/contact', cookie, { name: 'Lee Wei', relation: 'son' })).statusCode).toBe(200);
+      // A new contact needs a phone number.
+      expect((await call('PUT', '/api/onboarding/contact', cookie, { name: 'Lee Wei', relation: 'son' })).statusCode).toBe(400);
+      expect((await call('PUT', '/api/onboarding/contact', cookie, { name: 'Lee Wei', relation: 'son', phone: '123' })).statusCode).toBe(400);
+      expect((await call('PUT', '/api/onboarding/contact', cookie, { name: 'Lee Wei', relation: 'son', phone: '+65 9876 5432' })).statusCode).toBe(200);
 
       expect((await call('GET', '/api/me', cookie)).json()).toEqual({ name: 'Mr Lee', is_demo: false, text_size: 'xl', set_up: true });
       const metrics = (await call('GET', '/api/metrics', cookie)).json();

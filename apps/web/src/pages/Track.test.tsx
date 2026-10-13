@@ -20,7 +20,8 @@ async function openTrack() {
   await user.click(await screen.findByRole('button', { name: /Log in as demo patient/i }));
   await screen.findByRole('heading', { level: 1, name: /, Mdm Tan$/ });
   await user.click(screen.getByRole('button', { name: 'Track' }));
-  await screen.findByText('850 of 1,500 ml drunk');
+  // 850 ml from the seed, plus whatever earlier tests in this file logged and didn't undo.
+  await screen.findByText(/of 1,500 ml drunk/);
   return user;
 }
 
@@ -102,5 +103,36 @@ describe('Track · change cap size', () => {
 
     await user.click(screen.getByRole('button', { name: 'Save cap size' }));
     expect(await screen.findByRole('tabpanel', { name: 'Log drinks' })).toBeTruthy();
+  });
+});
+
+describe('Track · drink limit', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  // Last in the file: it leaves the mock API over the limit.
+  it('warns the moment drinks reach the limit, and keeps a warning while over', async () => {
+    const user = await openTrack();
+    const drinks = screen.getByRole('region', { name: "Today's drinks" });
+
+    // 850 of 1,500 ml: four full caps stay under the limit…
+    for (const total of ['1,000', '1,150', '1,300', '1,450']) {
+      await user.click(screen.getByRole('button', { name: 'Add Full cap, 150 ml' }));
+      await within(drinks).findByText(`${total} of 1,500 ml drunk`);
+    }
+    expect(screen.getByText('Almost at your limit. Small sips for the rest of today.')).toBeTruthy();
+    expect(screen.queryByRole('alertdialog')).toBeNull();
+
+    // …the fifth goes 100 ml over: a pop-up, then a banner that stays.
+    await user.click(screen.getByRole('button', { name: 'Add Full cap, 150 ml' }));
+    const warning = await screen.findByRole('alertdialog', { name: "You're 100 ml over today's drink limit" });
+    expect(within(warning).getByText(/Your limit is 1,500 ml\. Try to drink only small sips until tomorrow\./)).toBeTruthy();
+    await user.click(within(warning).getByRole('button', { name: 'OK, I understand' }));
+    expect(screen.queryByRole('alertdialog')).toBeNull();
+    expect(screen.getByRole('alert', { name: "You're 100 ml over today's drink limit" })).toBeTruthy();
+    expect(screen.queryByText('Almost at your limit. Small sips for the rest of today.')).toBeNull();
+    // SOS stays on screen.
+    expect(screen.getByRole('link', { name: /Emergency SOS/i })).toBeTruthy();
   });
 });

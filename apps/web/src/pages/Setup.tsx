@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react';
+import { clearDrafts, useDraft } from '../lib/draft';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { MEDICINE_CATALOG, clock } from '@ventra/core';
 import { SOSButton } from '../components';
@@ -9,13 +10,21 @@ import { field, fieldLabel, primaryButton, secondaryButton } from '../lib/formSt
 // A new patient starts empty; these steps give them their own limits and medicines.
 // NumbersStep, MedicinesStep and ContactStep are also used by My details (pages/MyDetails.tsx),
 // filled in with the patient's current values and without the step title.
+// In set-up each step keeps what was typed (draftKey, lib/draft.ts), so Back shows it again.
 const STEPS = 5;
 
 export default function Setup() {
   const { step } = useParams();
   const n = Math.min(Math.max(Number(step) || 1, 1), STEPS);
   const navigate = useNavigate();
-  const next = () => navigate(n < STEPS ? `/setup/${n + 1}` : '/home');
+  const next = () => {
+    if (n < STEPS) {
+      navigate(`/setup/${n + 1}`);
+      return;
+    }
+    clearDrafts('setup.');
+    navigate('/home');
+  };
 
   return (
     <div style={{ minHeight: '100vh', maxWidth: 480, margin: '0 auto', padding: '24px 20px 120px', display: 'flex', flexDirection: 'column', gap: 16, background: 'var(--color-canvas)' }}>
@@ -29,10 +38,16 @@ export default function Setup() {
         <SOSButton />
       </header>
       {n === 1 && <TextSizeStep onDone={next} />}
-      {n === 2 && <NumbersStep onDone={next} />}
-      {n === 3 && <MedicinesStep onDone={next} />}
+      {n === 2 && <NumbersStep onDone={next} draftKey="setup.numbers" />}
+      {n === 3 && <MedicinesStep onDone={next} draftKey="setup.medicines" />}
       {n === 4 && <CapStep onDone={next} />}
-      {n === 5 && <ContactStep onDone={next} />}
+      {n === 5 && <ContactStep onDone={next} draftKey="setup.contact" />}
+      {/* Step 1 has no way back: the account already exists by then. */}
+      {n > 1 && (
+        <Link to={`/setup/${n - 1}`} style={{ ...secondaryButton, textDecoration: 'none', color: 'var(--color-ink)' }}>
+          Back
+        </Link>
+      )}
     </div>
   );
 }
@@ -68,7 +83,7 @@ function Choice({ on, onClick, children }: { on: boolean; onClick: () => void; c
 function TextSizeStep({ onDone }: { onDone: () => void }) {
   const save = useSaveProfile();
   // Extra large is the app's normal size; Large makes everything a little smaller.
-  const [size, setSize] = useState<'large' | 'xl'>('xl');
+  const [size, setSize] = useDraft<'large' | 'xl'>('setup.text', 'xl');
   return (
     <>
       <Title>Make it easy to read</Title>
@@ -94,15 +109,17 @@ interface StepProps<T> {
   submitLabel?: string;
   // Set-up shows the step title; My details has it in the page header instead.
   showTitle?: boolean;
+  // Set-up only: keep what was typed under this key, so Back shows it again.
+  draftKey?: string;
 }
 
 // A3 · Clinic baselines (filled in by the care team)
 // My details passes the saved dry weight and alert amount: a dry-weight change bigger than the
 // alert amount asks whether to start the weight history again (set-up has no history, so it never asks).
-export function NumbersStep({ onDone, initial = EMPTY_NUMBERS, submitLabel = 'Save and next', showTitle = true, saved }: StepProps<NumbersValues> & { saved?: { dryKg: number; alertGainKg: number } }) {
+export function NumbersStep({ onDone, initial = EMPTY_NUMBERS, submitLabel = 'Save and next', showTitle = true, saved, draftKey }: StepProps<NumbersValues> & { saved?: { dryKg: number; alertGainKg: number } }) {
   const profile = useSaveProfile();
   const targets = useSaveTargets();
-  const [values, setValues] = useState(initial);
+  const [values, setValues] = useDraft(draftKey, initial);
   const [askRestart, setAskRestart] = useState(false);
   const set = (key: keyof typeof values) => (event: React.ChangeEvent<HTMLInputElement>) => setValues({ ...values, [key]: event.target.value });
   const numbers = {
@@ -178,9 +195,9 @@ export function NumbersStep({ onDone, initial = EMPTY_NUMBERS, submitLabel = 'Sa
 }
 
 // Medicines, picked from the heart-failure list
-export function MedicinesStep({ onDone, initial = {}, submitLabel, showTitle = true }: StepProps<Record<string, number[]>>) {
+export function MedicinesStep({ onDone, initial = {}, submitLabel, showTitle = true, draftKey }: StepProps<Record<string, number[]>>) {
   const save = useSaveMedications();
-  const [picked, setPicked] = useState<Record<string, number[]>>(initial);
+  const [picked, setPicked] = useDraft<Record<string, number[]>>(draftKey, initial);
   const toggleMed = (id: string, times: number[]) =>
     setPicked((current) => {
       const copy = { ...current };
@@ -246,7 +263,7 @@ export function MedicinesStep({ onDone, initial = {}, submitLabel, showTitle = t
 // A5 · Cap size (design/CapSize.dc.html)
 function CapStep({ onDone }: { onDone: () => void }) {
   const save = useSaveCap();
-  const [capMl, setCapMl] = useState(150);
+  const [capMl, setCapMl] = useDraft('setup.cap', 150);
   const sizes = [100, 150, 200];
   return (
     <>
@@ -275,12 +292,17 @@ function CapStep({ onDone }: { onDone: () => void }) {
 }
 
 // A6 · Who should we call? (design/Contacts.dc.html)
-export function ContactStep({ onDone, initial, submitLabel = 'Finish set-up', showTitle = true }: StepProps<{ name: string; relation: string }>) {
+export function ContactStep({ onDone, initial, submitLabel = 'Finish set-up', showTitle = true, draftKey }: StepProps<{ name: string; relation: string }>) {
   const save = useSaveContact();
-  const [name, setName] = useState(initial?.name ?? '');
-  const [relation, setRelation] = useState(initial?.relation ?? '');
-  const [phone, setPhone] = useState('');
-  const ready = name.trim().length > 0 && relation.trim().length > 0;
+  const [contact, setContact] = useDraft(draftKey, { name: initial?.name ?? '', relation: initial?.relation ?? '', phone: '' });
+  const { name, relation, phone } = contact;
+  const setName = (value: string) => setContact((current) => ({ ...current, name: value }));
+  const setRelation = (value: string) => setContact((current) => ({ ...current, relation: value }));
+  const setPhone = (value: string) => setContact((current) => ({ ...current, phone: value }));
+  // Needed for a new contact. When editing (initial), empty keeps the number on file.
+  const phoneDigits = phone.replace(/[\s()+-]/g, '');
+  const phoneOk = /^\d{8,15}$/.test(phoneDigits) || (initial != null && phone.trim() === '');
+  const ready = name.trim().length > 0 && relation.trim().length > 0 && phoneOk;
   return (
     <>
       {showTitle && <Title sub="If you need help, we will tell this person. You choose what they see later, in More.">Who should we tell?</Title>}
@@ -288,13 +310,17 @@ export function ContactStep({ onDone, initial, submitLabel = 'Finish set-up', sh
       <input id="c-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Tan Mei Ling" style={field} />
       <label htmlFor="c-rel" style={fieldLabel}>They are my…</label>
       <input id="c-rel" value={relation} onChange={(e) => setRelation(e.target.value)} placeholder="e.g. daughter" style={field} />
-      <label htmlFor="c-phone" style={fieldLabel}>Phone number (optional{initial ? ', leave empty to keep the one we have' : ''})</label>
-      <input id="c-phone" type="tel" inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} style={field} />
+      <label htmlFor="c-phone" style={fieldLabel}>Their phone number{initial ? ' (leave empty to keep the one we have)' : ''}</label>
+      <input id="c-phone" type="tel" inputMode="tel" autoComplete="off" placeholder="e.g. 9123 4567" aria-describedby="c-phone-hint" value={phone} onChange={(e) => setPhone(e.target.value)} style={field} />
+      {phone.trim() !== '' && !phoneOk ? (
+        <p id="c-phone-hint" role="alert" style={{ margin: 0, fontSize: 'var(--text-caption)', fontWeight: 600, color: 'var(--color-red)' }}>A phone number has at least 8 digits.</p>
+      ) : (
+        <span id="c-phone-hint" style={{ marginTop: -6, fontSize: 17, color: 'var(--color-ink-muted)' }}>So your care team can reach them if you need help.</span>
+      )}
       <SaveError show={save.isError} />
       <button type="button" disabled={!ready || save.isPending} onClick={() => save.mutate({ name: name.trim(), relation: relation.trim(), phone: phone.trim() || undefined }, { onSuccess: onDone })} style={primaryButton(ready)}>
         {submitLabel}
       </button>
-      {showTitle && <button type="button" onClick={onDone} style={{ ...secondaryButton, cursor: 'pointer' }}>Skip for now</button>}
     </>
   );
 }

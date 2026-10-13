@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
 import type { FluidEntryResponse, MetricsResponse } from '@ventra/core';
 import { LimitChangedNote } from '../components/LimitChangedNote';
+import { LimitWarningDialog, OverLimitBanner, overTitle } from '../components/LimitWarning';
 import { LoadError, Loading } from '../components/QueryState';
 import { WaterBottle } from '../components/WaterBottle';
 import { useAddFluid, useDeleteLastFluid, useFluid, useMetrics } from '../lib/api';
@@ -29,6 +30,8 @@ function DrinksView({ metrics, todayEntries }: { metrics: MetricsResponse; today
   const [risen, setRisen] = useState(false);
   const [splash, setSplash] = useState<{ text: string; id: number } | null>(null);
   const [message, setMessage] = useState('');
+  // Set when a drink takes today's total to or past the limit: the pop-up warning.
+  const [reachedLimit, setReachedLimit] = useState(false);
   const splashTimer = useRef<ReturnType<typeof setTimeout>>();
 
   // The bottle fills up from empty when the screen opens.
@@ -41,9 +44,21 @@ function DrinksView({ metrics, todayEntries }: { metrics: MetricsResponse; today
   const { fluidMl, capMl } = metrics.targets;
   const used = metrics.fluidToday;
   const state = drinkState(used, fluidMl);
-  // Limit lowered today below what's already drunk: explain instead of the "reached today's limit" banner.
+  // The limit that counts today: a limit changed today starts tomorrow (same as the traffic light).
   const changed = metrics.limitChangedToday.fluid;
-  const justChanged = changed != null && used > changed.toMl;
+  const todayLimit = changed ? changed.fromMl : fluidMl;
+  const isOver = todayLimit > 0 && used >= todayLimit;
+  const overText = `Your limit is ${ml(todayLimit)} ml. Try to drink only small sips until tomorrow. If you feel breathless or your ankles swell, call your nurse.`;
+  // Limit lowered today below what's already drunk, but still under the old one: explain that instead.
+  const justChanged = changed != null && used > changed.toMl && !isOver;
+
+  // Pop-up the moment today's total crosses the limit (watching the total, not the tap, so quick
+  // taps can't skip it). Opening the tab already over the limit shows only the banner.
+  const lastUsed = useRef(used);
+  useEffect(() => {
+    if (todayLimit > 0 && lastUsed.current < todayLimit && used >= todayLimit) setReachedLimit(true);
+    lastUsed.current = used;
+  }, [used, todayLimit]);
   const caps = capOptions(capMl);
   const busy = addFluid.isPending || undoFluid.isPending;
 
@@ -98,11 +113,14 @@ function DrinksView({ metrics, todayEntries }: { metrics: MetricsResponse; today
       </section>
 
       {justChanged && <LimitChangedNote what="drink" from={changed.fromMl} to={changed.toMl} unit="ml" />}
-      {!justChanged && state.near && (
-        <Banner tone="near">Almost at your limit. Small sips for the rest of today.</Banner>
+      {!justChanged && !isOver && state.near && (
+        <Banner>Almost at your limit. Small sips for the rest of today.</Banner>
       )}
-      {!justChanged && state.over && (
-        <Banner tone="over">You've reached today's limit. That's okay — let's slow down on drinks until tomorrow.</Banner>
+      {isOver && <OverLimitBanner title={overTitle('drink', used - todayLimit, 'ml')}>{overText}</OverLimitBanner>}
+      {reachedLimit && (
+        <LimitWarningDialog title={overTitle('drink', used - todayLimit, 'ml')} onClose={() => setReachedLimit(false)}>
+          {overText}
+        </LimitWarningDialog>
       )}
 
       <section style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -209,24 +227,15 @@ function DrinksView({ metrics, todayEntries }: { metrics: MetricsResponse; today
   );
 }
 
-function Banner({ tone, children }: { tone: 'near' | 'over'; children: string }) {
-  const near = tone === 'near';
-  const ink = near ? 'var(--color-yellow-ink)' : 'var(--color-green)';
+// "Almost at your limit" (80% or more). Over the limit uses OverLimitBanner instead.
+function Banner({ children }: { children: string }) {
+  const ink = 'var(--color-yellow-ink)';
   return (
-    <div style={{ display: 'flex', gap: 14, padding: 18, borderRadius: 14, background: near ? 'var(--color-yellow-soft)' : 'var(--color-green-soft)', border: `3px solid ${ink}` }}>
+    <div style={{ display: 'flex', gap: 14, padding: 18, borderRadius: 14, background: 'var(--color-yellow-soft)', border: `3px solid ${ink}` }}>
       <svg style={{ flexShrink: 0, color: ink }} width={34} height={34} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        {near ? (
-          <>
-            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" />
-            <path d="M12 9v4" />
-            <path d="M12 17h.01" />
-          </>
-        ) : (
-          <>
-            <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z" />
-            <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12" />
-          </>
-        )}
+        <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" />
+        <path d="M12 9v4" />
+        <path d="M12 17h.01" />
       </svg>
       <p style={{ margin: 0, fontSize: 21, lineHeight: '30px', fontWeight: 600 }}>{children}</p>
     </div>

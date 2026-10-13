@@ -11,6 +11,9 @@ type Db = BetterSQLite3Database<typeof schema>;
 export interface DemoDataOptions {
   // Yellow-day demo: today's water pill is recorded as missed instead of taken.
   yellowDay?: boolean;
+  // Start-of-day demo: today's weight, morning pills and "how I feel" are not done yet, so
+  // Home shows the whole morning to-do.
+  freshMorning?: boolean;
   // Telegram chat to keep (or set) on the demo family contact.
   familyChatId?: string | null;
 }
@@ -45,6 +48,7 @@ function insertDemoData(db: Db, patientId: number, today: IsoDate, options: Demo
   const waterPill = record.meds.find((med) => med.name === 'Water pill');
   const isYellowDayPill = (date: IsoDate, med: string) =>
     Boolean(options.yellowDay) && date === record.today && med === waterPill?.id;
+  const notDoneYet = (date: string) => Boolean(options.freshMorning) && date === record.today;
 
   db.update(schema.patients).set({
     name: record.patient.name,
@@ -100,6 +104,8 @@ function insertDemoData(db: Db, patientId: number, today: IsoDate, options: Demo
 
   for (const dose of record.taken) {
     if (isYellowDayPill(dose.date, dose.med)) continue;
+    // Morning doses before noon.
+    if (notDoneYet(dose.date) && dose.time < 12 * 60) continue;
     db.insert(schema.doseEvents).values({
       patientId,
       date: day(dose.date),
@@ -113,7 +119,7 @@ function insertDemoData(db: Db, patientId: number, today: IsoDate, options: Demo
   }
 
   for (const [date, weightKg] of Object.entries(record.weights)) {
-    if (weightKg == null) continue;
+    if (weightKg == null || notDoneYet(date)) continue;
     db.insert(schema.weights).values({ patientId, date: day(date as IsoDate), weightKg }).run();
   }
 
@@ -154,6 +160,7 @@ function insertDemoData(db: Db, patientId: number, today: IsoDate, options: Demo
   db.insert(schema.visits).values({ patientId, date: day('2026-10-27'), time: '9:00 AM', title: 'Blood test', doctor: null, place: 'Polyclinic lab', bring: null }).run();
 
   for (const symptom of record.symptoms) {
+    if (notDoneYet(symptom.date)) continue;
     db.insert(schema.symptoms).values({ patientId, date: day(symptom.date), key: symptom.key, sev: symptom.sev }).run();
   }
 
@@ -186,6 +193,7 @@ function clearPatientData(db: Db, patientId: number) {
   db.delete(schema.uiFlags).where(eq(schema.uiFlags.patientId, patientId)).run();
   db.delete(schema.chatMessages).where(eq(schema.chatMessages.patientId, patientId)).run();
   db.delete(schema.visits).where(eq(schema.visits.patientId, patientId)).run();
+  db.delete(schema.visitQuestions).where(eq(schema.visitQuestions.patientId, patientId)).run();
 }
 
 // Inserts Mdm Tan (phone 81234567, PIN 1234) with history ending on `today`.
