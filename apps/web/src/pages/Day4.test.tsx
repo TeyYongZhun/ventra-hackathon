@@ -70,6 +70,8 @@ describe('Day 4 screens', () => {
       const user = await openTrackTab(/Scan meal/);
       const scan = await screen.findByRole('region', { name: 'Scan my meal' });
       expect(within(scan).getByText("Take a photo before you eat. We'll tell you how salty it is.")).toBeTruthy();
+      // An optional note helps the AI.
+      await user.type(within(scan).getByLabelText('Anything we should know? (optional)'), 'chicken rice, half portion');
 
       await user.upload(within(scan).getByLabelText('Meal photo'), new File(['photo'], 'lunch.jpg', { type: 'image/jpeg' }));
       const result = await screen.findByRole('region', { name: 'Your meal photo' });
@@ -77,16 +79,46 @@ describe('Day 4 screens', () => {
       expect(within(result).getByRole('img', { name: 'Your photo of Chicken rice' })).toBeTruthy();
       expect(within(result).getByText('High in salt — about ½ teaspoon')).toBeTruthy();
       expect(within(result).getByText(/That is 65% of your day./)).toBeTruthy();
+      // 500 mg eaten so far + 1,300 mg: still under the 2,000 mg limit.
+      expect(within(result).queryByText(/over today's salt limit/)).toBeNull();
+      // The soup with it goes into today's drinks, and the box says so.
+      const drinks = within(result).getByRole('region', { name: 'Added to your drinks' });
+      expect(within(drinks).getByText("This meal has about 150 ml of soup. It will be added to today's drinks.")).toBeTruthy();
+      expect(within(result).queryByRole('checkbox')).toBeNull();
       // Not logged yet.
       const log = screen.getByRole('region', { name: "Today's food log" });
       expect(within(log).queryByText('Chicken rice')).toBeNull();
 
       await user.click(within(result).getByRole('button', { name: 'Yes, log it' }));
-      expect(await screen.findByText('Chicken rice logged.')).toBeTruthy();
+      expect(await screen.findByText('Chicken rice logged. 150 ml added to your drinks.')).toBeTruthy();
       expect(screen.queryByRole('region', { name: 'Your meal photo' })).toBeNull();
+      expect((screen.getByLabelText('Anything we should know? (optional)') as HTMLInputElement).value).toBe('');
       // The new meal opens on its card, photo first.
       expect(within(log).getByRole('img', { name: 'Your photo of Chicken rice' }).getAttribute('src')).toBe('data:image/jpeg;base64,/9j/AAAA');
+      expect(within(log).getByText('150 ml added to your drinks')).toBeTruthy();
       expect(within(log).getByText('Estimated from your photo')).toBeTruthy();
+    });
+
+    it('checks the same photo again with what the patient says, and warns about salt before and after', async () => {
+      const user = await openTrackTab(/Scan meal/);
+      const scan = await screen.findByRole('region', { name: 'Scan my meal' });
+      await user.upload(within(scan).getByLabelText('Meal photo'), new File(['photo'], 'dinner.jpg', { type: 'image/jpeg' }));
+      const first = await screen.findByRole('region', { name: 'Your meal photo' });
+
+      await user.click(within(first).getByRole('button', { name: 'Not right? Tell us what it is' }));
+      await user.type(within(first).getByLabelText('What is it?'), 'fish soup with noodles');
+      await user.click(within(first).getByRole('button', { name: 'Check again' }));
+      expect(await screen.findByRole('heading', { name: 'Fish soup with noodles' })).toBeTruthy();
+      const result = screen.getByRole('region', { name: 'Your meal photo' });
+
+      // 1,800 mg eaten so far (porridge and chicken rice) + 1,100 mg.
+      expect(within(result).getByText("This meal would take you 900 mg over today's salt limit (2,000 mg).")).toBeTruthy();
+      await user.click(within(result).getByRole('button', { name: 'Yes, log it' }));
+      expect(await screen.findByText('Fish soup with noodles logged. 150 ml added to your drinks.')).toBeTruthy();
+
+      // Now over: the salt card keeps a warning.
+      expect(await screen.findByRole('alert', { name: "You're 900 mg over today's salt limit" })).toBeTruthy();
+      expect(screen.getByText(/Your limit is 2,000 mg\. Choose low-salt food for the rest of today/)).toBeTruthy();
     });
   });
 
@@ -96,8 +128,8 @@ describe('Day 4 screens', () => {
       const today = await screen.findByRole('region', { name: "Today's weight" });
       expect(within(today).getByText('Steady — all good')).toBeTruthy();
       expect(within(today).getByText('Today at 7:10 AM')).toBeTruthy();
-      // Demo patient only: placeholder until the Bluetooth scale is built.
-      expect(screen.getByText('Scale connected')).toBeTruthy();
+      // No Bluetooth scale: weights are typed in.
+      expect(screen.queryByText('Scale connected')).toBeNull();
       // Since yesterday (58.2 → 58.4) and over 3 days (58.2 → 58.4) are both +0.2 kg.
       expect(screen.getAllByText('+0.2 kg')).toHaveLength(2);
       expect(screen.getByRole('img', { name: /^Weight from .* to Wed, 7 October \(58\.4 kg\)$/ })).toBeTruthy();
@@ -170,8 +202,18 @@ describe('Day 4 screens', () => {
       );
 
       await user.click(await screen.findByRole('link', { name: 'Create an account' }));
+      // A way back to log in, at the top and under the form.
+      expect(screen.getAllByRole('link', { name: 'Back to log in' }).map((link) => link.getAttribute('href'))).toEqual(['/login', '/login']);
       await user.type(screen.getByLabelText('Your name'), 'Mr Lee');
       await user.type(screen.getByLabelText('Phone number'), '9123 4567');
+      await user.type(screen.getByLabelText('Choose a 4-digit PIN'), '1111');
+
+      // Back to log in and in again: the name and phone are kept, the PIN is not.
+      await user.click(screen.getAllByRole('link', { name: 'Back to log in' })[0]!);
+      await user.click(await screen.findByRole('link', { name: 'Create an account' }));
+      expect((screen.getByLabelText('Your name') as HTMLInputElement).value).toBe('Mr Lee');
+      expect((screen.getByLabelText('Phone number') as HTMLInputElement).value).toBe('9123 4567');
+      expect((screen.getByLabelText('Choose a 4-digit PIN') as HTMLInputElement).value).toBe('');
       await user.type(screen.getByLabelText('Choose a 4-digit PIN'), '2468');
       await user.type(screen.getByLabelText('Type the PIN again'), '2468');
       await user.click(screen.getByRole('checkbox'));
@@ -190,6 +232,14 @@ describe('Day 4 screens', () => {
       await user.click(screen.getByRole('button', { name: 'Save and next' }));
 
       expect(await screen.findByRole('heading', { name: 'Medicines' })).toBeTruthy();
+      // Back one step: the numbers typed there are still filled in.
+      await user.click(screen.getAllByRole('link', { name: 'Back' })[0]!);
+      expect(await screen.findByRole('heading', { name: "Patient's numbers" })).toBeTruthy();
+      expect((screen.getByLabelText('Age') as HTMLInputElement).value).toBe('68');
+      expect((screen.getByLabelText('Drink limit per day') as HTMLInputElement).value).toBe('1200');
+      await user.click(screen.getByRole('button', { name: 'Save and next' }));
+
+      expect(await screen.findByRole('heading', { name: 'Medicines' })).toBeTruthy();
       await user.click(screen.getByRole('button', { name: /Water pill/ }));
       expect(screen.getByRole('group', { name: 'Water pill times' })).toBeTruthy();
       await user.click(screen.getByRole('button', { name: 'Save and next' }));
@@ -201,9 +251,20 @@ describe('Day 4 screens', () => {
       expect(await screen.findByRole('heading', { name: 'Who should we tell?' })).toBeTruthy();
       await user.type(screen.getByLabelText("Family member's name"), 'Lee Wei');
       await user.type(screen.getByLabelText('They are my…'), 'son');
+      // The phone number is needed, and there is no skipping this step.
+      expect(screen.queryByRole('button', { name: 'Skip for now' })).toBeNull();
+      expect((screen.getByRole('button', { name: 'Finish set-up' }) as HTMLButtonElement).disabled).toBe(true);
+      await user.type(screen.getByLabelText('Their phone number'), '123');
+      expect(screen.getByText('A phone number has at least 8 digits.')).toBeTruthy();
+      await user.type(screen.getByLabelText('Their phone number'), '4 5678');
+      // Each step after the first has a way back.
+      // (the round arrow at the top and the Back button under the main one).
+      expect(screen.getAllByRole('link', { name: 'Back' }).map((link) => link.getAttribute('href'))).toEqual(['/setup/4', '/setup/4']);
       await user.click(screen.getByRole('button', { name: 'Finish set-up' }));
 
       expect(await screen.findByRole('heading', { level: 1, name: /, Mdm Tan$/ })).toBeTruthy();
+      // Finished: nothing typed is left behind.
+      expect(Object.keys(sessionStorage).filter((key) => key.startsWith('ventra.draft.'))).toEqual([]);
     });
   });
 });

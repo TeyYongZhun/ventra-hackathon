@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import type { FamilySettingsResponse, FamilySettingsUpdateRequest } from '@ventra/core';
 import { LockedSwitch, PageHeader } from '../components';
 import { LoadError, Loading } from '../components/QueryState';
@@ -136,9 +136,12 @@ function ConnectTelegram({ settings, reset }: { settings: FamilySettingsResponse
             Ask {name} to open this on their phone, then tap <strong>Start</strong>:
           </p>
           {settings.linkUrl ? (
-            <a href={settings.linkUrl} target="_blank" rel="noreferrer" style={{ fontSize: 20, lineHeight: '28px', fontWeight: 700, color: 'var(--color-blue-ink)', overflowWrap: 'anywhere' }}>
-              {settings.linkUrl}
-            </a>
+            <>
+              <a href={settings.linkUrl} target="_blank" rel="noreferrer" style={{ fontSize: 20, lineHeight: '28px', fontWeight: 700, color: 'var(--color-blue-ink)', overflowWrap: 'anywhere' }}>
+                {settings.linkUrl}
+              </a>
+              <ShareLink url={settings.linkUrl} />
+            </>
           ) : (
             <p style={{ margin: 0, fontSize: 20, lineHeight: '28px' }}>Send this to the Ventra bot: <strong>/start {settings.linkCode}</strong></p>
           )}
@@ -151,6 +154,74 @@ function ConnectTelegram({ settings, reset }: { settings: FamilySettingsResponse
       )}
       {reset}
     </section>
+  );
+}
+
+// Copies the Telegram link, or sends it with the phone's own share sheet (WhatsApp, SMS…)
+// where the browser has one. Copy falls back to a hidden text box on plain-http pages.
+function ShareLink({ url }: { url: string }) {
+  const [copied, setCopied] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const canShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
+
+  useEffect(() => {
+    if (!copied) return;
+    const timer = setTimeout(() => setCopied(false), 2500);
+    return () => clearTimeout(timer);
+  }, [copied]);
+
+  async function copy() {
+    setFailed(false);
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url);
+      } else {
+        const box = document.createElement('textarea');
+        box.value = url;
+        box.setAttribute('readonly', '');
+        box.style.position = 'fixed';
+        box.style.opacity = '0';
+        document.body.appendChild(box);
+        box.select();
+        const ok = document.execCommand('copy');
+        box.remove();
+        if (!ok) throw new Error('copy failed');
+      }
+      setCopied(true);
+    } catch {
+      setFailed(true);
+    }
+  }
+
+  async function send() {
+    try {
+      await navigator.share({ title: 'Ventra', text: 'Open this link and tap Start to get Ventra updates.', url });
+    } catch {
+      // Closed the share sheet: nothing to do.
+    }
+  }
+
+  const button = { minHeight: 'var(--touch-min)', flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: '0 18px', borderRadius: 'var(--radius-pill)', border: '2.5px solid var(--color-ink)', fontFamily: 'inherit', fontSize: 20, fontWeight: 700, color: 'var(--color-ink)', cursor: 'pointer' } as const;
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+        <button type="button" onClick={copy} style={{ ...button, background: copied ? 'var(--color-green-soft)' : 'var(--color-surface)' }}>
+          <svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            {copied ? <path d="M20 6 9 17l-5-5" /> : <><rect x={9} y={9} width={13} height={13} rx={2} /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></>}
+          </svg>
+          {copied ? 'Copied!' : 'Copy link'}
+        </button>
+        {canShare && (
+          <button type="button" onClick={send} style={{ ...button, border: 0, background: 'var(--color-blue)' }}>
+            <svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m22 2-7 20-4-9-9-4Z" /><path d="M22 2 11 13" /></svg>
+            Send link
+          </button>
+        )}
+      </div>
+      <p role="status" aria-live="polite" style={{ margin: 0, minHeight: 0, fontSize: 18, lineHeight: '24px', fontWeight: 600, color: failed ? 'var(--color-red)' : 'var(--color-ink-muted)' }}>
+        {failed ? "Couldn't copy. Press and hold the link above to copy it." : copied ? 'Link copied. Paste it in a message to your family.' : ''}
+      </p>
+    </div>
   );
 }
 

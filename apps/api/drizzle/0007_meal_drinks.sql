@@ -1,0 +1,1 @@
+ALTER TABLE `fluid_entries` ADD `meal_id` integer;

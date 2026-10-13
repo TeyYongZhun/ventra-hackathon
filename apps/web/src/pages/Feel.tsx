@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { dayShort, symptomLabel, type SymptomKey } from '@ventra/core';
 import { PageHeader } from '../components';
 import { useAddSymptom, useMetrics } from '../lib/api';
+import { markCheckedIn } from '../lib/todo';
 import { micEnabled } from '../lib/prefs';
 import { recognitionClass, speechErrorMessage, type Recognition } from '../lib/speech';
 
@@ -138,10 +139,18 @@ export default function Feel() {
     }
   }
 
+  // "I feel fine" saves no symptoms, but still counts as today's check-in on the to-do.
+  function checkInFine() {
+    if (metrics.data) markCheckedIn(metrics.data.today);
+    setStatus('saved');
+  }
+
   async function save() {
     setStatus('saving');
     try {
       for (const key of picked) await add.mutateAsync({ key, sev });
+      // Ticks "How do you feel today?" off the morning to-do.
+      if (metrics.data) markCheckedIn(metrics.data.today);
       await metrics.refetch();
       setStatus('saved');
     } catch {
@@ -232,7 +241,7 @@ export default function Feel() {
       <button
         type="button"
         disabled={!ready || status === 'saving'}
-        onClick={() => (fine ? setStatus('saved') : save())}
+        onClick={() => (fine ? checkInFine() : save())}
         style={{ minHeight: 80, borderRadius: 'var(--radius-pill)', border: 0, background: ready ? 'var(--color-blue)' : 'var(--color-sunken)', color: ready ? 'var(--color-ink)' : 'var(--color-ink-muted)', fontFamily: 'inherit', fontSize: 26, fontWeight: 700, cursor: ready ? 'pointer' : 'default' }}
       >
         {status === 'saving' ? 'Saving…' : 'Save how I feel'}

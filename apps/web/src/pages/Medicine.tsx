@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { clock, type DoseStatus, type IsoDate, type Medicine as MedicineInfo, type MetricsResponse } from '@ventra/core';
 import { PageHeader } from '../components';
 import { LoadError, Loading } from '../components/QueryState';
+import { PhoneRemindersSetting } from '../components/DoseReminder';
 import { ScanBoxCard } from '../components/ScanBoxCard';
 import { useConfirmDose, useMetrics } from '../lib/api';
 
@@ -64,6 +65,7 @@ function MedicineView({ metrics }: { metrics: MetricsResponse }) {
             onTaken={markTaken}
           />
         ))}
+      <PhoneRemindersSetting />
       <p style={{ margin: 0, display: 'flex', gap: 10, fontSize: 'var(--text-caption)', lineHeight: '27px', color: 'var(--color-ink-muted)' }}>
         <svg style={{ flexShrink: 0 }} width={24} height={24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.25} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <circle cx={12} cy={12} r={10} />

@@ -172,7 +172,8 @@ export interface FluidDeleteResponse {
 // Log a meal: a food from FOODS (packages/core/foods.ts), or a photo the patient just scanned
 // (POST /api/vision/meal → scanId). The server fills in the nutrition values from the food or
 // from its own stored scan, and the meal name (Breakfast/Lunch/Dinner/Snack) from the time.
-export type MealCreateRequest = { foodId: string } | { scanId: number };
+// addFluid (default true): also log the soup or drink the scan found (estimate.fluidMl) as a drink.
+export type MealCreateRequest = { foodId: string } | { scanId: number; addFluid?: boolean };
 
 // Nutrition estimate for one meal: plate is carbs, protein, fat shares (adds up to 1).
 export interface MealEstimate {
@@ -186,6 +187,9 @@ export interface MealEstimate {
   fat: MacroLog;
   plate: [number, number, number];
   tip: string;
+  // From a scan: liquid in the meal that will be drunk (soup, broth, a drink), and what it is.
+  fluidMl?: number;
+  fluidWhat?: string;
 }
 
 export interface MealListEntry extends MealEstimate {
@@ -195,15 +199,19 @@ export interface MealListEntry extends MealEstimate {
   // Photo from "Scan my meal" (same-origin, needs the session cookie), or null for a food
   // picked from the list.
   photoUrl: string | null;
+  // Soup or drink from this meal that was added to today's drinks (undone with the meal).
+  fluidAddedMl: number | null;
 }
 
 // ------------------------------------------------------------------
 // Meal photo scan (POST /api/vision/meal)
 // ------------------------------------------------------------------
 // photo: the JPEG as base64 (a data: URL prefix is allowed). The app resizes it first.
-export interface MealScanRequest {
-  photo: string;
-}
+// note: what the patient says about the meal ("fish soup, half portion"), to help the AI.
+// To check the same photo again with a note, send the scanId instead of the photo.
+export type MealScanRequest =
+  | { photo: string; note?: string }
+  | { scanId: number; note: string };
 
 // found=false: the AI saw no meal in the photo. sure=false: it found one but is not confident.
 export type MealScanResponse =
@@ -347,10 +355,18 @@ export interface AskRequest {
 // dose: refuse line (show nurse card) · unsure: fallback line
 export type AskReplyKind = 'answer' | 'emergency' | 'dose' | 'unsure';
 
+// Set when the question went on the patient's "Questions to ask" for their next visit
+// (added), or was already there. The chat says so under the reply.
+export interface VisitQuestionNote {
+  status: 'added' | 'already';
+  question: string;
+}
+
 export interface AskResponse {
   reply: string;
   kind: AskReplyKind;
   request_id: string;
+  visitQuestion: VisitQuestionNote | null;
 }
 
 // ------------------------------------------------------------------
@@ -516,3 +532,26 @@ export interface MedicineLeaflet {
 export type MedicineScanResponse =
   | { status: 'yours' | 'not_yours'; medicine: Medicine; leaflet: MedicineLeaflet }
   | { status: 'unknown' };
+
+// ------------------------------------------------------------------
+// Questions for the next visit (GET /api/visit-questions)
+// ------------------------------------------------------------------
+// Added by the AI when something the patient asked in Ask AI needs their own doctor to explain.
+export interface VisitQuestion {
+  id: number;
+  // As the patient will ask it, e.g. "Can I take my water pill later on days I go out?"
+  question: string;
+  // What they typed in Ask AI
+  asked: string;
+  createdAt: string;
+}
+
+export interface VisitQuestionListResponse {
+  // Newest first
+  questions: VisitQuestion[];
+}
+
+export interface VisitQuestionDeleteResponse {
+  ok: true;
+  deletedId: number;
+}

@@ -3,13 +3,14 @@ import { symptomLabel, type Report as ReportData } from '@ventra/core';
 import { PageHeader } from '../components';
 import { DateBox } from '../components/VisitCards';
 import { LoadError, Loading } from '../components/QueryState';
-import { useMetrics, useReport, useVisits } from '../lib/api';
+import { useDeleteVisitQuestion, useMetrics, useReport, useVisitQuestions, useVisits } from '../lib/api';
 import { dayHeading } from '../lib/copy';
 
 // E2 · Doctor visit prep (design/VisitPrep.dc.html), from the Home tile "Visit prep".
 // Built from GET /api/report and the weight history in /api/metrics. Questions are made from
-// the patient's own logs; the next visit (GET /api/visits) sits at the top. Left out (no data or connection yet):
-// "Add my own question" and "Send to doctor or family".
+// the patient's own logs, plus the ones the AI added when something they asked in Ask AI needs
+// their doctor (GET /api/visit-questions, removable). The next visit (GET /api/visits) sits at
+// the top. Left out (no connection yet): "Send to doctor or family".
 const header = <PageHeader back={{ to: '/more', label: 'Back to calendar' }} title="For my doctor" titleSize={32} />;
 const canSpeak = () => typeof window !== 'undefined' && 'speechSynthesis' in window;
 
@@ -39,14 +40,27 @@ function VisitPrepView({ report, history }: { report: ReportData; history: Array
   const change = first && last ? last.kg - first.kg : null;
   const steady = report.weightChange == null || Math.abs(report.weightChange) < 1;
 
-  const questions = [
-    ankles > 0 ? `My ankles were swollen on ${plural(ankles, 'day')}. Is that a problem?` : '',
-    tired > 0 ? `I felt tired on ${plural(tired, 'day')}. Is it my medicine?` : '',
-    ...missed.map((med) => `I missed my ${med.generic.toLowerCase()} ${plural(med.missedDates.length, 'time')}. What should I do if I miss it?`),
-    'Are my drink and salt limits still right for me?',
-  ].filter(Boolean);
+  const fromAsk = useVisitQuestions().data?.questions ?? [];
+  const removeQuestion = useDeleteVisitQuestion();
+  const questions: Array<{ text: string; askId?: number }> = [
+    ...fromAsk.map((q) => ({ text: q.question, askId: q.id })),
+    ...[
+      ankles > 0 ? `My ankles were swollen on ${plural(ankles, 'day')}. Is that a problem?` : '',
+      tired > 0 ? `I felt tired on ${plural(tired, 'day')}. Is it my medicine?` : '',
+      ...missed.map((med) => `I missed my ${med.generic.toLowerCase()} ${plural(med.missedDates.length, 'time')}. What should I do if I miss it?`),
+      'Are my drink and salt limits still right for me?',
+    ].filter(Boolean).map((text) => ({ text })),
+  ];
 
-  const [asked, setAsked] = useState<boolean[]>(() => questions.map(() => true));
+  // Every question starts ticked; the patient unticks the ones they won't ask.
+  const [skipped, setSkipped] = useState<Set<string>>(() => new Set());
+  const asked = (text: string) => !skipped.has(text);
+  const toggle = (text: string) => setSkipped((current) => {
+    const next = new Set(current);
+    if (next.has(text)) next.delete(text);
+    else next.add(text);
+    return next;
+  });
   const [speaking, setSpeaking] = useState(false);
   useEffect(() => () => { if (canSpeak()) window.speechSynthesis.cancel(); }, []);
 
@@ -54,7 +68,7 @@ function VisitPrepView({ report, history }: { report: ReportData; history: Array
     if (!canSpeak()) return;
     window.speechSynthesis.cancel();
     if (speaking) { setSpeaking(false); return; }
-    const chosen = questions.filter((_, i) => asked[i]);
+    const chosen = questions.map((q) => q.text).filter(asked);
     const utterance = new SpeechSynthesisUtterance(chosen.length ? `Questions for my doctor. ${chosen.join(' ')}` : 'No questions picked.');
     utterance.lang = 'en-SG';
     utterance.rate = 0.9;
@@ -102,21 +116,47 @@ function VisitPrepView({ report, history }: { report: ReportData; history: Array
 
       <section style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: 20, borderRadius: 24, background: 'var(--color-surface)' }}>
         <h2 style={{ margin: '0 0 8px', fontSize: 28, lineHeight: '34px', fontWeight: 700 }}>Questions to ask</h2>
-        {questions.map((question, i) => (
-          <button
-            key={question}
-            type="button"
-            role="checkbox"
-            aria-checked={asked[i]}
-            onClick={() => setAsked((current) => current.map((on, j) => (j === i ? !on : on)))}
-            style={{ minHeight: 84, display: 'flex', alignItems: 'center', gap: 14, padding: '10px 0', border: 0, borderTop: '2px solid var(--color-line)', background: 'var(--color-surface)', color: 'var(--color-ink)', fontFamily: 'inherit', textAlign: 'left', cursor: 'pointer' }}
-          >
-            <span aria-hidden="true" style={{ width: 48, height: 48, flexShrink: 0, boxSizing: 'border-box', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 12, background: asked[i] ? 'var(--color-blue)' : 'var(--color-surface)', border: '3px solid var(--color-ink)' }}>
-              {asked[i] && <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>}
-            </span>
-            <span style={{ flex: 1, fontSize: 21, lineHeight: '29px', fontWeight: 600 }}>{question}</span>
-          </button>
+        {questions.map(({ text, askId }) => (
+          <div key={text} style={{ display: 'flex', alignItems: 'center', gap: 8, borderTop: '2px solid var(--color-line)' }}>
+            <button
+              type="button"
+              role="checkbox"
+              aria-checked={asked(text)}
+              onClick={() => toggle(text)}
+              style={{ flex: 1, minWidth: 0, minHeight: 84, display: 'flex', alignItems: 'center', gap: 14, padding: '10px 0', border: 0, background: 'var(--color-surface)', color: 'var(--color-ink)', fontFamily: 'inherit', textAlign: 'left', cursor: 'pointer' }}
+            >
+              <span aria-hidden="true" style={{ width: 48, height: 48, flexShrink: 0, boxSizing: 'border-box', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 12, background: asked(text) ? 'var(--color-blue)' : 'var(--color-surface)', border: '3px solid var(--color-ink)' }}>
+                {asked(text) && <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>}
+              </span>
+              <span style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <span style={{ fontSize: 21, lineHeight: '29px', fontWeight: 600 }}>{text}</span>
+                {askId != null && (
+                  <span style={{ alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: 6, padding: '2px 10px', borderRadius: 'var(--radius-pill)', background: 'var(--color-iris-soft)', fontSize: 16, lineHeight: '22px', fontWeight: 700 }}>
+                    <svg width={16} height={16} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2c.6 4.8 2.4 7.2 10 10-7.6 2.8-9.4 5.2-10 10-.6-4.8-2.4-7.2-10-10 7.6-2.8 9.4-5.2 10-10z" /></svg>
+                    From Ask AI
+                  </span>
+                )}
+              </span>
+            </button>
+            {askId != null && (
+              <button
+                type="button"
+                data-noprint
+                aria-label={`Remove question: ${text}`}
+                disabled={removeQuestion.isPending}
+                onClick={() => removeQuestion.mutate(askId)}
+                style={{ width: 48, height: 48, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 'var(--radius-pill)', border: '2.5px solid var(--color-ink)', background: 'var(--color-surface)', color: 'var(--color-ink)', cursor: 'pointer' }}
+              >
+                <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.75} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+              </button>
+            )}
+          </div>
         ))}
+        {fromAsk.length === 0 && (
+          <p style={{ margin: '4px 0 0', fontSize: 18, lineHeight: '25px', color: 'var(--color-ink-muted)' }}>
+            When you ask something in Ask AI that your doctor should answer, we'll add it here.
+          </p>
+        )}
       </section>
 
       <div data-noprint style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>

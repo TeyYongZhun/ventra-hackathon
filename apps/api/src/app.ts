@@ -302,7 +302,14 @@ export function createApiApp(options: CreateApiAppOptions) {
   registerFamilyRoutes(app, { db, now, telegram });
   registerTelegramRoutes(app, { db, now, telegram, webhookSecret: options.telegramWebhookSecret });
   registerDemoRoutes(app, { db, now });
-  registerMealRoutes(app, { db, now });
+  registerMealRoutes(app, {
+    db,
+    now,
+    onAlert: (patientId, alertId) => {
+      notifyAlert(db, telegram, patientId, alertId, now())
+        .catch((error) => app.log.error({ err: error, alertId }, 'Failed to tell family about alert'));
+    },
+  });
   registerVisionRoutes(app, { db, now, vision: options.vision });
   registerMedicineRoutes(app, { db });
   registerVisitRoutes(app, { db, now });
@@ -310,6 +317,7 @@ export function createApiApp(options: CreateApiAppOptions) {
   registerAskRoutes(app, {
     db,
     adp: options.adp,
+    vision: options.vision,
     now,
     pseudonymSecret: options.pseudonymSecret || process.env.SESSION_SECRET || 'ventra-dev-pseudonym-salt',
   });

@@ -94,6 +94,8 @@ export const fluidEntries = sqliteTable('fluid_entries', {
   what: text('what').notNull(),
   ml: integer('ml').notNull(),
   deletedAt: text('deleted_at'),
+  // Soup or a drink logged with a scanned meal: undoing the meal removes it too.
+  mealId: integer('meal_id'),
 }, (table) => ({
   patientIdIdx: index('fluid_entries_patient_id_idx').on(table.patientId),
 }));
@@ -231,4 +233,18 @@ export const visits = sqliteTable('visits', {
   bring: text('bring'),
 }, (table) => ({
   patientIdIdx: index('visits_patient_id_idx').on(table.patientId),
+}));
+
+// Questions for the next doctor visit, added when the AI decides something the patient asked in
+// Ask AI needs their own doctor to explain. Shown on Visit prep; the patient can remove them.
+export const visitQuestions = sqliteTable('visit_questions', {
+  id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
+  patientId: integer('patient_id').notNull().references(() => patients.id),
+  createdAt: text('created_at').notNull(),
+  // The question as the patient will ask it, e.g. "Can I take my water pill later when I go out?"
+  question: text('question').notNull(),
+  // What they typed in Ask AI
+  asked: text('asked').notNull(),
+}, (table) => ({
+  patientIdIdx: index('visit_questions_patient_id_idx').on(table.patientId),
 }));

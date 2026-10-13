@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { MealCard } from '../components/MealCard';
 import { MealScan } from '../components/MealScan';
 import { LimitChangedNote } from '../components/LimitChangedNote';
+import { OverLimitBanner, overTitle } from '../components/LimitWarning';
 import { LoadError, Loading } from '../components/QueryState';
 import { SaltBowl } from '../components/SaltBowl';
 import { useDeleteLastMeal, useMeals, useMetrics } from '../lib/api';
@@ -26,16 +27,24 @@ export function MealsTab() {
   const used = metrics.data.sodiumToday;
   const entries = meals.data.entries;
   const busy = undoMeal.isPending;
-  // Salt limit lowered today below what's already eaten: today keeps the old limit.
+  // A limit changed today starts tomorrow: today counts with the old one (same as the traffic light).
   const changed = metrics.data.limitChangedToday.sodium;
+  const todayLimit = changed ? changed.fromMg : limit;
+  const saltOver = todayLimit > 0 && used >= todayLimit;
+  const drinksChanged = metrics.data.limitChangedToday.fluid;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
       <MealScan
-        limitMg={limit}
+        totals={{
+          saltUsedMg: used,
+          saltLimitMg: todayLimit,
+          drinksUsedMl: metrics.data.fluidToday,
+          drinksLimitMl: drinksChanged ? drinksChanged.fromMl : metrics.data.targets.fluidMl,
+        }}
         onLogged={(meal) => {
           setOpenId(meal.id);
-          setMessage(`${meal.what} logged.`);
+          setMessage(`${meal.what} logged.${meal.fluidAddedMl ? ` ${num(meal.fluidAddedMl)} ml added to your drinks.` : ''}`);
         }}
       />
       <section aria-label="Today's salt" style={{ display: 'flex', alignItems: 'center', gap: 22, padding: 'var(--space-6)', borderRadius: 32, background: 'var(--color-yellow-soft)' }}>
@@ -59,7 +68,12 @@ export function MealsTab() {
           )}
         </div>
       </section>
-      {changed && used > changed.toMg && <LimitChangedNote what="salt" from={changed.fromMg} to={changed.toMg} unit="mg" />}
+      {saltOver && (
+        <OverLimitBanner title={overTitle('salt', used - todayLimit, 'mg')}>
+          {`Your limit is ${num(todayLimit)} mg. Choose low-salt food for the rest of today, and skip sauces, soups and pickles.`}
+        </OverLimitBanner>
+      )}
+      {changed && used > changed.toMg && !saltOver && <LimitChangedNote what="salt" from={changed.fromMg} to={changed.toMg} unit="mg" />}
 
       {/* Today: one expandable card per meal, newest first (design: "Meals you scanned today"). */}
       <section aria-label="Today's food log" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>

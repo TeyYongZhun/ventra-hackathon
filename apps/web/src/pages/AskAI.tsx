@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
-import type { AskReplyKind } from '@ventra/core';
+import type { AskReplyKind, VisitQuestionNote } from '@ventra/core';
 import { PageHeader } from '../components';
 import { ScrollingPlaceholder } from '../components/ScrollingPlaceholder';
 import { useAsk, useMe } from '../lib/api';
@@ -15,7 +15,7 @@ type AiKind = AskReplyKind | 'error' | 'pending';
 
 type Message =
   | { id: number; from: 'me'; text: string }
-  | { id: number; from: 'ai'; kind: AiKind; text: string };
+  | { id: number; from: 'ai'; kind: AiKind; text: string; visitQuestion?: VisitQuestionNote | null };
 
 
 const IDEAS = ['What is my water pill for?', 'How much can I drink today?', 'Why are my ankles swollen?'];
@@ -87,11 +87,11 @@ export default function AskAI() {
       { id: aiId, from: 'ai', kind: 'pending', text: '' },
     ]);
 
-    const settle = (kind: AiKind, reply: string) =>
-      setMessages((current) => current.map((message) => (message.id === aiId ? { id: aiId, from: 'ai', kind, text: reply } : message)));
+    const settle = (kind: AiKind, reply: string, visitQuestion: VisitQuestionNote | null = null) =>
+      setMessages((current) => current.map((message) => (message.id === aiId ? { id: aiId, from: 'ai', kind, text: reply, visitQuestion } : message)));
 
     ask.mutate({ question }, {
-      onSuccess: (result) => settle(result.kind, result.reply),
+      onSuccess: (result) => settle(result.kind, result.reply, result.visitQuestion),
       onError: (error) => settle(
         'error',
         error.code === 'RATE_LIMITED'
@@ -268,6 +268,7 @@ function ChatItem({ message }: { message: Message }) {
           <span style={{ fontSize: 'var(--text-h3)', lineHeight: 'var(--lh-h3)', fontWeight: 700 }}>Please ask your nurse</span>
         </div>
         <p style={{ margin: 0, fontSize: 'var(--text-body)', lineHeight: 'var(--lh-body)' }}>{message.text}</p>
+        {message.visitQuestion && <VisitNote note={message.visitQuestion} />}
         <Link
           to="/nurse"
           style={{ height: 72, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, borderRadius: 'var(--radius-pill)', background: 'var(--color-blue)', color: 'var(--color-ink)', textDecoration: 'none', fontSize: 23, fontWeight: 700 }}
@@ -283,24 +284,44 @@ function ChatItem({ message }: { message: Message }) {
 
   const pending = message.kind === 'pending';
   return (
-    <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-      <span aria-hidden="true" style={{ width: 48, height: 48, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 'var(--radius-pill)', background: 'var(--color-surface)', boxShadow: '0 0 0 3px var(--color-iris)' }}>
-        <BotFace size={36} />
-      </span>
-      <div
-        aria-busy={pending}
-        style={{
-          flex: 1,
-          padding: '16px 20px',
-          borderRadius: '6px 24px 24px 24px',
-          background: message.kind === 'error' ? 'var(--color-yellow-soft)' : 'var(--color-iris-soft)',
-          fontSize: 'var(--text-body)',
-          lineHeight: 'var(--lh-body)',
-        }}
-      >
-        {pending ? 'Thinking…' : message.text}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+        <span aria-hidden="true" style={{ width: 48, height: 48, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 'var(--radius-pill)', background: 'var(--color-surface)', boxShadow: '0 0 0 3px var(--color-iris)' }}>
+          <BotFace size={36} />
+        </span>
+        <div
+          aria-busy={pending}
+          style={{
+            flex: 1,
+            padding: '16px 20px',
+            borderRadius: '6px 24px 24px 24px',
+            background: message.kind === 'error' ? 'var(--color-yellow-soft)' : 'var(--color-iris-soft)',
+            fontSize: 'var(--text-body)',
+            lineHeight: 'var(--lh-body)',
+          }}
+        >
+          {pending ? 'Thinking…' : message.text}
+        </div>
       </div>
+      {/* Lined up under the bubble, past the avatar (48 px + 10 px gap). */}
+      {message.visitQuestion && <div style={{ marginLeft: 58 }}><VisitNote note={message.visitQuestion} /></div>}
     </div>
+  );
+}
+
+// "Added to Questions to ask for your next visit": the question went on the Visit prep list
+// (the server decided the doctor should answer it), with a link to see the list.
+function VisitNote({ note }: { note: VisitQuestionNote }) {
+  return (
+    <p role="status" style={{ margin: 0, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '4px 10px', padding: '12px 14px', borderRadius: 18, background: 'var(--color-green-soft)', fontSize: 19, lineHeight: '26px', fontWeight: 600 }}>
+      <svg style={{ flexShrink: 0, color: 'var(--color-green)' }} width={24} height={24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>
+      <span style={{ flex: 1, minWidth: 180 }}>
+        {note.status === 'added'
+          ? 'Added to “Questions to ask” for your next visit.'
+          : 'This is already on “Questions to ask” for your next visit.'}
+      </span>
+      <Link to="/visit" style={{ color: 'var(--color-blue-ink)', fontWeight: 700 }}>See my questions</Link>
+    </p>
   );
 }
 

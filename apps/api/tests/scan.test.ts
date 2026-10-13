@@ -44,6 +44,8 @@ const CHICKEN_RICE = [
     protein: { g: 30, what: 'Steamed chicken' },
     fat: { g: 22, what: 'Chicken skin and rice oil' },
     plate: [0.55, 0.3, 0.15],
+    fluidMl: 154,
+    fluidWhat: 'Soup',
     tip: 'Ask for no chilli sauce and leave the soup.',
     confidence: 0.95,
   }),
@@ -58,7 +60,7 @@ function cookieFrom(response: { headers: Record<string, string | string[] | unde
 }
 
 function fakeVision(reply: string | (() => Promise<string>) = CHICKEN_RICE): VisionClient & { describeMeal: ReturnType<typeof vi.fn> } {
-  return { describeMeal: vi.fn(async () => (typeof reply === 'string' ? reply : reply())) };
+  return { describeMeal: vi.fn(async () => (typeof reply === 'string' ? reply : reply())), completeText: vi.fn(async () => '') };
 }
 
 describe('meal photo scan and medicine barcodes', () => {
@@ -161,6 +163,59 @@ describe('meal photo scan and medicine barcodes', () => {
 
     const { photoUrl } = (await call('POST', '/api/meals', cookie, { scanId })).json();
     expect((await call('GET', photoUrl, other)).statusCode).toBe(404);
+  });
+
+  it('logs the soup with the meal as a drink, and undo takes both off', async () => {
+    const { call, login } = await setup();
+    const cookie = await login();
+    const fluidBefore = (await call('GET', '/api/metrics', cookie)).json().fluidToday;
+
+    const scan = (await call('POST', '/api/vision/meal', cookie, { photo: PHOTO })).json();
+    // To the nearest 10 ml.
+    expect(scan.estimate).toMatchObject({ fluidMl: 150, fluidWhat: 'soup' });
+    const meal = (await call('POST', '/api/meals', cookie, { scanId: scan.scanId })).json();
+    expect(meal.fluidAddedMl).toBe(150);
+
+    expect((await call('GET', '/api/metrics', cookie)).json().fluidToday).toBe(fluidBefore + 150);
+    const drinks = (await call('GET', '/api/fluid', cookie)).json().entries;
+    expect(drinks[0]).toMatchObject({ what: 'Soup with hainanese chicken rice', ml: 150 });
+    expect((await call('GET', '/api/meals', cookie)).json().entries[0].fluidAddedMl).toBe(150);
+
+    await call('DELETE', '/api/meals/last', cookie);
+    expect((await call('GET', '/api/metrics', cookie)).json().fluidToday).toBe(fluidBefore);
+    expect((await call('GET', '/api/fluid', cookie)).json().entries.some((entry: { what: string }) => entry.what.startsWith('Soup with'))).toBe(false);
+  });
+
+  it('leaves the soup out of drinks when the patient says so', async () => {
+    const { call, login } = await setup();
+    const cookie = await login();
+    const fluidBefore = (await call('GET', '/api/metrics', cookie)).json().fluidToday;
+    const { scanId } = (await call('POST', '/api/vision/meal', cookie, { photo: PHOTO })).json();
+    const meal = (await call('POST', '/api/meals', cookie, { scanId, addFluid: false })).json();
+    expect(meal.fluidAddedMl).toBeNull();
+    expect((await call('GET', '/api/metrics', cookie)).json().fluidToday).toBe(fluidBefore);
+  });
+
+  it("passes the patient's note to the AI, and can check the same photo again with one", async () => {
+    const vision = fakeVision();
+    const { call, login, signup } = await setup(vision);
+    const cookie = await login();
+
+    const first = (await call('POST', '/api/vision/meal', cookie, { photo: PHOTO, note: 'half portion, no gravy' })).json();
+    expect(vision.describeMeal).toHaveBeenLastCalledWith(JPEG, { note: 'half portion, no gravy' });
+
+    // "Not right? Tell us what it is": the stored photo, the new note, a new scan in its place.
+    const again = await call('POST', '/api/vision/meal', cookie, { scanId: first.scanId, note: 'it is fish soup' });
+    expect(again.statusCode).toBe(200);
+    expect(vision.describeMeal).toHaveBeenLastCalledWith(JPEG, { note: 'it is fish soup' });
+    expect(again.json().scanId).not.toBe(first.scanId);
+    expect((await call('POST', '/api/meals', cookie, { scanId: first.scanId })).statusCode).toBe(404);
+
+    // Someone else's scan, a re-check without a note, or an over-long note: no.
+    const other = await signup('90000002');
+    expect((await call('POST', '/api/vision/meal', other, { scanId: again.json().scanId, note: 'mine now' })).statusCode).toBe(404);
+    expect((await call('POST', '/api/vision/meal', cookie, { scanId: again.json().scanId })).statusCode).toBe(400);
+    expect((await call('POST', '/api/vision/meal', cookie, { photo: PHOTO, note: 'x'.repeat(201) })).statusCode).toBe(400);
   });
 
   it('undo removes the meal and its photo', async () => {
@@ -314,6 +369,13 @@ describe('reading the vision reply', () => {
     expect(plateShares([0, 0, 0], [0, 0, 0])).toEqual([0.5, 0.25, 0.25]);
   });
 
+  it('reads the soup or drink in the meal', () => {
+    const base = { what: 'Fish soup', sodiumMg: 1100, kcal: 420 };
+    expect(parseMealReply(JSON.stringify({ ...base, fluidMl: 2400, fluidWhat: 'Fish Soup' }))).toMatchObject({ estimate: { fluidMl: 1000, fluidWhat: 'fish soup' } });
+    expect(parseMealReply(JSON.stringify({ ...base, fluidMl: 246 }))).toMatchObject({ estimate: { fluidMl: 250, fluidWhat: 'soup' } });
+    expect(parseMealReply(JSON.stringify({ ...base, fluidMl: -5, fluidWhat: 'tea' }))).toMatchObject({ estimate: { fluidMl: 0, fluidWhat: '' } });
+  });
+
   it('returns null for a reply with no JSON', () => {
     expect(parseMealReply('Sorry, I cannot help.')).toBeNull();
     expect(parseMealReply('{not json}')).toBeNull();
@@ -385,5 +447,21 @@ describe('TokenHub settings', () => {
       TOKENHUB_BASE_URL: 'https://tokenhub-intl.tencentcloudmaas.com/v1/chat/completions/',
       TOKENHUB_MODEL: "'glm-5.3-flash'",
     })).toEqual({ apiKey: 'sk-abc', baseUrl: 'https://tokenhub-intl.tencentcloudmaas.com/v1', model: 'glm-5.3-flash' });
+  });
+});
+
+describe('TokenHub prompts', () => {
+  it("puts the patient's note in the meal prompt, without its quotes", async () => {
+    const fetchImpl = vi.fn(async (_url: string | URL | Request, _init?: RequestInit) => new Response(JSON.stringify({ choices: [{ message: { content: 'ok' } }] }), { status: 200 }));
+    const client = createTokenHubClient({ baseUrl: 'https://hub.test/v1', apiKey: 'k', model: 'm', fetchImpl });
+
+    await client.describeMeal(JPEG, { note: 'my "fish" soup\nhalf' });
+    const meal = JSON.parse(fetchImpl.mock.calls[0][1]?.body as string);
+    expect(meal.messages[0].content[0].text).toContain('The person who took the photo says: "my \'fish\' soup half".');
+    expect(meal.messages[0].content[0].text).toContain('"fluidMl"');
+
+    await client.completeText('Hello');
+    const text = JSON.parse(fetchImpl.mock.calls[1][1]?.body as string);
+    expect(text.messages).toEqual([{ role: 'user', content: 'Hello' }]);
   });
 });

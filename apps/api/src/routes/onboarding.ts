@@ -40,10 +40,17 @@ const medicationsSchema = z.object({
   })).max(12),
 });
 
+// A phone number: 8 to 15 digits once spaces, dashes, brackets and a leading + are ignored.
+const contactPhone = z.string().trim().max(32).refine((value) => {
+  const digits = value.replace(/[\s()+-]/g, '');
+  return /^\d{8,15}$/.test(digits);
+}, 'A phone number has 8 to 15 digits');
+
 const contactSchema = z.object({
   name: z.string().trim().min(1).max(100),
   relation: z.string().trim().min(1).max(50),
-  phone: z.string().trim().max(32).optional(),
+  // Needed for a new contact; when editing, leaving it out keeps the number on file.
+  phone: contactPhone.optional(),
 });
 
 export interface OnboardingRouteOptions {
@@ -159,7 +166,10 @@ export function registerOnboardingRoutes(app: FastifyInstance, options: Onboardi
     const scope = patientScope(request);
     const existing = db.select({ id: schema.contacts.id })
       .from(schema.contacts).where(scope.where(schema.contacts.patientId)).get();
-    const values = { name: parsed.data.name, relation: parsed.data.relation, phone: parsed.data.phone || null };
+    const values = { name: parsed.data.name, relation: parsed.data.relation, phone: parsed.data.phone ?? null };
+    if (!existing && !parsed.data.phone) {
+      return sendError(reply, 400, 'VALIDATION_ERROR', "Please add your family member's phone number");
+    }
     if (existing) {
       // No phone sent (e.g. editing only the name in My details): keep the one on file.
       const update = parsed.data.phone === undefined ? { name: values.name, relation: values.relation } : values;

@@ -14,10 +14,14 @@ import {
   WeightIcon,
 } from '../components/HomeIcons';
 import { LoadError, Loading } from '../components/QueryState';
+import { TodoCard } from '../components/TodayTodo';
 import { useMetrics } from '../lib/api';
 import { calendarTile, dayHeading, greeting, pillsLeft, statusLine, streakText } from '../lib/copy';
+import { morningTodo } from '../lib/todo';
 
 // B1 · Home (design/Main.dc.html). Every number comes from GET /api/metrics.
+// Today's to-do (weigh, morning pills, how you feel) is a card under the greeting until every step
+// is done. Separately, the motivation note pops up once a day, the first time Home opens.
 export default function Home() {
   const metrics = useMetrics();
 
@@ -43,6 +47,8 @@ function HomeView({ metrics }: { metrics: MetricsResponse }) {
   const navigate = useNavigate();
   // The motivation note shows once a day: the first time Home opens that day.
   const [noteOpen, setNoteOpen] = useState(false);
+  const todo = morningTodo(metrics);
+  const todoLeft = todo.some((item) => !item.done);
   useEffect(() => {
     setNoteOpen(!noteSeen(metrics.today));
   }, [metrics.today]);
@@ -99,6 +105,8 @@ function HomeView({ metrics }: { metrics: MetricsResponse }) {
           {greeting(new Date().getHours())}, {metrics.patient.name}
         </h1>
       </header>
+
+      {todoLeft && <TodoCard items={todo} />}
 
       {isGreen ? (
         <StatusCard

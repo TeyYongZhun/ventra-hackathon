@@ -4,7 +4,8 @@ import type { MetricsResponse } from '@ventra/core';
 import { PageHeader } from '../components';
 import { NextVisitCard, VisitCard } from '../components/VisitCards';
 import { LoadError, Loading } from '../components/QueryState';
-import { useDemoReset, useDemoYellowDay, useLogout, useMe, useMetrics, useVisits } from '../lib/api';
+import { useDemoMorning, useDemoReset, useLogout, useMe, useMetrics, useVisits } from '../lib/api';
+import { demoReminder, notificationsSupported, notifyDose, sgNow, startDemoReminder } from '../lib/reminders';
 
 // F1 · Calendar, the "More" tab (design/Calendar.dc.html): this month's days coloured by the
 // core rules, the report card, settings links and log out.
@@ -24,6 +25,8 @@ export default function More() {
   return <CalendarView metrics={metrics.data} />;
 }
 
+const demoButton = { minHeight: 'var(--touch-min)', padding: '8px 16px', borderRadius: 'var(--radius-pill)', border: '2.5px solid var(--color-ink)', background: 'var(--color-yellow)', color: 'var(--color-ink)', fontFamily: 'inherit', fontSize: 20, fontWeight: 700, cursor: 'pointer' } as const;
+
 function CalendarView({ metrics }: { metrics: MetricsResponse }) {
   const visitList = useVisits().data;
   const visits = visitList?.visits ?? [];
@@ -31,8 +34,8 @@ function CalendarView({ metrics }: { metrics: MetricsResponse }) {
   const me = useMe();
   const navigate = useNavigate();
   const logout = useLogout();
-  const yellowDay = useDemoYellowDay();
   const reset = useDemoReset();
+  const morning = useDemoMorning();
   const [message, setMessage] = useState('');
   const [askOut, setAskOut] = useState(false);
   const greenThisMonth = metrics.dayZones.filter((day) => day.zone === 'green' && day.date.slice(0, 7) === metrics.today.slice(0, 7)).length;
@@ -100,14 +103,39 @@ function CalendarView({ metrics }: { metrics: MetricsResponse }) {
           </p>
           <button
             type="button"
-            disabled={yellowDay.isPending}
-            onClick={() => yellowDay.mutate(undefined, {
-              onSuccess: () => navigate('/home'),
-              onError: () => setMessage('Could not start the yellow-day demo.'),
+            disabled={morning.isPending}
+            onClick={() => morning.mutate(undefined, {
+              onSuccess: () => {
+                // As if the app opened for the first time today: the streak note and the to-do.
+                try {
+                  localStorage.removeItem(`ventra.note.${metrics.today}`);
+                  localStorage.removeItem(`ventra.checkin.${metrics.today}`);
+                } catch {
+                  // Storage blocked: the to-do still shows.
+                }
+                navigate('/home');
+              },
+              onError: () => setMessage('Could not start the morning demo.'),
             })}
-            style={{ minHeight: 'var(--touch-min)', borderRadius: 'var(--radius-pill)', border: '2.5px solid var(--color-ink)', background: 'var(--color-yellow)', color: 'var(--color-ink)', fontFamily: 'inherit', fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
+            style={demoButton}
           >
-            Start yellow-day demo (water pill missed)
+            Demo: start of the day (to-do list)
+          </button>
+          <button
+            type="button"
+            onClick={async () => {
+              // Asks to allow phone notifications first, if the patient hasn't decided yet.
+              if (notificationsSupported() && Notification.permission === 'default') {
+                await Notification.requestPermission().catch(() => undefined);
+              }
+              startDemoReminder();
+              const reminder = demoReminder(metrics.pillsToday.all);
+              if (reminder) await notifyDose(sgNow().date, reminder, true);
+              navigate('/home');
+            }}
+            style={demoButton}
+          >
+            Demo: medicine reminder
           </button>
           <button
             type="button"

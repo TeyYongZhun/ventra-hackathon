@@ -3,12 +3,12 @@ import { Link } from 'react-router-dom';
 import type { MetricsResponse } from '@ventra/core';
 import { LoadError, Loading } from '../components/QueryState';
 import { WeightChart } from '../components/WeightChart';
-import { useMe, useMetrics } from '../lib/api';
+import { useMetrics } from '../lib/api';
 import { ml as num } from '../lib/copy';
 
 // C2 · Weight & targets (design/Weight.dc.html). All numbers from GET /api/metrics.
-// "Scale connected" shows for the demo patient only: a placeholder for the Bluetooth scale,
-// which is not built yet. The reminder switch is left out (no reminders exist yet).
+// The design's "Scale connected" pill is left out: weights are typed in, there is no Bluetooth
+// scale. The reminder switch is left out too (the daily to-do on Home covers weighing).
 function signed(value: number | null): string {
   if (value == null) return '—';
   return `${value > 0 ? '+' : value < 0 ? '−' : ''}${Math.abs(value).toFixed(1)} kg`;
@@ -26,19 +26,9 @@ function WeightView({ metrics }: { metrics: MetricsResponse }) {
   const { targets, weightToday } = metrics;
   const goingUp = metrics.reasons.some((reason) => reason.key === 'weight');
   const days = targets.alertDays || 3;
-  const isDemo = useMe().data?.is_demo === true;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
-      {isDemo && (
-        <div style={{ alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px', borderRadius: 'var(--radius-pill)', background: 'var(--color-green-soft)' }}>
-          <svg style={{ color: 'var(--color-green)' }} width={28} height={28} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="m7 7 10 10-5 5V2l5 5L7 17" />
-          </svg>
-          <span style={{ fontSize: 20, lineHeight: '26px', fontWeight: 700, color: 'var(--color-green)' }}>Scale connected</span>
-        </div>
-      )}
-
       <section aria-label="Today's weight" style={{ display: 'flex', flexDirection: 'column', gap: 18, padding: 24, borderRadius: 32, background: 'var(--color-yellow)' }}>
         <span style={{ fontSize: 20, lineHeight: '26px', fontWeight: 700 }}>{metrics.weighTimeToday ? `Today at ${metrics.weighTimeToday}` : 'Today'}</span>
         {weightToday != null ? (

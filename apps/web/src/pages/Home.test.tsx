@@ -45,15 +45,39 @@ describe('Home', () => {
     expect(within(grid).getByRole('button', { name: 'Calendar, today is Wed, 7 October' })).toBeTruthy();
   });
 
-  it('shows the daily note once a day', async () => {
+  it("shows today's to-do on Home until the routine is done", async () => {
+    localStorage.setItem('ventra.note.2026-10-07', '1');
+    const user = await openHome();
+
+    // Mdm Tan has weighed and taken her morning pills, but not said how she feels yet.
+    const card = await screen.findByRole('region', { name: "Today's to-do" });
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(within(card).getByText('2 of 3 done')).toBeTruthy();
+    expect(within(card).getByRole('link', { name: 'Weigh yourself, done' })).toBeTruthy();
+    expect(within(card).getByRole('link', { name: 'Take your morning pills, done' })).toBeTruthy();
+    expect(within(card).getByRole('link', { name: 'How do you feel today?' }).getAttribute('href')).toBe('/feel');
+
+    // "I feel fine" finishes the routine: the card goes away.
+    await user.click(within(card).getByRole('link', { name: 'How do you feel today?' }));
+    await user.click(await screen.findByRole('button', { name: 'I feel fine' }));
+    await user.click(screen.getByRole('button', { name: 'Save how I feel' }));
+    await screen.findByText('Good to hear. Thank you for checking in.');
+    await user.click(screen.getByRole('button', { name: 'Home' }));
+    await screen.findByRole('heading', { level: 1, name: /, Mdm Tan$/ });
+    expect(screen.queryByRole('region', { name: "Today's to-do" })).toBeNull();
+  });
+
+  it('shows the streak note once a day, separate from the to-do', async () => {
     const user = await openHome();
 
     const note = await screen.findByRole('dialog', { name: "You're doing so well!" });
     expect(within(note).getByText(/You have weighed yourself 11 mornings in a row\./)).toBeTruthy();
+    expect(within(note).queryByText('How do you feel today?')).toBeNull();
     await user.click(within(note).getByRole('button', { name: 'Thank you!' }));
 
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(localStorage.getItem('ventra.note.2026-10-07')).toBe('1');
+    expect(screen.getByRole('region', { name: "Today's to-do" })).toBeTruthy();
   });
 
   it('skips the note when it was already seen today', async () => {

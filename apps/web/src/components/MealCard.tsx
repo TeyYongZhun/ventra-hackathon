@@ -83,6 +83,15 @@ export function MealCard({ meal, limitMg, defaultOpen = false }: { meal: MealLis
             </div>
           </div>
 
+          {meal.fluidAddedMl ? (
+            <p style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderRadius: 20, background: 'var(--color-sky-soft)', fontSize: 20, lineHeight: '28px', fontWeight: 600 }}>
+              <svg style={{ flexShrink: 0, color: 'var(--color-blue-ink)' }} width={26} height={26} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.25} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5S5 13 5 15a7 7 0 0 0 7 7z" />
+              </svg>
+              {num(meal.fluidAddedMl)} ml added to your drinks
+            </p>
+          ) : null}
+
           <section style={{ display: 'flex', flexDirection: 'column', gap: 18, padding: 22, borderRadius: 24, background: 'var(--color-surface)' }}>
             <h3 style={{ margin: 0, fontSize: 26, lineHeight: '32px', fontWeight: 700 }}>In this meal</h3>
             <div role="group" aria-label="Show meal info as" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 6, padding: 5, borderRadius: 'var(--radius-pill)', background: 'var(--color-sunken)' }}>

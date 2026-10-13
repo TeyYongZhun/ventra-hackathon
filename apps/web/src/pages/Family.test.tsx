@@ -27,7 +27,9 @@ describe('More, alert, nurse call and family', () => {
   it('shows demo tools to the demo patient', async () => {
     await openMore();
     const tools = screen.getByRole('region', { name: 'Demo tools' });
-    expect(within(tools).getByRole('button', { name: /Start yellow-day demo/ })).toBeTruthy();
+    expect(within(tools).queryByRole('button', { name: /yellow-day demo/ })).toBeNull();
+    expect(within(tools).getByRole('button', { name: 'Demo: start of the day (to-do list)' })).toBeTruthy();
+    expect(within(tools).getByRole('button', { name: 'Demo: medicine reminder' })).toBeTruthy();
     expect(within(tools).getByRole('button', { name: 'Reset demo day' })).toBeTruthy();
   });
 
@@ -97,6 +99,32 @@ describe('More, alert, nurse call and family', () => {
     expect(within(connect).getByText('CODE01')).toBeTruthy();
 
     await user.click(within(connect).getByRole('button', { name: 'Get a new code' }));
-    expect(await within(screen.getByRole('region', { name: 'Connect Telegram' })).findByText('CODE02')).toBeTruthy();
+    const fresh = screen.getByRole('region', { name: 'Connect Telegram' });
+    expect(await within(fresh).findByText('CODE02')).toBeTruthy();
+
+    // The link can be copied to paste into a message.
+    await user.click(within(fresh).getByRole('button', { name: 'Copy link' }));
+    expect(await within(fresh).findByText('Link copied. Paste it in a message to your family.')).toBeTruthy();
+    expect(await navigator.clipboard.readText()).toBe('https://t.me/VentraCareBot?start=CODE02');
+  });
+
+  it('demos the start of the day: the to-do on Home with nothing done yet', async () => {
+    const user = await openMore();
+    await user.click(screen.getByRole('button', { name: 'Demo: start of the day (to-do list)' }));
+
+    // As if the app opened for the first time today: the streak note pops up…
+    const note = await screen.findByRole('dialog', { name: "You're doing so well!" });
+    await user.click(within(note).getByRole('button', { name: 'Thank you!' }));
+    // …and the to-do is on Home, nothing ticked.
+    const todo = screen.getByRole('region', { name: "Today's to-do" });
+    expect(within(todo).getByText('0 of 3 done')).toBeTruthy();
+    expect(within(todo).getByRole('link', { name: 'Weigh yourself' })).toBeTruthy();
+    expect(within(todo).getByRole('link', { name: 'Take your morning pills' })).toBeTruthy();
+
+    // Reset brings the demo day back.
+    await user.click(screen.getByRole('button', { name: 'More' }));
+    await user.click(await screen.findByRole('button', { name: 'Reset demo day' }));
+    await screen.findByRole('heading', { level: 1, name: /, Mdm Tan$/ });
+    expect(await within(screen.getByRole('region', { name: "Today's to-do" })).findByText('2 of 3 done')).toBeTruthy();
   });
 });
