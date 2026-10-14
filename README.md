@@ -29,13 +29,14 @@
 
 ## The problem
 
-After a hospital stay for heart failure, the weeks at home are where things go wrong. Fluid builds up quietly, a water pill is skipped, a salty lunch adds up. By the time someone feels breathless, it is often a readmission.
+**Older adults (65+) in Singapore who have just been discharged after a heart-failure hospital stay often end up back in hospital, because early warning signs at home are missed.**
 
-- Singapore's heart-failure readmissions compare poorly with OECD peers ([ACE, 2025](https://isomer-user-content.by.gov.sg/68/3edc195a-ee82-4033-8e5e-f320f9d4c123/ETPO016_2025_chfavbc.pdf)).
-- At NHCS, education, follow-up calls and an app cut 30-day readmissions from **8.3% to 3.5%** ([CHI](https://child.chi.sg/learn/child-collection/projects/to-reduce-the-readmission-rate-of-heart-failure-patients/)).
-- Patients who weighed themselves on ≥ 80% of days had far fewer hospitalisations, **IRR 0.37** ([PubMed](https://www.pubmed.ncbi.nlm.nih.gov/27818309/)).
+- **20%** are readmitted within a year, the highest compared with OECD countries (average 11%) ([ACE, 2025](https://isomer-user-content.by.gov.sg/68/3edc195a-ee82-4033-8e5e-f320f9d4c123/ETPO016_2025_chfavbc.pdf)).
+- Hospital costs for heart failure nearly doubled in 10 years, to **S$71.7M** in 2022 ([ACE, 2025](https://isomer-user-content.by.gov.sg/68/3edc195a-ee82-4033-8e5e-f320f9d4c123/ETPO016_2025_chfavbc.pdf)).
 
-Self-care works when it is easy, every day, for an older patient, and when someone notices early.
+At home, patients must weigh themselves, take their medicines, and watch salt and fluids every day. For an older patient, this is hard to keep up. A slow weight gain goes unnoticed, and family and nurses often find out only after the patient is rushed to the emergency department.
+
+**The gap:** no simple daily tool that older patients can use, and that warns family and the care team early.
 
 ## Target users
 
@@ -160,11 +161,13 @@ flowchart LR
   end
   subgraph Z4["Zone 4 · Outside"]
     TG["Telegram · family"]
-    SIM["Nurse / 995 (simulated)"]
+    NURSE["Nurse (simulated)"]
+    E995["995 emergency (simulated)"]
   end
   PWA -->|HTTPS + session| API
   API --> CORE
   CORE <--> DB
+  API -->|"emergency words → 'Please call 995 now.' + SOS card (AI skipped)"| PWA
   API -->|"screenInput → question + own numbers"| ADP
   API -->|"photo / question text only"| TH
   ADP -->|answer| API
@@ -172,7 +175,9 @@ flowchart LR
   API -->|"screenOutput + range checks"| CORE
   JOBS --> CORE
   CORE -->|"yellow alert · summary"| TG
-  PWA -.->|simulated| SIM
+  PWA -.->|simulated| NURSE
+  PWA -.->|"SOS · 10 s countdown, simulated"| E995
+  API -->|"SOS alert"| TG
 ```
 
 | Boundary | What crosses | Protection |
@@ -215,10 +220,43 @@ More: [docs/architecture.md](docs/architecture.md) · [docs/api.md](docs/api.md)
 
 ## Impact
 
-- **Built on published results:** readmissions fell from 8.3% to 3.5% with education + follow-up + an app, and daily weighing is linked to far fewer hospitalisations (IRR 0.37).
-- **Measurable:** weighing days and adherence (confirmed doses only) are recorded, ready for a clinic pilot.
-- **Practical:** one container, no native app, rules a clinic can review. Every AI feature fails safe: Ask AI falls back to fixed replies, meal scan to a manual list.
-- **Honest:** we have **not** run a clinical study.
+### Business value
+
+**Ventra helps hospitals keep heart-failure patients out of hospital after discharge, at very low cost.**
+
+- **Problem cost:** heart-failure hospital stays cost **S$71.7M** in 2022, and **1 in 5** patients is readmitted within a year ([ACE, 2025](https://isomer-user-content.by.gov.sg/68/3edc195a-ee82-4033-8e5e-f320f9d4c123/ETPO016_2025_chfavbc.pdf)).
+- **Proof the approach works:** a similar NHCS programme more than halved 30-day readmissions ([CHI](https://child.chi.sg/learn/child-collection/projects/to-reduce-the-readmission-rate-of-heart-failure-patients/)).
+- **Ventra's edge:** the same kind of support, every day on the patient's own phone, with little extra staff time.
+- **Next step:** a trial run with one clinic to measure weighing days, medicine adherence and readmissions.
+
+| Who | Value |
+|---|---|
+| **Hospitals and MOH** (who pays) | Fewer readmissions: lower costs and more free beds |
+| **Nurses and doctors** | Real data at each visit (one-page report, nurse script) instead of chasing patients |
+| **Patients** | Stay home and stay well; one tap per task, plain explanations |
+| **Family** | Know early when something is wrong, even living apart (Telegram alert, 10 PM summary) |
+
+### The evidence
+
+| What Ventra does | Published result |
+|---|---|
+| Explains medicines and warning signs, tracks daily self-care, alerts family | A similar NHCS programme (education, follow-up calls and an app) cut 30-day readmissions from **8.3% to 3.5%** and 6-month readmissions from **13.6% to 5.8%** ([CHI](https://child.chi.sg/learn/child-collection/projects/to-reduce-the-readmission-rate-of-heart-failure-patients/)) |
+| Daily weighing | Patients who logged their weight on **≥ 80% of days** had **63% fewer** heart-failure hospitalisations ([Jones et al., 2014](https://pubmed.ncbi.nlm.nih.gov/24483776/)) |
+
+### How we would prove it
+
+A trial run with one clinic would measure these (Ventra already records all of them):
+
+| Metric | How Ventra measures it | Goal in a trial run |
+|---|---|---|
+| Weighing days | Days with a morning weight logged | ≥ 80% of days |
+| Medicine adherence | Confirmed doses ÷ doses due (confirmed doses only, locked once taken) | ≥ 80% of doses |
+| Early warnings | Yellow days caught, and family alerted on Telegram the same day | Every yellow day |
+| Readmissions | 30-day readmissions vs. the clinic's current rate | Lower than today |
+
+**Practical to adopt:** one tap per task for the patient, no app store install, one container to deploy, and alert rules a clinic can read and change. Every AI feature fails safe: Ask AI falls back to fixed replies, meal scan to a manual list.
+
+**Honest:** these are published results and trial goals. Ventra itself has **not** been tested in a clinical study yet.
 
 ---
 

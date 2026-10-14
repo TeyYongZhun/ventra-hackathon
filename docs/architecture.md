@@ -34,6 +34,7 @@ flowchart LR
   PWA -->|HTTPS + session| AUTH --> API
   API --> CORE
   CORE <--> DB
+  API -->|"emergency words → 'Please call 995 now.' + SOS card (AI skipped)"| PWA
   API -->|"screenInput → question + own numbers"| ADP
   ADP -->|"answer"| API
   API -->|"screenOutput"| CORE
@@ -41,7 +42,8 @@ flowchart LR
   JOBS -->|summary| TG
   CORE -->|yellow alert| TG
   PWA -.->|simulated| NURSE
-  PWA -.->|countdown, simulated| E995
+  PWA -.->|"SOS · 10 s countdown, simulated"| E995
+  API -->|"SOS alert"| TG
 ```
 
 GitHub renders this diagram. For slides, open it in [mermaid.live](https://mermaid.live) and export a PNG.
