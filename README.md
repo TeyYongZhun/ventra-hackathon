@@ -6,7 +6,9 @@
 
 <h3>Safe, simple heart failure self-care companion.</h3>
 
-<p><em>Heart Failure Self-Care Agent · Built for the Tencent Cloud "AI CAN DO IT" Hackathon Singapore 2026 · Challenge 2: AI Healthier Every Day</em></p>
+<p><em>Heart Failure Self-Care Agent · Built for the Tencent Cloud "AI CAN DO IT" Hackathon Singapore 2026 · 
+  Challenge 2: AI Healthier Every Day: Intelligent Support for Long-Term 
+Self-Care</em></p>
 
 <p>
   <img alt="React 18" src="https://img.shields.io/badge/React_18-20232A?style=flat&logo=react&logoColor=61DAFB">
