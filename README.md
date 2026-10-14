@@ -58,7 +58,51 @@ Self-care works when it is easy, every day, for an older patient, and when someo
 | **Hosting** | Render (Docker, Singapore) |
 | **Dev tool** | CodeBuddy |
 
-CodeBuddy proof: [rules file](CODEBUDDY.md) and [screenshots](evidence/README.md).
+## CodeBuddy proof
+
+Ventra's foundation (scaffold, rules, database, API, login, CI and deploy) was built in **CodeBuddy IDE** sessions. We also used other AI coding assistants for some later features and fixes.
+
+Three kinds of proof:
+
+| Proof | What it shows | Link |
+|---|---|---|
+| **Usage log** (API call log) | 48 requests from CodeBuddyIDE, 758.57 credits, models kimi-k2.6, gpt-5.5, glm-5.2, minimax-m3 | [codebuddy-usage-log.xlsx](evidence/codebuddy-usage-log.xlsx) |
+| **Chat screenshots** | 24 screenshots of CodeBuddy sessions, one per feature | [evidence/](evidence/README.md) |
+| **Rules file** | The rules every CodeBuddy session followed (safety, patient scoping, accessibility) | [CODEBUDDY.md](CODEBUDDY.md) |
+
+**How we prompted CodeBuddy:** one feature per session, always with the rules file attached.
+
+```
+@CODEBUDDY.md @<files>
+CONTEXT: <what those files are>
+TASK: <one feature, one sentence>
+RULES: follow CODEBUDDY.md. <task-specific rule>
+DONE WHEN: <testable criteria>
+```
+
+**Sessions with screenshots**
+
+| What CodeBuddy built | Screenshot |
+|---|---|
+| Monorepo scaffold (app, server, core) | [view](evidence/D1-scaffold-a.png) |
+| Patient record and metrics, with tests | [view](evidence/D1-core-port-a.png) |
+| Alert rules (green / yellow), with tests | [view](evidence/D1-rules-a.png) |
+| SQLite database, migration and demo data | [view](evidence/D1-db-a.png) |
+| API contract and shared types | [view](evidence/D1-api-doc-a.png) |
+| Design tokens and shared components | [view](evidence/D1-components-1a.png) |
+| App shell, navigation and SOS button | [view](evidence/D1-shell-a.png) |
+| Login with phone + PIN, patient scoping | [view](evidence/D2-auth-a.png) |
+| Tencent Cloud ADP chat test script | [view](evidence/D1-codebuddy-adp-test.png) |
+| CI fixes (GitHub Actions green) | [view](evidence/D1-fix-ci-1a.png) |
+| Free-host deploy | [view](evidence/D1-deploy-a.png) |
+
+<details>
+<summary><b>Example: CodeBuddy building the alert rules</b> (click to open)</summary>
+
+![CodeBuddy session: alert rules](evidence/D1-rules-a.png)
+![CodeBuddy session: alert rules, result](evidence/D1-rules-b.png)
+
+</details>
 
 ## The solution
 
