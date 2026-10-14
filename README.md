@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/images/cover.jpg" alt="Ventra: an older woman at home with the Ventra app showing a good day, an Ask AI answer, and a 10 PM family summary on Telegram" width="100%">
+<img src="docs/images/cover.png">
 
 <h1>Ventra</h1>
 
