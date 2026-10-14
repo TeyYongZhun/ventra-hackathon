@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="docs/images/cover.jpg" alt="Ventra: an older woman at home with the Ventra app showing a good day, and a 10 PM family summary on Telegram" width="100%">
+
 <h1>Ventra</h1>
 
 <h3>Safe, simple heart failure self-care companion.</h3>
