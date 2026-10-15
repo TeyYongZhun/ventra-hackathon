@@ -100,7 +100,7 @@ DONE WHEN: <testable criteria>
 | Login with phone + PIN, patient scoping | [view](evidence/D2-auth-a.png) |
 | Tencent Cloud ADP chat test script | [view](evidence/D1-codebuddy-adp-test.png) |
 | CI fixes (GitHub Actions green) | [view](evidence/D1-fix-ci-1a.png) |
-| Free-host deploy | [view](evidence/D1-deploy-a.png) |
+| Free-host deploy | [view](evidence/D1-deploy-b.png) |
 
 <details>
 <summary><b>Example: CodeBuddy building the alert rules</b> (click to open)</summary>
