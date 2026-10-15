@@ -24,6 +24,7 @@ Self-Care</em></p>
 
 <p>
   <a href="https://ventra-hackathon.onrender.com"><b>🚀 Live Demo</b></a> ·
+  <a href="https://youtu.be/6FQ1TZ-7wPc"><b>🎬 Demo Video</b></a> ·
   <a href="docs/architecture.md"><b>🧭 Architecture</b></a>
 </p>
 
