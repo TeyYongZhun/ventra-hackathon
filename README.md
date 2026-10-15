@@ -250,7 +250,7 @@ More: [docs/architecture.md](docs/architecture.md) · [docs/api.md](docs/api.md)
 
 ### How we would prove it
 
-A trial run with one clinic would measure these (Ventra already records all of them):
+A trial run with one clinic would measure these (Ventra records the first three; the clinic records readmissions):
 
 | Metric | How Ventra measures it | Goal in a trial run |
 |---|---|---|
