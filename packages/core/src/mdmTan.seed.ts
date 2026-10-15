@@ -74,7 +74,7 @@ function confirmedDoses(): TakenDose[] {
 export const mdmTanSeed: PatientRecord = {
   patient: {
     name: 'Mdm Tan',
-    age: 72,
+    age: 81,
     condition: 'heart failure',
     family: { name: 'Mei Ling', relation: 'daughter' },
   },

@@ -209,7 +209,7 @@ If `date` is omitted, defaults to today in Singapore. A past date is treated as 
 {
   "patient": {
     "name": "Mdm Tan",
-    "age": 72,
+    "age": 81,
     "condition": "heart failure",
     "family": { "name": "Mei Ling", "relation": "daughter" }
   },
@@ -256,7 +256,7 @@ This example uses the real values from `@ventra/core` (`mdmTanSeed`) and the met
 {
   "patient": {
     "name": "Mdm Tan",
-    "age": 72,
+    "age": 81,
     "condition": "heart failure",
     "family": { "name": "Mei Ling", "relation": "daughter" }
   },
@@ -940,7 +940,7 @@ The doctor report data, built by `buildReport` in `packages/core/report.ts` from
 **Success 200 (shape):**
 ```json
 {
-  "patient": { "name": "Mdm Tan", "age": 72, "condition": "heart failure", "family": { "name": "Mei Ling", "relation": "daughter" } },
+  "patient": { "name": "Mdm Tan", "age": 81, "condition": "heart failure", "family": { "name": "Mei Ling", "relation": "daughter" } },
   "today": "2026-10-07",
   "period": { "from": "2026-10-01", "to": "2026-10-07" },
   "discharge": "2026-09-27",

@@ -234,8 +234,8 @@ export async function reseedDemoPatient(db: Db, today: IsoDate = mdmTanSeed.toda
 
   db.transaction((tx) => {
     // Back to the default text size (Extra large) and the full weight history too, so every
-    // demo starts the same.
-    tx.update(schema.patients).set({ textSize: null, weightSince: null }).where(eq(schema.patients.id, existing.id)).run();
+    // demo starts the same. Age too, so a database seeded before an age change catches up.
+    tx.update(schema.patients).set({ age: mdmTanSeed.patient.age, textSize: null, weightSince: null }).where(eq(schema.patients.id, existing.id)).run();
     clearPatientData(tx, existing.id);
     insertDemoData(tx, existing.id, today, { ...options, familyChatId: linkedChat ?? options.familyChatId ?? null });
   });
