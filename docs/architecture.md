@@ -11,6 +11,10 @@ packages/core   Pure TypeScript shared by API and web: metrics, alert rules, dos
 
 ## System and trust boundaries
 
+![Ventra architecture: four trust zones (patient phone, Ventra server, Tencent Cloud, outside parties)](images/architecture.png)
+
+The detailed version:
+
 ```mermaid
 flowchart LR
   subgraph Z1["Zone 1 · Patient phone — UNTRUSTED input"]
@@ -46,7 +50,7 @@ flowchart LR
   API -->|"SOS alert"| TG
 ```
 
-GitHub renders this diagram. For slides, open it in [mermaid.live](https://mermaid.live) and export a PNG.
+GitHub renders this diagram. The image above is slide 1 of the architecture deck.
 
 ## One source of truth for numbers
 

@@ -149,6 +149,11 @@ Voice input needs Chrome, Edge or Safari with the microphone allowed. The free h
 
 ## Architecture and trust boundaries
 
+![Ventra architecture: four trust zones (patient phone, Ventra server, Tencent Cloud, outside parties)](docs/images/architecture.png)
+
+<details>
+<summary><b>Detailed diagram</b> (click to open)</summary>
+
 ```mermaid
 flowchart LR
   subgraph Z1["Zone 1 · Patient phone — UNTRUSTED"]
@@ -184,6 +189,8 @@ flowchart LR
   PWA -.->|"SOS · 10 s countdown, simulated"| E995
   API -->|"SOS alert"| TG
 ```
+
+</details>
 
 | Boundary | What crosses | Protection |
 |---|---|---|
